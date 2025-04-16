@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>South India Tourism</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container mt-5">
+        <h1 class="text-center">Welcome to South India Tourism</h1>
+        <p class="text-center">Explore amazing destinations!</p>
+        <div class="row">
+            {% for state in states %}
+                <div class="col-md-4 mb-3">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">{{ state.name }}</h5>
+                            <p class="card-text">{{ state.description }}</p>
+                            <!-- Link to be added later -->
+                            <a href="#" class="btn btn-primary">Visit {{ state.name }}</a>
+                        </div>
+                    </div>
+                </div>
+            {% empty %}
+                <p class="text-center">No states available yet.</p>
+            {% endfor %}
+        </div>
+    </div>
+</body>
+</html>
