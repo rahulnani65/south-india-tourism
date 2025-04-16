@@ -1,9 +1,9 @@
 from django.contrib import admin
-from .models import State, TouristPlace, Restaurant
+from .models import State, TouristPlace, Hotel
 
 @admin.register(State)
 class StateAdmin(admin.ModelAdmin):
-    list_display = ['name', 'created_at']
+    list_display = ['name', 'created_at']           # source env/bin/activate
     search_fields = ['name']
 
 @admin.register(TouristPlace)
@@ -12,8 +12,8 @@ class TouristPlaceAdmin(admin.ModelAdmin):
     list_filter = ['state', 'category']
     search_fields = ['name']
 
-@admin.register(Restaurant)
-class RestaurantAdmin(admin.ModelAdmin):
-    list_display = ['name', 'tourist_place', 'dietary_tags']
+@admin.register(Hotel)
+class HotelAdmin(admin.ModelAdmin):
+    list_display = ['name', 'tourist_place', 'amenities']
     list_filter = ['tourist_place']
-    search_fields = ['name', 'dietary_tags']
+    search_fields = ['name', 'amenities']

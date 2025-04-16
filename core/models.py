@@ -34,20 +34,20 @@ class TouristPlace(models.Model):
     class Meta:
         ordering = ['name']
 
-class Restaurant(models.Model):
-    DIETARY_TAGS = (
-        ('vegetarian', 'Vegetarian'),
-        ('vegan', 'Vegan'),
-        ('gluten_free', 'Gluten-Free'),
-        ('south_indian', 'South Indian'),
-        ('north_indian', 'North Indian'),
-        ('chinese', 'Chinese'),
+class Hotel(models.Model):
+    AMENITIES = (
+        ('wifi', 'Wi-Fi'),
+        ('pool', 'Swimming Pool'),
+        ('ac', 'Air Conditioning'),
+        ('parking', 'Parking'),
+        ('restaurant', 'Restaurant'),
+        ('gym', 'Gym'),
     )
 
     name = models.CharField(max_length=100)
-    tourist_place = models.ForeignKey(TouristPlace, on_delete=models.CASCADE, related_name='restaurants')
+    tourist_place = models.ForeignKey(TouristPlace, on_delete=models.CASCADE, related_name='hotels')
     address = models.TextField(blank=True)
-    dietary_tags = models.CharField(max_length=200, blank=True)  # Comma-separated, e.g., "vegetarian,vegan"
+    amenities = models.CharField(max_length=200, blank=True)  # Comma-separated, e.g., "wifi,ac"
     distance_km = models.FloatField(null=True, blank=True)  # From tourist place
     created_at = models.DateTimeField(auto_now_add=True)
 
