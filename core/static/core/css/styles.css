@@ -1,0 +1,207 @@
+/* Custom Navbar */
+.bg-custom {
+    background-color: #1a3c34;
+}
+.nav-btn {
+    margin-left: 10px;
+}
+.navbar-brand, .nav-link {
+    color: #ffffff !important;
+    font-weight: 500;
+}
+.nav-link:hover {
+    color: #d3a625 !important;
+}
+
+/* Hero Section */
+.home {
+    min-height: 100vh;
+    width: 100vw; /* Ensure the section spans the viewport width */
+    margin: 0;
+    padding: 0;
+    position: relative;
+}
+.hero-box {
+    width: 100vw; /* Full viewport width */
+    height: 100vh; /* Full viewport height */
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 0;
+    padding: 0;
+    position: absolute;
+    top: 0;
+    left: 0;
+}
+.content {
+    text-align: center;
+    color: white;
+}
+.content span {
+    font-size: 1.5em;
+    text-transform: uppercase;
+}
+.content h3 {
+    font-size: 3em;
+    margin: 10px 0;
+    text-transform: uppercase;
+}
+.content p {
+    font-size: 1.2em;
+    margin-bottom: 20px;
+}
+.btn {
+    background: #d3a625;
+    color: white;
+    padding: 10px 20px;
+    text-decoration: none;
+    border-radius: 5px;
+}
+
+/* States Section */
+.states {
+    padding: 40px 0;
+    background-color: #f8f9fa;
+    text-align: center;
+}
+.state-card {
+    transition: transform 0.3s, box-shadow 0.3s;
+    background: #fff;
+    border: none;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+.state-card:hover {
+    transform: scale(1.05);
+    box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+}
+
+/* Adventure Section */
+.category {
+    padding: 40px 0;
+    text-align: center;
+}
+.heading {
+    font-size: 2.5em;
+    color: #1a3c34;
+    margin-bottom: 20px;
+}
+.box-container {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+}
+.box {
+    background: #fff;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    width: 100%;
+    max-width: 300px;
+}
+.box img {
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
+}
+
+/* Packages Section */
+.packages {
+    padding: 40px 0;
+    text-align: center;
+}
+.packages .box {
+    background: #fff;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    width: 100%;
+    max-width: 300px;
+}
+.packages .image img {
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
+}
+.price {
+    color: #d3a625;
+    font-weight: bold;
+    margin: 10px 0;
+}
+
+/* Contact Section */
+.contact {
+    padding: 40px 0;
+    text-align: center;
+}
+.contact-form .input {
+    width: 100%;
+    padding: 10px;
+    margin: 10px 0;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+}
+.msg textarea {
+    width: 100%;
+    height: 100px;
+    padding: 10px;
+    margin: 10px 0;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+}
+.btn1 button {
+    background: #1a3c34;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+}
+
+/* Footer */
+.footer {
+    background: #1a3c34;
+    color: white;
+    padding: 20px 0;
+    text-align: center;
+}
+.footer .box-container {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+.footer .box a {
+    color: white;
+    display: block;
+    margin: 5px 0;
+    text-decoration: none;
+}
+.footer .box a:hover {
+    color: #d3a625;
+}
+.credit {
+    margin-top: 10px;
+    font-size: 0.9em;
+}
+
+/* General */
+body {
+    font-family: 'Arial', sans-serif;
+    margin: 0;
+    padding: 0;
+}
+h2 {
+    color: #1a3c34;
+    font-size: 2.5em;
+    margin-bottom: 20px;
+}
+.card {
+    transition: transform 0.3s, box-shadow 0.3s;
+}
+.card:hover {
+    transform: scale(1.05);
+    box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+}

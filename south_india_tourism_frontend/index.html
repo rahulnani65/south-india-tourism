@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>South India Tourism</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css" rel="stylesheet"/>
+  <link rel="stylesheet" href="css/styles.css" />
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="https://unicons.iconscout.com/release/v2.1.6/css/unicons.css" />
+</head>
+<body>
+
+  <!-- Navbar -->
+  <nav class="navbar navbar-expand-lg navbar-dark bg-custom sticky-top">
+    <div class="container-fluid">
+      <a class="navbar-brand" href="#">South India Tourism</a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav ms-auto">
+          <li class="nav-item"><a class="nav-link active" href="#">Home</a></li>
+          <li class="nav-item"><a class="nav-link" href="#category">Adventures</a></li>
+          <li class="nav-item"><a class="nav-link" href="#packages">Packages</a></li>
+          <li class="nav-item"><a class="nav-link" href="#contact">Contact</a></li>
+          <li class="nav-item">
+            <button class="btn btn-light nav-btn" data-bs-toggle="modal" data-bs-target="#adminModal">Admin</button>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Hero Section -->
+  <section class="home" id="home">
+    <div class="wrapper">
+      <div class="box" style="background: url(images/home1.jpg) no-repeat;">
+        <div class="content">
+          <span>never stop</span>
+          <h3>exploring</h3>
+          <p>Travel.com offers best deals on India tour packages.</p>
+          <a href="#category" class="btn">get started</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3D Map Section -->
+  <section class="map-section" id="map-container">
+    <h2 class="text-center mb-4">Explore South India</h2>
+    <div id="threejs-canvas"></div>
+  </section>
+
+  <!-- Adventure Section -->
+  <section class="category" id="category">
+    <h1 class="heading">Adventure Idea!</h1>
+    <div class="box-container">
+      <div class="box"><img src="images/category-1.jpg" /><h3>bungee jump</h3><p>Bungee jumping is...</p><a href="https://en.wikipedia.org/wiki/Bungee_jumping" class="btn">read more</a></div>
+      <div class="box"><img src="images/category-2.jpg" /><h3>zip lines</h3><p>Zip lines are...</p><a href="https://en.wikipedia.org/wiki/Zip_line" class="btn">read more</a></div>
+      <div class="box"><img src="images/category-3.jpg" /><h3>Canoeing</h3><p>Canoeing is...</p><a href="https://en.wikipedia.org/wiki/Canoeing" class="btn">read more</a></div>
+    </div>
+  </section>
+
+  <!-- Packages Section -->
+  <section class="packages" id="packages">
+    <h1 class="heading">Popular Packages</h1>
+    <div class="box-container">
+      <!-- Example package card -->
+      <div class="box">
+        <div class="image"><img src="images/img-1.jpg" /></div>
+        <div class="content">
+          <h3>Manali Package</h3>
+          <p>Explore calmness in Himachal...</p>
+          <div class="price">Rs 5,999 - Rs 8,999</div>
+          <a href="#contact" class="btn">explore now</a>
+        </div>
+      </div>
+      <!-- Add more boxes as needed -->
+    </div>
+  </section>
+
+  <!-- Contact Section -->
+  <section class="contact" id="contact">
+    <div class="wrapper1">
+      <div class="title1"><h1>Contact us</h1></div>
+      <div class="contact-form">
+        <form method="post" action="contact_us.php">
+          <div class="input-fields">
+            <input type="text" class="input" placeholder="Name" name="name">
+            <input type="email" class="input" placeholder="Email" name="email">
+            <input type="phone" class="input" placeholder="Phone" name="phone">
+            <input type="text" class="input" placeholder="Subject" name="subject">
+          </div>
+          <div class="msg">
+            <textarea placeholder="Message" name="message"></textarea>
+            <div class="btn1"><button type="submit">send <i class="uil uil-message"></i></button></div>
+          </div>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <section class="footer">
+    <div class="box-container">
+      <div class="box">
+        <h3>Quick links</h3>
+        <a href="#home">home</a>
+        <a href="#packages">packages</a>
+        <a href="#contact">contact</a>
+      </div>
+      <div class="box">
+        <h3>Extra links</h3>
+        <a href="#">Terms of use</a>
+        <a href="#">Privacy policy</a>
+      </div>
+      <div class="box">
+        <h3>Contact Info</h3>
+        <a href="#"><i class="fas fa-phone"></i> +91 8115585868</a>
+        <a href="#"><i class="fas fa-envelope"></i> your@email.com</a>
+        <a href="#"><i class="fas fa-map"></i> South India</a>
+      </div>
+      <div class="box">
+        <h3>Follow us</h3>
+        <a href="#"><i class="fab fa-facebook-f"></i> Facebook</a>
+        <a href="#"><i class="fab fa-instagram"></i> Instagram</a>
+        <a href="#"><i class="fab fa-linkedin"></i> LinkedIn</a>
+      </div>
+    </div>
+    <div class="credit">Created by <span>Rahul Nallagattu</span> | All rights reserved!</div>
+  </section>
+
+  <!-- Admin Modal -->
+  <div class="modal fade" id="adminModal" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Add New Hotel</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <input type="text" class="form-control mb-2" id="hotelName" placeholder="Hotel Name" />
+          <select class="form-control mb-2" id="placeName">
+            <option value="Munnar">Munnar</option>
+            <option value="Hampi">Hampi</option>
+            <option value="Kovalam">Kovalam</option>
+          </select>
+          <input type="text" class="form-control mb-2" id="address" placeholder="Address" />
+          <input type="text" class="form-control mb-2" id="amenities" placeholder="Amenities (comma-separated)" />
+          <input type="number" class="form-control mb-2" id="distance" placeholder="Distance (km)" />
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+          <button type="button" class="btn btn-primary" onclick="addHotel()">Add Hotel</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
+  <script src="js/scripts.js"></script>
+  <script src="js/three.js"></script>
+</body>
+</html>

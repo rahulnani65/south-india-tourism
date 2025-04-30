@@ -1,0 +1,113 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>South India Tourism - {{ state_name }}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}" />
+</head>
+<body>
+    <!-- Navigation Bar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-custom sticky-top">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="{% url 'home' %}">South India Tourism</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'home' %}">Home</a>
+                    </li>
+                    <li class="nav-item">
+                        <button class="btn btn-light nav-btn" data-bs-toggle="modal" data-bs-target="#adminModal">Admin</button>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- State Details -->
+    <section class="container mt-4" id="state-details">
+        <!-- Loaded by JS -->
+    </section>
+
+    <!-- Footer -->
+    <section class="footer">
+      <div class="box-container">
+        <div class="box">
+          <h3>Quick links</h3>
+          <a href="{% url 'home' %}">home</a>
+          <a href="#">packages</a>
+          <a href="#">contact</a>
+        </div>
+        <div class="box">
+          <h3>Extra links</h3>
+          <a href="#">Terms of use</a>
+          <a href="#">Privacy policy</a>
+        </div>
+        <div class="box">
+          <h3>Contact Info</h3>
+          <a href="#"><i class="fas fa-phone"></i> +91 8115585868</a>
+          <a href="#"><i class="fas fa-envelope"></i> your@email.com</a>
+          <a href="#"><i class="fas fa-map"></i> South India</a>
+        </div>
+        <div class="box">
+          <h3>Follow us</h3>
+          <a href="#"><i class="fab fa-facebook-f"></i> Facebook</a>
+          <a href="#"><i class="fab fa-instagram"></i> Instagram</a>
+          <a href="#"><i class="fab fa-linkedin"></i> LinkedIn</a>
+        </div>
+      </div>
+      <div class="credit">Created by <span>Rahul Nallagattu</span> | All rights reserved!</div>
+    </section>
+
+    <!-- Admin Modal -->
+    <div class="modal fade" id="adminModal" tabindex="-1">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Add New Hotel</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+            <input type="text" class="form-control mb-2" id="hotelName" placeholder="Hotel Name" />
+            <select class="form-control mb-2" id="placeName">
+              <option value="Munnar">Munnar</option>
+              <option value="Hampi">Hampi</option>
+              <option value="Kovalam">Kovalam</option>
+            </select>
+            <input type="text" class="form-control mb-2" id="address" placeholder="Address" />
+            <input type="text" class="form-control mb-2" id="amenities" placeholder="Amenities (comma-separated)" />
+            <input type="number" class="form-control mb-2" id="distance" placeholder="Distance (km)" />
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            <button type="button" class="btn btn-primary" onclick="addHotel()">Add Hotel</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{% static 'js/scripts.js' %}"></script>
+    <script>
+        // Load state details
+        const stateName = "{{ state_name|escapejs }}";
+        fetch(`/api/states/`)
+            .then(response => response.json())
+            .then(states => {
+                const state = states.find(s => s.name === stateName);
+                if (state) {
+                    document.getElementById('state-details').innerHTML = `
+                        <h2>${state.name}</h2>
+                        <p>${state.description}</p>
+                        <button class="btn btn-secondary mt-3" onclick="window.location.href='{% url 'home' %}'">Back to Home</button>
+                    `;
+                }
+            });
+    </script>
+</body>
+</html>
