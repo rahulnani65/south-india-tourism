@@ -1,0 +1,222 @@
+/* Custom Navbar */
+.bg-custom {
+    background-color: #1a3c34;
+}
+.nav-btn {
+    margin-left: 10px;
+    font-family: 'Poppins', sans-serif;
+    font-weight: 500;
+    font-size: 1rem;
+}
+.navbar-brand, .nav-link {
+    color: #ffffff !important;
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 500;
+    font-size: 1.1rem;
+}
+.nav-link:hover {
+    color: #d3a625 !important;
+}
+
+/* Hero Section */
+.hero-section {
+    position: relative;
+    height: 400px;
+    background: linear-gradient(135deg, #1a3c34 0%, #2a5d52 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+.hero-overlay {
+    text-align: center;
+}
+.hero-title {
+    font-size: 3.5rem;
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 600;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+    color: #ffffff;
+}
+.hero-subtitle {
+    font-size: 1.5rem;
+    font-family: 'Poppins', sans-serif;
+    font-weight: 300;
+    color: #ffffff;
+}
+
+/* State Details Section */
+.state-details {
+    padding: 40px 0;
+    background-color: #f8f9fa;
+}
+.section-title {
+    font-size: 2rem;
+    color: #1a3c34;
+    margin-bottom: 20px;
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 600;
+}
+.section-content {
+    font-size: 1.1rem;
+    color: #333;
+    font-family: 'Poppins', sans-serif;
+    line-height: 1.8;
+}
+
+/* Tabs Styling */
+.nav-tabs {
+    border-bottom: 2px solid #1a3c34;
+    flex-wrap: wrap; /* Allow tabs to wrap on smaller screens */
+}
+.nav-tabs .nav-item {
+    margin-bottom: 5px; /* Space between wrapped tabs */
+}
+.nav-tabs .nav-link {
+    color: #1a3c34;
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 500;
+    font-size: 1.1rem;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px 5px 0 0;
+    transition: all 0.3s ease;
+    background-color: transparent;
+}
+.nav-tabs .nav-link:hover {
+    color: #d3a625;
+    background-color: rgba(211, 166, 37, 0.1); /* Subtle background on hover */
+    border-bottom: 2px solid #d3a625;
+}
+.nav-tabs .nav-link.active {
+    color: #d3a625;
+    border-bottom: 2px solid #d3a625;
+    background-color: #ffffff; /* White background for active tab */
+}
+.nav-tabs .nav-link i {
+    font-size: 1rem;
+}
+
+/* Tab Content Styling */
+.tab-content {
+    background-color: #ffffff;
+    border: 1px solid #e0e0e0;
+    border-radius: 0 0 5px 5px;
+    padding: 20px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+/* Responsive Tabs */
+@media (max-width: 576px) {
+    .nav-tabs {
+        flex-direction: column;
+        align-items: center;
+    }
+    .nav-tabs .nav-item {
+        width: 100%;
+        text-align: center;
+    }
+    .nav-tabs .nav-link {
+        width: 100%;
+        border-radius: 5px;
+        margin-bottom: 5px;
+    }
+    .nav-tabs .nav-link.active {
+        border-bottom: none;
+        border: 2px solid #d3a625;
+    }
+}
+
+/* Place Cards */
+.place-card {
+    transition: transform 0.3s, box-shadow 0.3s;
+    background: #fff;
+    border: none;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+.place-card:hover {
+    transform: scale(1.02);
+    box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+}
+.hotel-card {
+    background: #f1f1f1;
+    border: none;
+    border-radius: 5px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    margin-bottom: 10px;
+}
+.card-title {
+    color: #1a3c34;
+    font-size: 1.25em;
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 600;
+}
+.card-text {
+    font-size: 0.95em;
+    color: #333;
+    font-family: 'Poppins', sans-serif;
+}
+
+/* Login and Signup Pages */
+.container .heading {
+    font-size: 2.5rem;
+    color: #1a3c34;
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 600;
+}
+.form-label {
+    color: #1a3c34;
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 500;
+    font-size: 1rem;
+}
+.form-control {
+    font-family: 'Poppins', sans-serif;
+    font-size: 1rem;
+}
+.btn-primary {
+    background-color: #1a3c34;
+    border-color: #1a3c34;
+    font-family: 'Poppins', sans-serif;
+    font-weight: 500;
+    font-size: 1rem;
+}
+.btn-primary:hover {
+    background-color: #0f2c28;
+    border-color: #0f2c28;
+}
+.alert {
+    margin-top: 10px;
+    font-family: 'Poppins', sans-serif;
+    font-size: 1rem;
+}
+
+/* Footer */
+.footer {
+    background: #1a3c34;
+    color: white;
+    padding: 20px 0;
+    text-align: center;
+}
+.footer .credit {
+    font-size: 0.9em;
+    font-family: 'Poppins', sans-serif;
+}
+
+/* General */
+body {
+    font-family: 'Poppins', sans-serif;
+    margin: 0;
+    padding: 0;
+    font-size: 16px;
+}
+h1, h2, h3, h4, h5, h6 {
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 600;
+    color: #1a3c34;
+}
+p, a, li, button, input, textarea, select, label {
+    font-family: 'Poppins', sans-serif;
+    font-weight: 400;
+}

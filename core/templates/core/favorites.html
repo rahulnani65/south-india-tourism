@@ -1,0 +1,104 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Favorites - South India Tourism</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'core/css/style.css' %}">
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600&family=Poppins:wght@300;500&display=swap" rel="stylesheet">
+</head>
+<body>
+  <!-- Navbar -->
+  <nav class="navbar navbar-expand-lg navbar-dark bg-custom sticky-top">
+    <div class="container-fluid">
+      <a class="navbar-brand" href="{% url 'home' %}">South India Tourism</a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav ms-auto">
+          <li class="nav-item"><a class="nav-link" href="{% url 'home' %}">Home</a></li>
+          <li class="nav-item"><a class="nav-link" href="{% url 'home' %}#category">Adventures</a></li>
+          <li class="nav-item"><a class="nav-link" href="{% url 'home' %}#packages">Packages</a></li>
+          <li class="nav-item"><a class="nav-link" href="{% url 'home' %}#contact">Contact</a></li>
+          <li class="nav-item"><a class="nav-link" href="{% url 'my_favorites' %}">My Favorites</a></li>
+          <li class="nav-item">
+            <form action="{% url 'logout' %}" method="post" style="display: inline;">
+              {% csrf_token %}
+              <button type="submit" class="btn btn-light nav-btn">Logout</button>
+            </form>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Favorites Section -->
+  <section class="favorites-section py-5">
+    <div class="container">
+      <h1 class="section-title text-center mb-5">My Favorites</h1>
+
+      <!-- Favorite States -->
+      <h2 class="section-title mt-4">Favorite States</h2>
+      {% if favorite_states %}
+        <div class="row">
+          {% for state in favorite_states %}
+            <div class="col-md-4 mb-4">
+              <div class="card favorite-card">
+                <div class="card-body">
+                  <h5 class="card-title">
+                    <a href="{% url 'state_detail' state.name.lower|slugify %}" class="text-decoration-none">{{ state.name }}</a>
+                  </h5>
+                  <p class="card-text">{{ state.description|truncatewords:20|default:"No description available." }}</p>
+                  <form action="{% url 'remove_state_favorite' state.id %}" method="post" style="display: inline;">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-sm btn-danger">Remove from Favorites</button>
+                  </form>
+                </div>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <p class="text-center">You have no favorite states yet.</p>
+      {% endif %}
+
+      <!-- Favorite Places -->
+      <h2 class="section-title mt-5">Favorite Places</h2>
+      {% if favorite_places %}
+        <div class="row">
+          {% for place in favorite_places %}
+            <div class="col-md-4 mb-4">
+              <div class="card favorite-card">
+                <div class="card-body">
+                  <h5 class="card-title">
+                    <a href="{% url 'state_detail' place.state.name.lower|slugify %}" class="text-decoration-none">{{ place.name }} ({{ place.state.name }})</a>
+                  </h5>
+                  <p class="card-text">{{ place.description|truncatewords:20|default:"No description available." }}</p>
+                  <form action="{% url 'remove_favorite' place.id %}" method="post" style="display: inline;">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-sm btn-danger">Remove from Favorites</button>
+                  </form>
+                </div>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <p class="text-center">You have no favorite places yet.</p>
+      {% endif %}
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container">
+      <div class="credit">Created by Team South India Tourism | © 2025</div>
+    </div>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

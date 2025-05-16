@@ -1,0 +1,111 @@
+/* Custom Navbar */
+.bg-custom {
+    background-color: #1a3c34;
+}
+.nav-btn {
+    margin-left: 10px;
+    font-family: 'Poppins', sans-serif;
+    font-weight: 500;
+    font-size: 1rem;
+}
+.navbar-brand, .nav-link {
+    color: #ffffff !important;
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 500;
+    font-size: 1.1rem;
+}
+.nav-link:hover {
+    color: #1a3c34 !important; /* Darker color on hover for contrast against yellow */
+}
+.navbar-nav.ms-auto {
+    background-color: #d3a625; /* Permanent yellow background for the navbar ul */
+    padding: 10px 15px;
+    border-radius: 5px;
+}
+
+/* Contact Section */
+.contact {
+    padding: 40px 0;
+    background-color: #f8f9fa;
+}
+.contact .heading {
+    font-size: 2.5rem;
+    color: #1a3c34;
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 600;
+    margin-bottom: 30px;
+}
+.contact .form-label {
+    color: #1a3c34;
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 500;
+    font-size: 1rem;
+}
+.contact .form-control {
+    font-family: 'Poppins', sans-serif;
+    font-size: 1rem;
+}
+.btn-primary {
+    background-color: #1a3c34;
+    border-color: #1a3c34;
+    font-family: 'Poppins', sans-serif;
+    font-weight: 500;
+    font-size: 1rem;
+}
+.btn-primary:hover {
+    background-color: #0f2c28;
+    border-color: #0f2c28;
+}
+
+/* Footer */
+.footer {
+    background: #1a3c34;
+    color: white;
+    padding: 20px 0;
+    text-align: center;
+}
+.footer .box-container {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+.footer .box h3 {
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 600;
+    font-size: 1.5rem;
+    color: #ffffff;
+}
+.footer .box a {
+    color: white;
+    display: block;
+    margin: 5px 0;
+    text-decoration: none;
+    font-family: 'Poppins', sans-serif;
+    font-size: 1rem;
+}
+.footer .box a:hover {
+    color: #d3a625;
+}
+.footer .credit {
+    margin-top: 10px;
+    font-size: 0.9em;
+    font-family: 'Poppins', sans-serif;
+}
+
+/* General */
+body {
+    font-family: 'Poppins', sans-serif;
+    margin: 0;
+    padding: 0;
+    font-size: 16px;
+}
+h1, h2, h3, h4, h5, h6 {
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 600;
+    color: #1a3c34;
+}
+p, a, li, button, input, textarea, select, label {
+    font-family: 'Poppins', sans-serif;
+    font-weight: 400;
+}

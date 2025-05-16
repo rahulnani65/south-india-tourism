@@ -169,19 +169,19 @@ function recommendHotel(stateName, placeName) {
 }
 
 // Admin: Simulate adding a hotel
-function addHotel() {
-    const name = document.getElementById('hotelName').value;
-    const placeName = document.getElementById('placeName').value;
-    const address = document.getElementById('address').value;
-    const amenities = document.getElementById('amenities').value.split(',').map(s => s.trim());
-    const distance = parseFloat(document.getElementById('distance').value);
-    if (!name || !placeName || !address || !amenities.length || isNaN(distance)) {
-        alert("Please fill all fields!");
-        return;
-    }
-    alert(`Hotel Added (Simulation):\nName: ${name}\nPlace: ${placeName}\nAddress: ${address}\nAmenities: ${amenities.join(', ')}\nDistance: ${distance} km`);
-    document.getElementById('adminModal').querySelector('.btn-close').click();
-}
+// function addHotel() {
+//     const name = document.getElementById('hotelName').value;
+//     const placeName = document.getElementById('placeName').value;
+//     const address = document.getElementById('address').value;
+//     const amenities = document.getElementById('amenities').value.split(',').map(s => s.trim());
+//     const distance = parseFloat(document.getElementById('distance').value);
+//     if (!name || !placeName || !address || !amenities.length || isNaN(distance)) {
+//         alert("Please fill all fields!");
+//         return;
+//     }
+//     alert(`Hotel Added (Simulation):\nName: ${name}\nPlace: ${placeName}\nAddress: ${address}\nAmenities: ${amenities.join(', ')}\nDistance: ${distance} km`);
+//     document.getElementById('adminModal').querySelector('.btn-close').click();
+// }
 
 // Load state details on page load for state.html
 if (window.location.pathname.includes('state.html')) {

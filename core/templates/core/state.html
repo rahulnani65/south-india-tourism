@@ -2,112 +2,252 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>South India Tourism - {{ state_name }}</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="{% static 'css/styles.css' %}" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ state.name }} - South India Tourism</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'core/css/style.css' %}">
+  
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600&family=Poppins:wght@300;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
 </head>
 <body>
-    <!-- Navigation Bar -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-custom sticky-top">
-        <div class="container-fluid">
-            <a class="navbar-brand" href="{% url 'home' %}">South India Tourism</a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav ms-auto">
-                    <li class="nav-item">
-                        <a class="nav-link" href="{% url 'home' %}">Home</a>
-                    </li>
-                    <li class="nav-item">
-                        <button class="btn btn-light nav-btn" data-bs-toggle="modal" data-bs-target="#adminModal">Admin</button>
-                    </li>
-                </ul>
-            </div>
-        </div>
-    </nav>
+  <!-- Navbar -->
+  <nav class="navbar navbar-expand-lg navbar-dark bg-custom sticky-top">
+    <div class="container-fluid">
+      <a class="navbar-brand" href="{% url 'home' %}">South India Tourism</a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav ms-auto">
+          <li class="nav-item"><a class="nav-link" href="{% url 'home' %}">Home</a></li>
+          <li class="nav-item"><a class="nav-link" href="{% url 'home' %}#category">Adventures</a></li>
+          <li class="nav-item"><a class="nav-link" href="{% url 'home' %}#packages">Packages</a></li>
+          <li class="nav-item"><a class="nav-link" href="{% url 'home' %}#contact">Contact</a></li>
+          {% if user.is_authenticated %}
+            <li class="nav-item"><a class="nav-link" href="{% url 'my_favorites' %}">My Favorites</a></li>
+            <li class="nav-item">
+              <form action="{% url 'logout' %}" method="post" style="display: inline;">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-light nav-btn">Logout</button>
+              </form>
+            </li>
+          {% else %}
+            <li class="nav-item">
+              <a href="{% url 'login' %}" class="btn btn-light nav-btn">Login</a>
+            </li>
+          {% endif %}
+        </ul>
+      </div>
+    </div>
+  </nav>
 
-    <!-- State Details -->
-    <section class="container mt-4" id="state-details">
-        <!-- Loaded by JS -->
-    </section>
+  <!-- Hero Section -->
+  <section class="hero-section text-center text-white">
+    <div class="hero-overlay">
+      <h1 class="hero-title">{{ state.name }}</h1>
+      <p class="hero-subtitle">Discover the beauty and culture of {{ state.name }}</p>
+      {% if user.is_authenticated %}
+        {% if is_favorited %}
+          <form action="{% url 'remove_state_favorite' state.id %}" method="post" style="display: inline;">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-danger mt-3">Remove from Favorites</button>
+          </form>
+        {% else %}
+          <form action="{% url 'add_state_favorite' state.id %}" method="post" style="display: inline;">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-primary mt-3">Add to Favorites</button>
+          </form>
+        {% endif %}
+      {% endif %}
+    </div>
+  </section>
 
-    <!-- Footer -->
-    <section class="footer">
-      <div class="box-container">
-        <div class="box">
-          <h3>Quick links</h3>
-          <a href="{% url 'home' %}">home</a>
-          <a href="#">packages</a>
-          <a href="#">contact</a>
+  <!-- State Details Section with Tabs -->
+  <section class="state-details py-5">
+    <div class="container">
+      <!-- Tabs Navigation -->
+      <ul class="nav nav-tabs justify-content-center mb-4 state-tabs" id="stateTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+          <a class="nav-link active" id="overview-tab" data-bs-toggle="tab" href="#overview" role="tab" aria-controls="overview" aria-selected="true">
+            <i class="bi bi-info-circle me-2"></i>Overview
+          </a>
+        </li>
+        <li class="nav-item" role="presentation">
+          <a class="nav-link" id="history-tab" data-bs-toggle="tab" href="#history" role="tab" aria-controls="history" aria-selected="false" tabindex="-1">
+            <i class="bi bi-book me-2"></i>History
+          </a>
+        </li>
+        <li class="nav-item" role="presentation">
+          <a class="nav-link" id="culture-tab" data-bs-toggle="tab" href="#culture" role="tab" aria-controls="culture" aria-selected="false" tabindex="-1">
+            <i class="bi bi-music-note-beamed me-2"></i>Culture
+          </a>
+        </li>
+        <li class="nav-item" role="presentation">
+          <a class="nav-link" id="climate-tab" data-bs-toggle="tab" href="#climate" role="tab" aria-controls="climate" aria-selected="false" tabindex="-1">
+            <i class="bi bi-sun me-2"></i>Climate
+          </a>
+        </li>
+        <li class="nav-item" role="presentation">
+          <a class="nav-link" id="best-time-tab" data-bs-toggle="tab" href="#best-time" role="tab" aria-controls="best-time" aria-selected="false" tabindex="-1">
+            <i class="bi bi-calendar-check me-2"></i>Best Time to Visit
+          </a>
+        </li>
+      </ul>
+
+      <!-- Tab Content -->
+      <div class="tab-content" id="stateTabsContent">
+        <div class="tab-pane fade show active" id="overview" role="tabpanel" aria-labelledby="overview-tab">
+          <h3 class="section-title">Overview</h3>
+          <p class="section-content">{{ state.description|default:"No description available." }}</p>
         </div>
-        <div class="box">
-          <h3>Extra links</h3>
-          <a href="#">Terms of use</a>
-          <a href="#">Privacy policy</a>
+        <div class="tab-pane fade" id="history" role="tabpanel" aria-labelledby="history-tab">
+          <h3 class="section-title">History</h3>
+          <p class="section-content">{{ state.history|default:"No historical information available." }}</p>
         </div>
-        <div class="box">
-          <h3>Contact Info</h3>
-          <a href="#"><i class="fas fa-phone"></i> +91 8115585868</a>
-          <a href="#"><i class="fas fa-envelope"></i> your@email.com</a>
-          <a href="#"><i class="fas fa-map"></i> South India</a>
+        <div class="tab-pane fade" id="culture" role="tabpanel" aria-labelledby="culture-tab">
+          <h3 class="section-title">Culture</h3>
+          <p class="section-content">{{ state.culture|default:"No cultural information available." }}</p>
         </div>
-        <div class="box">
-          <h3>Follow us</h3>
-          <a href="#"><i class="fab fa-facebook-f"></i> Facebook</a>
-          <a href="#"><i class="fab fa-instagram"></i> Instagram</a>
-          <a href="#"><i class="fab fa-linkedin"></i> LinkedIn</a>
+        <div class="tab-pane fade" id="climate" role="tabpanel" aria-labelledby="climate-tab">
+          <h3 class="section-title">Climate</h3>
+          <p class="section-content">{{ state.climate|default:"No climate information available." }}</p>
+        </div>
+        <div class="tab-pane fade" id="best-time" role="tabpanel" aria-labelledby="best-time-tab">
+          <h3 class="section-title">Best Time to Visit</h3>
+          <p class="section-content">{{ state.best_time_to_visit|default:"Not specified." }}</p>
         </div>
       </div>
-      <div class="credit">Created by <span>Rahul Nallagattu</span> | All rights reserved!</div>
-    </section>
 
-    <!-- Admin Modal -->
-    <div class="modal fade" id="adminModal" tabindex="-1">
-      <div class="modal-dialog">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title">Add New Hotel</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-          </div>
-          <div class="modal-body">
-            <input type="text" class="form-control mb-2" id="hotelName" placeholder="Hotel Name" />
-            <select class="form-control mb-2" id="placeName">
-              <option value="Munnar">Munnar</option>
-              <option value="Hampi">Hampi</option>
-              <option value="Kovalam">Kovalam</option>
+      <!-- Places Section -->
+      <div class="row mt-5">
+        <h3 class="section-title text-center">Places to Visit</h3>
+        <!-- Category Filter -->
+        <div class="col-md-12 mb-4">
+          <form method="get" class="d-flex justify-content-center">
+            <select name="category" class="form-select w-auto me-2" onchange="this.form.submit()">
+              <option value="">All Categories</option>
+              {% for category, label in categories %}
+                <option value="{{ category }}" {% if selected_category == category %}selected{% endif %}>{{ label }}</option>
+              {% endfor %}
             </select>
-            <input type="text" class="form-control mb-2" id="address" placeholder="Address" />
-            <input type="text" class="form-control mb-2" id="amenities" placeholder="Amenities (comma-separated)" />
-            <input type="number" class="form-control mb-2" id="distance" placeholder="Distance (km)" />
+          </form>
+        </div>
+
+        <!-- Places -->
+        {% for place in places %}
+          <div class="col-md-6 mb-4">
+            <div class="card place-card">
+              <div class="card-body">
+                <h5 class="card-title">{{ place.name }} ({{ place.category }})</h5>
+                <p class="card-text">{{ place.description }}</p>
+                <p><strong>Location:</strong> {{ place.location|default:"Not specified" }}</p>
+                <p><strong>Entry Fee:</strong> {% if place.entry_fee %}${{ place.entry_fee }}{% else %}Free{% endif %}</p>
+                <p><strong>Visiting Hours:</strong> {{ place.visiting_hours|default:"Not specified" }}</p>
+
+                <!-- Favorite Button -->
+                {% if user.is_authenticated %}
+                  {% if place.is_favorited %}
+                    <form action="{% url 'remove_favorite' place.id %}" method="post" style="display: inline;">
+                      {% csrf_token %}
+                      <button type="submit" class="btn btn-sm btn-danger">Remove from Favorites</button>
+                    </form>
+                  {% else %}
+                    <form action="{% url 'add_favorite' place.id %}" method="post" style="display: inline;">
+                      {% csrf_token %}
+                      <button type="submit" class="btn btn-sm btn-primary">Add to Favorites</button>
+                    </form>
+                  {% endif %}
+                {% endif %}
+
+                <!-- Reviews -->
+                <h6 class="mt-3">Reviews:</h6>
+                {% for review in place.reviews_list %}
+                  <div class="border p-2 mb-2">
+                    <p><strong>{{ review.user.username }}</strong> ({{ review.rating }}/5): {{ review.comment }}</p>
+                    <small>{{ review.created_on }}</small>
+                  </div>
+                {% empty %}
+                  <p>No reviews yet.</p>
+                {% endfor %}
+
+                <!-- Add Review Form -->
+                {% if user.is_authenticated %}
+                  <form action="{% url 'add_review' place.id %}" method="post" class="mt-3">
+                    {% csrf_token %}
+                    <div class="mb-2">
+                      <label for="rating-{{ place.id }}">Rating (1-5):</label>
+                      <select name="rating" id="rating-{{ place.id }}" class="form-select w-auto d-inline-block">
+                        {% for i in "12345" %}
+                          <option value="{{ i }}">{{ i }}</option>
+                        {% endfor %}
+                      </select>
+                    </div>
+                    <div class="mb-2">
+                      <textarea name="comment" class="form-control" rows="2" placeholder="Write your review..." required></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-sm btn-primary">Submit Review</button>
+                  </form>
+                {% endif %}
+
+                <!-- Nearby Hotels -->
+                <h6 class="mt-3">Nearby Hotels:</h6>
+                {% for hotel in place.hotels_near %}
+                  <div class="card hotel-card mb-2">
+                    <div class="card-body">
+                      <h6 class="card-title">{{ hotel.name }}</h6>
+                      <p class="card-text">Distance: {{ hotel.distance }} km</p>
+                      <p class="card-text">Price: {% if hotel.price_per_night %}${{ hotel.price_per_night }}/night{% else %}Not specified{% endif %}</p>
+                      <p class="card-text">Amenities: {{ hotel.amenities|default:"Not specified" }}</p>
+                    </div>
+                  </div>
+                {% empty %}
+                  <p>No nearby hotels found.</p>
+                {% endfor %}
+              </div>
+            </div>
           </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-            <button type="button" class="btn btn-primary" onclick="addHotel()">Add Hotel</button>
+        {% empty %}
+          <div class="col-md-12">
+            <p>No places found for this category.</p>
           </div>
+        {% endfor %}
+      </div>
+
+      <!-- Suggested Itinerary -->
+      <div class="row mt-5">
+        <div class="col-md-12">
+          <h3 class="section-title">Suggested Itinerary (3 Days)</h3>
+          <ul class="itinerary-list">
+            {% for day in itinerary %}
+              <li><strong>Day {{ day.day }}:</strong> {{ day.activity }}</li>
+            {% endfor %}
+          </ul>
+        </div>
+      </div>
+
+      <!-- Local Transportation Options -->
+      <div class="row mt-4">
+        <div class="col-md-12">
+          <h3 class="section-title">Local Transportation Options</h3>
+          <ul class="transport-list">
+            {% for option in transport_options %}
+              <li><strong>{{ option.mode }}:</strong> {{ option.details }}</li>
+            {% endfor %}
+          </ul>
         </div>
       </div>
     </div>
+  </section>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="{% static 'js/scripts.js' %}"></script>
-    <script>
-        // Load state details
-        const stateName = "{{ state_name|escapejs }}";
-        fetch(`/api/states/`)
-            .then(response => response.json())
-            .then(states => {
-                const state = states.find(s => s.name === stateName);
-                if (state) {
-                    document.getElementById('state-details').innerHTML = `
-                        <h2>${state.name}</h2>
-                        <p>${state.description}</p>
-                        <button class="btn btn-secondary mt-3" onclick="window.location.href='{% url 'home' %}'">Back to Home</button>
-                    `;
-                }
-            });
-    </script>
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container">
+      <div class="credit">Created by Team South India Tourism | © 2025</div>
+    </div>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

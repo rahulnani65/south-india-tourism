@@ -2,129 +2,154 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>South India Tourism</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
-  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css" rel="stylesheet" />
-  <link rel="stylesheet" href="{% static 'core/css/styles.css' %}" />
-  <link rel="stylesheet" href="https://unicons.iconscout.com/release/v2.1.6/css/unicons.css" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'core/css/styles.css' %}">
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600&family=Poppins:wght@300;500&display=swap" rel="stylesheet">
 </head>
 <body>
 
-  <!-- Navbar -->
-  <nav class="navbar navbar-expand-lg navbar-dark bg-custom sticky-top">
-    <div class="container-fluid">
-      <a class="navbar-brand" href="{% url 'home' %}">South India Tourism</a>
-      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-        <span class="navbar-toggler-icon"></span>
-      </button>
-      <div class="collapse navbar-collapse" id="navbarNav">
-        <ul class="navbar-nav ms-auto">
-          <li class="nav-item"><a class="nav-link active" href="{% url 'home' %}">Home</a></li>
-          <li class="nav-item"><a class="nav-link" href="#category">Adventures</a></li>
-          <li class="nav-item"><a class="nav-link" href="#packages">Packages</a></li>
-          <li class="nav-item"><a class="nav-link" href="#contact">Contact</a></li>
+<!-- Navbar -->
+<nav class="navbar navbar-expand-lg navbar-dark bg-custom sticky-top">
+  <div class="container-fluid">
+    <a class="navbar-brand" href="{% url 'home' %}">South India Tourism</a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarNav">
+      <ul class="navbar-nav ms-auto">
+        <li class="nav-item"><a class="nav-link" href="{% url 'home' %}">Home</a></li>
+        <li class="nav-item"><a class="nav-link" href="{% url 'home' %}#category">Adventures</a></li>
+        <li class="nav-item"><a class="nav-link" href="{% url 'home' %}#packages">Packages</a></li>
+        <li class="nav-item"><a class="nav-link" href="{% url 'home' %}#contact">Contact</a></li>
+        {% if user.is_authenticated %}
           <li class="nav-item">
-            <button class="btn btn-light nav-btn" data-bs-toggle="modal" data-bs-target="#adminModal">Admin</button>
+            <form action="{% url 'logout' %}" method="post" style="display: inline;">
+              {% csrf_token %}
+              <button type="submit" class="btn btn-light nav-btn">Logout</button>
+            </form>
           </li>
-        </ul>
-      </div>
+        {% else %}
+          <li class="nav-item">
+            <a href="{% url 'login' %}" class="btn btn-light nav-btn">Login</a>
+          </li>
+        {% endif %}
+      </ul>
     </div>
-  </nav>
+  </div>
+</nav>
 
-  <!-- Hero Section -->
-  <section class="home" id="home">
-    <div class="hero-box" style="background: url('{% static 'core/images/home1.jpg' %}') no-repeat center center/cover;">
-      <div class="content">
-        <span>never stop</span>
-        <h3>exploring</h3>
-        <p>Travel.com offers best deals on India tour packages.</p>
-        <a href="#states" class="btn">get started</a>
-      </div>
+<!-- Hero Section -->
+<section class="home" id="home">
+  <div class="hero-box">
+    <div class="content">
+      <span>never stop</span>
+      <h3>exploring</h3>
+      <p>Travel.com offers best deals on India tour packages.</p>
+      <a href="#states" class="btn">get started</a>
     </div>
-  </section>
+  </div>
+</section>
 
-  <!-- States Section -->
-  <section class="states" id="states">
-    <h1 class="heading text-center mb-4">Explore South India</h1>
-    <div class="container">
-      <div class="row">
-        {% for state in states %}
-          <div class="col-md-4 mb-3">
-            <div class="card state-card">
-              <div class="card-body">
-                <h5 class="card-title">{{ state.name }}</h5>
-                <p class="card-text">{{ state.description|default:'No description available' }}</p>
-                <a href="{% url 'state_detail' state.name|slugify %}" class="btn btn-primary">Visit {{ state.name }}</a>
-              </div>
+<!-- States Section -->
+<section class="states" id="states">
+  <div class="container">
+    <h2 class="heading text-center">States</h2>
+    <div class="row justify-content-center">
+      {% for state in states %}
+        <div class="col-md-4 col-sm-6 mb-4">
+          <div class="card state-card h-100">
+            <div class="card-body text-center">
+              <h5 class="card-title">{{ state.name }}</h5>
+              <p class="card-text">{{ state.description|default:'No description available' }}</p>
+              <a href="{% url 'state_detail' state.name|slugify %}" class="btn">Visit {{ state.name }}</a>
             </div>
           </div>
-        {% empty %}
-          <p class="text-center">No states available yet.</p>
-        {% endfor %}
-      </div>
-    </div>
-  </section>
-
-  <!-- Adventure Section -->
-  <section class="category" id="category">
-    <h1 class="heading">Adventure Idea!</h1>
-    <div class="box-container">
-      <div class="box">
-        <img src="{% static 'core/images/category-1.jpg' %}" alt="Bungee Jump" />
-        <h3>Bungee Jump</h3>
-        <p>Bungee jumping is an exhilarating activity...</p>
-        <a href="https://en.wikipedia.org/wiki/Bungee_jumping" class="btn">read more</a>
-      </div>
-      <div class="box">
-        <img src="{% static 'core/images/category-2.jpg' %}" alt="Zip Lines" />
-        <h3>Zip Lines</h3>
-        <p>Zip lines are thrilling aerial rides...</p>
-        <a href="https://en.wikipedia.org/wiki/Zip_line" class="btn">read more</a>
-      </div>
-      <div class="box">
-        <img src="{% static 'core/images/category-3.jpg' %}" alt="Canoeing" />
-        <h3>Canoeing</h3>
-        <p>Canoeing is a peaceful water sport...</p>
-        <a href="https://en.wikipedia.org/wiki/Canoeing" class="btn">read more</a>
-      </div>
-    </div>
-  </section>
-
-  <!-- Packages Section -->
-  <section class="packages" id="packages">
-    <h1 class="heading">Popular Packages</h1>
-    <div class="box-container">
-      <div class="box">
-        <div class="image">
-          <img src="{% static 'core/images/img-1.jpg' %}" alt="Manali Package" />
         </div>
-        <div class="content">
-          <h3>Manali Package</h3>
-          <p>Explore calmness in Himachal...</p>
-          <div class="price">Rs 5,999 - Rs 8,999</div>
-          <a href="#contact" class="btn">explore now</a>
+      {% empty %}
+        <p class="text-center">No states available.</p>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<!-- Adventure Section -->
+<section class="category" id="category">
+  <div class="container">
+    <h1 class="heading text-center">Adventure Idea!</h1>
+    <div class="row justify-content-center">
+      <div class="col-md-4 col-sm-6 mb-4">
+        <div class="card adventure-card h-100">
+          <img src="{% static 'core/images/category-1.jpg' %}" class="card-img-top" alt="Bungee Jump">
+          <div class="card-body">
+            <h3 class="card-title">Bungee Jump</h3>
+            <p class="card-text">Bungee jumping is an exhilarating activity...</p>
+            <a href="https://en.wikipedia.org/wiki/Bungee_jumping" class="btn">read more</a>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-4 col-sm-6 mb-4">
+        <div class="card adventure-card h-100">
+          <img src="{% static 'core/images/category-2.jpg' %}" class="card-img-top" alt="Zip Lines">
+          <div class="card-body">
+            <h3 class="card-title">Zip Lines</h3>
+            <p class="card-text">Zip lines are thrilling aerial rides...</p>
+            <a href="https://en.wikipedia.org/wiki/Zip_line" class="btn">read more</a>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-4 col-sm-6 mb-4">
+        <div class="card adventure-card h-100">
+          <img src="{% static 'core/images/category-3.jpg' %}" class="card-img-top" alt="Canoeing">
+          <div class="card-body">
+            <h3 class="card-title">Canoeing</h3>
+            <p class="card-text">Canoeing is a peaceful water sport...</p>
+            <a href="https://en.wikipedia.org/wiki/Canoeing" class="btn">read more</a>
+          </div>
         </div>
       </div>
     </div>
-  </section>
+  </div>
+</section>
 
-  <!-- Contact Section -->
-  <section class="contact" id="contact">
+<!-- Packages Section -->
+<section class="packages" id="packages">
+  <div class="container">
+    <h1 class="heading text-center">Popular Packages</h1>
+    <div class="row justify-content-center">
+      <div class="col-md-4 col-sm-6 mb-4">
+        <div class="card package-card h-100">
+          <img src="{% static 'core/images/img-1.jpg' %}" class="card-img-top" alt="Manali Package">
+          <div class="card-body">
+            <h3 class="card-title">Manali Package</h3>
+            <p class="card-text">Explore calmness in Himachal...</p>
+            <div class="price">Rs 5,999 - Rs 8,999</div>
+            <a href="#contact" class="btn">explore now</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Contact Section -->
+<section class="contact" id="contact">
+  <div class="container">
     <div class="wrapper1">
       <div class="title1"><h1>Contact us</h1></div>
       <div class="contact-form">
         <form method="post" action="{% url 'contact_submit' %}">
           {% csrf_token %}
           <div class="input-fields">
-            <input type="text" class="input" placeholder="Name" name="name" required>
-            <input type="email" class="input" placeholder="Email" name="email" required>
-            <input type="text" class="input" placeholder="Phone" name="phone" required>
-            <input type="text" class="input" placeholder="Subject" name="subject" required>
+            <input type="text" class="input form-control" placeholder="Name" name="name" required>
+            <input type="email" class="input form-control" placeholder="Email" name="email" required>
+            <input type="text" class="input form-control" placeholder="Phone" name="phone" required>
+            <input type="text" class="input form-control" placeholder="Subject" name="subject" required>
           </div>
           <div class="msg">
-            <textarea placeholder="Message" name="message" required></textarea>
+            <textarea class="form-control" placeholder="Message" name="message" required></textarea>
             <div class="btn1">
               <button type="submit">send <i class="uil uil-message"></i></button>
             </div>
@@ -132,10 +157,12 @@
         </form>
       </div>
     </div>
-  </section>
+  </div>
+</section>
 
-  <!-- Footer -->
-  <section class="footer">
+<!-- Footer -->
+<section class="footer">
+  <div class="container">
     <div class="box-container">
       <div class="box">
         <h3>Quick links</h3>
@@ -162,38 +189,39 @@
       </div>
     </div>
     <div class="credit">Created by <span>Rahul Nallagattu</span> | All rights reserved!</div>
-  </section>
+  </div>
+</section>
 
-  <!-- Admin Modal -->
-  <div class="modal fade" id="adminModal" tabindex="-1" aria-labelledby="adminModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title" id="adminModalLabel">Add New Hotel</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-        </div>
-        <div class="modal-body">
-          <input type="text" class="form-control mb-2" id="hotelName" placeholder="Hotel Name" required />
-          <select class="form-control mb-2" id="placeName" required>
-            <option value="">Select a Place</option>
-            <option value="Munnar">Munnar</option>
-            <option value="Hampi">Hampi</option>
-            <option value="Kovalam">Kovalam</option>
-          </select>
-          <input type="text" class="form-control mb-2" id="address" placeholder="Address" required />
-          <input type="text" class="form-control mb-2" id="amenities" placeholder="Amenities (comma-separated)" required />
-          <input type="number" step="0.1" class="form-control mb-2" id="distance" placeholder="Distance (km)" required />
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-          <button type="button" class="btn btn-primary" onclick="addHotel()">Add Hotel</button>
-        </div>
+<!-- Admin Modal -->
+<div class="modal fade" id="adminModal" tabindex="-1" aria-labelledby="adminModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="adminModalLabel">Add New Hotel</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <input type="text" class="form-control mb-2" id="hotelName" placeholder="Hotel Name" required />
+        <select class="form-control mb-2" id="placeName" required>
+          <option value="">Select a Place</option>
+          {% for place in places %}
+            <option value="{{ place.name }}">{{ place.name }}</option>
+          {% endfor %}
+        </select>
+        <input type="text" class="form-control mb-2" id="address" placeholder="Address" required />
+        <input type="text" class="form-control mb-2" id="amenities" placeholder="Amenities (comma-separated)" required />
+        <input type="number" step="0.1" class="form-control mb-2" id="distance" placeholder="Distance (km)" required />
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+        <button type="button" class="btn btn-primary" onclick="addHotel()">Add Hotel</button>
       </div>
     </div>
   </div>
+</div>
 
-  <!-- Scripts -->
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-  <script src="{% static 'core/js/scripts.js' %}"></script>
+<!-- Scripts -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="{% static 'core/js/scripts.js' %}"></script>
 </body>
 </html>
