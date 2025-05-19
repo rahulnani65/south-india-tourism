@@ -1,15 +1,10 @@
-/* Reset and General Styles */
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-}
-
+/* General Styles */
 body {
     font-family: 'Poppins', sans-serif;
     font-size: 16px;
     color: #333;
-    background-color: #fff;
+    background-color: #f8f9fa;
+    margin: 0;
 }
 
 h1, h2, h3, h4, h5, h6 {
@@ -18,58 +13,13 @@ h1, h2, h3, h4, h5, h6 {
     color: #1a3c34;
 }
 
-p, a, li, button, input, textarea, select, label {
-    font-family: 'Poppins', sans-serif;
-    font-weight: 400;
-}
-/* Add this to styles.css */
-.hero-box {
-    min-height: 400px; /* Adjust height as needed */
-    width: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: url('../images/home1.jpg') no-repeat center center/cover;
-    position: relative;
-    margin-top: 0;
-}
-.hero-box::before {
-    content: "";
-    position: absolute;
-    top: 0; left: 0; right: 0; bottom: 0;
-    background: rgba(0,0,0,0.3); /* Optional: dark overlay for readability */
-    z-index: 1;
-}
-.content {
-    position: relative;
-    z-index: 2;
-    background: rgba(255,255,255,0.85);
-    padding: 2rem 2.5rem;
-    border-radius: 12px;
-    box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+.heading {
+    font-size: 2.5rem;
     color: #1a3c34;
-    text-align: center;
-    max-width: 600px;
-    width: 90%;
-    margin: 0 auto;
-}
-.btn {
-    background-color: #d3a625;
-    color: #fff;
-    padding: 10px 20px;
-    border: none;
-    border-radius: 5px;
-    text-decoration: none;
-    font-family: 'Poppins', sans-serif;
-    font-weight: 500;
-    transition: background-color 0.3s ease;
+    margin-bottom: 2rem;
 }
 
-.btn:hover {
-    background-color: #b38f1e;
-}
-
-/* Custom Navbar */
+/* Navbar */
 .bg-custom {
     background-color: #1a3c34;
 }
@@ -101,12 +51,11 @@ p, a, li, button, input, textarea, select, label {
 /* Hero Section */
 .home {
     position: relative;
-    min-height: 80vh; /* Reduced from 100vh for better fit */
+    height: 80vh; /* Increased height for better visibility */
     display: flex;
     align-items: center;
     justify-content: center;
-    text-align: center;
-    color: #fff;
+    overflow: hidden;
 }
 
 .hero-box {
@@ -119,36 +68,72 @@ p, a, li, button, input, textarea, select, label {
     z-index: -1;
 }
 
-
-
-
+.content {
+    background: rgba(0, 0, 0, 0.6); /* Slightly darker overlay for better text contrast */
+    padding: 2.5rem 3rem; /* Increased padding for better spacing */
+    border-radius: 15px;
+    text-align: center;
+    width: 80%; /* Adjusted width to 80% of the viewport */
+    max-width: 700px; /* Max-width for larger screens */
+    min-height: 350px; /* Minimum height to ensure content fits */
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    color: #fff;
+}
 
 .content span {
-    font-size: 1.5rem;
+    font-size: 1.8rem; /* Slightly larger for emphasis */
     text-transform: uppercase;
-    letter-spacing: 2px;
+    letter-spacing: 3px;
+    display: block;
+    margin-bottom: 0.5rem;
 }
 
 .content h3 {
-    font-size: 3.5rem;
-    margin: 10px 0;
+    font-size: 4rem; /* Larger heading for impact */
+    margin: 0.5rem 0;
+    line-height: 1.2;
 }
 
 .content p {
-    font-size: 1.2rem;
-    margin-bottom: 20px;
+    font-size: 1.3rem;
+    margin-bottom: 2rem;
+    font-weight: 300;
+}
+
+.btn, .btn-primary, .btn-outline-primary {
+    background-color: #d3a625;
+    color: #fff;
+    padding: 12px 25px;
+    border: none;
+    border-radius: 5px;
+    text-decoration: none;
+    font-family: 'Poppins', sans-serif;
+    font-weight: 500;
+    font-size: 1.1rem;
+    transition: background-color 0.3s ease;
+}
+
+.btn:hover, .btn-primary:hover {
+    background-color: #b38f1e;
+    color: #fff;
+}
+
+.btn-outline-primary {
+    background-color: transparent;
+    border: 2px solid #d3a625;
+    color: #d3a625;
+}
+
+.btn-outline-primary:hover {
+    background-color: #d3a625;
+    color: #fff;
 }
 
 /* States Section */
 .states {
-    padding: 60px 0;
-    background-color: #f8f9fa;
-}
-
-.states .heading {
-    font-size: 2.5rem;
-    color: #1a3c34;
-    margin-bottom: 40px;
+    background-color: #fff;
 }
 
 .state-card {
@@ -156,47 +141,48 @@ p, a, li, button, input, textarea, select, label {
     border-radius: 10px;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
     transition: transform 0.3s ease;
+    overflow: hidden;
 }
 
 .state-card:hover {
     transform: translateY(-5px);
 }
 
+.state-card .card-img-top {
+    height: 150px;
+    object-fit: cover;
+}
+
 .state-card .card-body {
-    padding: 20px;
+    padding: 15px;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    min-height: 200px; /* Ensure consistent height */
 }
 
 .state-card .card-title {
-    font-size: 1.5rem;
+    font-size: 1.25rem;
     color: #1a3c34;
+    margin-bottom: 0.5rem;
 }
 
 .state-card .card-text {
-    font-size: 1rem;
+    font-size: 0.9rem;
     color: #666;
     flex-grow: 1;
 }
 
 /* Adventure Section */
 .category {
-    padding: 60px 0;
-    text-align: center;
-}
-
-.category .heading {
-    font-size: 2.5rem;
-    color: #1a3c34;
-    margin-bottom: 40px;
+    background-color: #f8f9fa;
 }
 
 .adventure-card {
+    border: 1px solid #ddd;
     border-radius: 10px;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
     transition: transform 0.3s ease;
+    overflow: hidden;
 }
 
 .adventure-card:hover {
@@ -208,42 +194,28 @@ p, a, li, button, input, textarea, select, label {
     object-fit: cover;
 }
 
-.adventure-card .card-body {
-    padding: 20px;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-}
-
 .adventure-card .card-title {
     font-size: 1.5rem;
     color: #1a3c34;
-    margin-bottom: 10px;
+    margin-bottom: 0.5rem;
 }
 
 .adventure-card .card-text {
     font-size: 1rem;
     color: #666;
-    flex-grow: 1;
 }
 
 /* Packages Section */
 .packages {
-    padding: 60px 0;
-    background-color: #f8f9fa;
-    text-align: center;
-}
-
-.packages .heading {
-    font-size: 2.5rem;
-    color: #1a3c34;
-    margin-bottom: 40px;
+    background-color: #fff;
 }
 
 .package-card {
+    border: 1px solid #ddd;
     border-radius: 10px;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
     transition: transform 0.3s ease;
+    overflow: hidden;
 }
 
 .package-card:hover {
@@ -255,140 +227,145 @@ p, a, li, button, input, textarea, select, label {
     object-fit: cover;
 }
 
-.package-card .card-body {
-    padding: 20px;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-}
-
 .package-card .card-title {
     font-size: 1.5rem;
     color: #1a3c34;
-    margin-bottom: 10px;
+    margin-bottom: 0.5rem;
 }
 
 .package-card .card-text {
     font-size: 1rem;
     color: #666;
-    margin-bottom: 10px;
 }
 
 .package-card .price {
-    font-size: 1.2rem;
+    font-size: 1.1rem;
     color: #d3a625;
-    font-weight: 500;
-    margin-bottom: 15px;
+    margin: 0.5rem 0;
+}
+
+/* Blog Posts Section */
+.posts {
+    background-color: #f8f9fa;
+}
+
+.post-card {
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease;
+}
+
+.post-card:hover {
+    transform: translateY(-5px);
+}
+
+.post-card .card-title {
+    font-size: 1.25rem;
+    color: #1a3c34;
+}
+
+.post-card .card-text {
+    font-size: 1rem;
+    color: #666;
 }
 
 /* Contact Section */
 .contact {
-    padding: 60px 0;
     background-color: #fff;
 }
 
-.contact .wrapper1 {
-    text-align: center;
-}
-
-.contact .title1 h1 {
-    font-size: 2.5rem;
-    color: #1a3c34;
-    margin-bottom: 30px;
-}
-
-.contact-form {
-    background-color: #f8f9fa;
-    padding: 30px;
+.contact form {
+    background: #f9f9f9;
+    padding: 2rem;
     border-radius: 10px;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-}
-
-.input-fields {
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
-    margin-bottom: 20px;
-}
-
-.input-fields .input {
-    font-size: 1rem;
-    font-family: 'Poppins', sans-serif;
-}
-
-.msg textarea {
-    font-size: 1rem;
-    font-family: 'Poppins', sans-serif;
-    min-height: 120px;
-    margin-bottom: 20px;
-}
-
-.btn1 button {
-    background-color: #1a3c34;
-    color: #fff;
-    padding: 10px 20px;
-    border: none;
-    border-radius: 5px;
-    font-family: 'Poppins', sans-serif;
-    font-weight: 500;
-    cursor: pointer;
-}
-
-.btn1 button:hover {
-    background-color: #0f2c28;
 }
 
 /* Footer */
 .footer {
     background: #1a3c34;
     color: white;
-    padding: 40px 0;
-    text-align: center;
+    padding: 2rem 0;
 }
 
-.footer .box-container {
+.box-container {
     display: flex;
-    justify-content: center;
-    gap: 40px;
     flex-wrap: wrap;
+    gap: 1rem;
 }
 
-.footer .box {
-    flex: 1;
-    min-width: 200px;
+.box {
+    flex: 1 1 200px;
 }
 
-.footer .box h3 {
-    font-family: 'Montserrat', sans-serif;
-    font-weight: 600;
+.box h3 {
     font-size: 1.5rem;
-    color: #ffffff;
-    margin-bottom: 15px;
-}
-
-.footer .box a {
-    color: white;
-    display: block;
-    margin: 10px 0;
-    text-decoration: none;
-    font-family: 'Poppins', sans-serif;
-    font-size: 1rem;
-}
-
-.footer .box a:hover {
+    margin-bottom: 1rem;
     color: #d3a625;
 }
 
-.footer .credit {
-    margin-top: 20px;
-    font-size: 0.9em;
-    font-family: 'Poppins', sans-serif;
+.box a {
+    display: block;
+    color: #ddd;
+    font-size: 1rem;
+    margin-bottom: 0.5rem;
+    text-decoration: none;
+}
+
+.box a i {
+    margin-right: 8px;
+}
+
+.box a:hover {
+    color: #d3a625;
+}
+
+.credit {
+    font-size: 0.9rem;
+    margin-top: 1.5rem;
+}
+
+.credit span {
+    color: #d3a625;
 }
 
 /* Responsive Design */
+@media (max-width: 992px) {
+    .home {
+        height: 70vh; /* Slightly smaller height for medium screens */
+    }
+
+    .content {
+        width: 90%;
+        max-width: 600px;
+        min-height: 300px;
+        padding: 2rem;
+    }
+
+    .content h3 {
+        font-size: 3rem;
+    }
+
+    .content p {
+        font-size: 1.2rem;
+    }
+}
+
 @media (max-width: 768px) {
     .home {
-        min-height: 60vh;
+        height: 60vh; /* Adjusted height for smaller screens */
+    }
+
+    .content {
+        width: 90%;
+        max-width: 500px;
+        min-height: 250px;
+        padding: 1.5rem;
+    }
+
+    .content span {
+        font-size: 1.5rem;
     }
 
     .content h3 {
@@ -399,9 +376,15 @@ p, a, li, button, input, textarea, select, label {
         font-size: 1rem;
     }
 
-    .footer .box-container {
-        flex-direction: column;
-        gap: 20px;
+    .btn, .btn-primary, .btn-outline-primary {
+        padding: 10px 20px;
+        font-size: 1rem;
+    }
+
+    .state-card .card-img-top,
+    .adventure-card .card-img-top,
+    .package-card .card-img-top {
+        height: 120px;
     }
 }
 
@@ -414,5 +397,39 @@ p, a, li, button, input, textarea, select, label {
     .nav-btn {
         margin-left: 0;
         margin-top: 10px;
+    }
+
+    .home {
+        height: 50vh; /* Further reduced height for very small screens */
+    }
+
+    .content {
+        width: 95%;
+        max-width: 400px;
+        min-height: 200px;
+        padding: 1rem;
+    }
+
+    .content span {
+        font-size: 1.2rem;
+        letter-spacing: 2px;
+    }
+
+    .content h3 {
+        font-size: 2rem;
+    }
+
+    .content p {
+        font-size: 0.9rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .btn, .btn-primary, .btn-outline-primary {
+        padding: 8px 15px;
+        font-size: 0.9rem;
+    }
+
+    .heading {
+        font-size: 2rem;
     }
 }

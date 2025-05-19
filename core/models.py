@@ -8,7 +8,8 @@ class State(models.Model):
     culture = models.TextField(blank=True, help_text="Cultural highlights, traditions, and festivals.")
     climate = models.TextField(blank=True, help_text="Climate information, including average temperatures and weather patterns.")
     best_time_to_visit = models.CharField(max_length=100, blank=True, help_text="Best months or seasons to visit the state.")
-    favorites = models.ManyToManyField(User, related_name='favorite_states', blank=True)  # Add this field
+    favorites = models.ManyToManyField(User, related_name='favorite_states', blank=True)
+
     def __str__(self):
         return self.name
 
@@ -81,12 +82,28 @@ class Review(models.Model):
 
     def __str__(self):
         return f"{self.user.username} - {self.place.name} - {self.rating}"
-    
+
 class Post(models.Model):
     title = models.CharField(max_length=200)
     content = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
-    favorites = models.ManyToManyField(User, related_name='favorite_posts', blank=True)  # Add this field
+    favorites = models.ManyToManyField(User, related_name='favorite_posts', blank=True)
 
     def __str__(self):
         return self.title
+
+class Itinerary(models.Model):
+    state = models.ForeignKey(State, on_delete=models.CASCADE, related_name='itineraries')
+    day = models.IntegerField()
+    activity = models.TextField()
+
+    def __str__(self):
+        return f"Day {self.day} Itinerary for {self.state.name}"
+
+class TransportationOption(models.Model):
+    state = models.ForeignKey(State, on_delete=models.CASCADE, related_name='transport_options')
+    mode = models.CharField(max_length=100)
+    details = models.TextField()
+
+    def __str__(self):
+        return f"{self.mode} in {self.state.name}"

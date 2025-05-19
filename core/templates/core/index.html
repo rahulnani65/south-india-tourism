@@ -6,222 +6,266 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>South India Tourism</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link rel="stylesheet" href="{% static 'core/css/styles.css' %}">
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600&family=Poppins:wght@300;500&display=swap" rel="stylesheet">
 </head>
 <body>
-
-<!-- Navbar -->
-<nav class="navbar navbar-expand-lg navbar-dark bg-custom sticky-top">
-  <div class="container-fluid">
-    <a class="navbar-brand" href="{% url 'home' %}">South India Tourism</a>
-    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-      <span class="navbar-toggler-icon"></span>
-    </button>
-    <div class="collapse navbar-collapse" id="navbarNav">
-      <ul class="navbar-nav ms-auto">
-        <li class="nav-item"><a class="nav-link" href="{% url 'home' %}">Home</a></li>
-        <li class="nav-item"><a class="nav-link" href="{% url 'home' %}#category">Adventures</a></li>
-        <li class="nav-item"><a class="nav-link" href="{% url 'home' %}#packages">Packages</a></li>
-        <li class="nav-item"><a class="nav-link" href="{% url 'home' %}#contact">Contact</a></li>
-        {% if user.is_authenticated %}
-          <li class="nav-item">
-            <form action="{% url 'logout' %}" method="post" style="display: inline;">
-              {% csrf_token %}
-              <button type="submit" class="btn btn-light nav-btn">Logout</button>
-            </form>
-          </li>
-        {% else %}
-          <li class="nav-item">
-            <a href="{% url 'login' %}" class="btn btn-light nav-btn">Login</a>
-          </li>
-        {% endif %}
-      </ul>
+  <!-- Navbar -->
+  <nav class="navbar navbar-expand-lg navbar-dark bg-custom sticky-top">
+    <div class="container-fluid">
+      <a class="navbar-brand" href="{% url 'home' %}">South India Tourism</a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav ms-auto">
+          <li class="nav-item"><a class="nav-link active" href="{% url 'home' %}">Home</a></li>
+          <li class="nav-item"><a class="nav-link" href="{% url 'home' %}#category">Adventures</a></li>
+          <li class="nav-item"><a class="nav-link" href="{% url 'home' %}#packages">Packages</a></li>
+          <li class="nav-item"><a class="nav-link" href="{% url 'home' %}#contact">Contact</a></li>
+          {% if user.is_authenticated %}
+            <li class="nav-item"><a class="nav-link" href="{% url 'my_favorites' %}">My Favorites</a></li>
+            <li class="nav-item"><a class="nav-link" href="{% url 'profile' %}">Profile</a></li>
+            <li class="nav-item">
+              <form action="{% url 'logout' %}" method="post" style="display: inline;">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-light nav-btn">Logout</button>
+              </form>
+            </li>
+          {% else %}
+            <li class="nav-item">
+              <a href="{% url 'login' %}" class="btn btn-light nav-btn">Login</a>
+            </li>
+            <li class="nav-item">
+              <a href="{% url 'signup' %}" class="btn btn-light nav-btn">Sign Up</a>
+            </li>
+          {% endif %}
+        </ul>
+      </div>
     </div>
-  </div>
-</nav>
+  </nav>
 
-<!-- Hero Section -->
-<section class="home" id="home">
-  <div class="hero-box">
-    <div class="content">
-      <span>never stop</span>
-      <h3>exploring</h3>
-      <p>Travel.com offers best deals on India tour packages.</p>
-      <a href="#states" class="btn">get started</a>
+  <!-- Hero Section -->
+  <section class="home" id="home">
+    <div class="hero-box">
+      <div class="content">
+        <span>never stop</span>
+        <h3>exploring</h3>
+        <p>Travel.com offers the best deals on South India tour packages.</p>
+        <a href="#states" class="btn">Get Started</a>
+      </div>
     </div>
-  </div>
-</section>
+  </section>
 
-<!-- States Section -->
-<section class="states" id="states">
-  <div class="container">
-    <h2 class="heading text-center">States</h2>
-    <div class="row justify-content-center">
-      {% for state in states %}
+  <!-- States Section -->
+  <section class="states py-5" id="states">
+    <div class="container">
+      <h2 class="heading text-center mb-4">Explore South India</h2>
+      <div class="row justify-content-center">
+        {% for state in states %}
+          <div class="col-md-2 col-sm-4 mb-4">
+            <div class="card state-card h-100 text-center">
+              <img src="{% static 'core/images/'|add:state.name|lower|add:'.jpg' %}" class="card-img-top" alt="{{ state.name }}" onerror="this.src='{% static 'core/images/india.svg' %}'">
+              <div class="card-body">
+                <h5 class="card-title">{{ state.name }}</h5>
+                <p class="card-text">{{ state.description|truncatewords:10|default:'Discover the wonders of this state.' }}</p>
+                <a href="{% url 'state_detail' state.name|lower|slugify %}" class="btn btn-outline-primary btn-sm mt-2">Explore</a>
+              </div>
+            </div>
+          </div>
+        {% empty %}
+          <div class="col-md-12 text-center">
+            <p>No states available.</p>
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+  </section>
+
+  <!-- Adventure Section -->
+  <section class="category py-5" id="category">
+    <div class="container">
+      <h2 class="heading text-center mb-4">Adventure Ideas</h2>
+      <div class="row justify-content-center">
         <div class="col-md-4 col-sm-6 mb-4">
-          <div class="card state-card h-100">
-            <div class="card-body text-center">
-              <h5 class="card-title">{{ state.name }}</h5>
-              <p class="card-text">{{ state.description|default:'No description available' }}</p>
-              <a href="{% url 'state_detail' state.name|slugify %}" class="btn">Visit {{ state.name }}</a>
+          <div class="card adventure-card h-100">
+            <img src="{% static 'core/images/category-1.jpg' %}" class="card-img-top" alt="Bungee Jump">
+            <div class="card-body">
+              <h3 class="card-title">Bungee Jump</h3>
+              <p class="card-text">Experience the thrill of bungee jumping in South India’s adventure spots.</p>
+              <a href="https://en.wikipedia.org/wiki/Bungee_jumping" class="btn btn-outline-primary btn-sm">Read More</a>
             </div>
           </div>
         </div>
-      {% empty %}
-        <p class="text-center">No states available.</p>
-      {% endfor %}
-    </div>
-  </div>
-</section>
-
-<!-- Adventure Section -->
-<section class="category" id="category">
-  <div class="container">
-    <h1 class="heading text-center">Adventure Idea!</h1>
-    <div class="row justify-content-center">
-      <div class="col-md-4 col-sm-6 mb-4">
-        <div class="card adventure-card h-100">
-          <img src="{% static 'core/images/category-1.jpg' %}" class="card-img-top" alt="Bungee Jump">
-          <div class="card-body">
-            <h3 class="card-title">Bungee Jump</h3>
-            <p class="card-text">Bungee jumping is an exhilarating activity...</p>
-            <a href="https://en.wikipedia.org/wiki/Bungee_jumping" class="btn">read more</a>
-          </div>
-        </div>
-      </div>
-      <div class="col-md-4 col-sm-6 mb-4">
-        <div class="card adventure-card h-100">
-          <img src="{% static 'core/images/category-2.jpg' %}" class="card-img-top" alt="Zip Lines">
-          <div class="card-body">
-            <h3 class="card-title">Zip Lines</h3>
-            <p class="card-text">Zip lines are thrilling aerial rides...</p>
-            <a href="https://en.wikipedia.org/wiki/Zip_line" class="btn">read more</a>
-          </div>
-        </div>
-      </div>
-      <div class="col-md-4 col-sm-6 mb-4">
-        <div class="card adventure-card h-100">
-          <img src="{% static 'core/images/category-3.jpg' %}" class="card-img-top" alt="Canoeing">
-          <div class="card-body">
-            <h3 class="card-title">Canoeing</h3>
-            <p class="card-text">Canoeing is a peaceful water sport...</p>
-            <a href="https://en.wikipedia.org/wiki/Canoeing" class="btn">read more</a>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- Packages Section -->
-<section class="packages" id="packages">
-  <div class="container">
-    <h1 class="heading text-center">Popular Packages</h1>
-    <div class="row justify-content-center">
-      <div class="col-md-4 col-sm-6 mb-4">
-        <div class="card package-card h-100">
-          <img src="{% static 'core/images/img-1.jpg' %}" class="card-img-top" alt="Manali Package">
-          <div class="card-body">
-            <h3 class="card-title">Manali Package</h3>
-            <p class="card-text">Explore calmness in Himachal...</p>
-            <div class="price">Rs 5,999 - Rs 8,999</div>
-            <a href="#contact" class="btn">explore now</a>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- Contact Section -->
-<section class="contact" id="contact">
-  <div class="container">
-    <div class="wrapper1">
-      <div class="title1"><h1>Contact us</h1></div>
-      <div class="contact-form">
-        <form method="post" action="{% url 'contact_submit' %}">
-          {% csrf_token %}
-          <div class="input-fields">
-            <input type="text" class="input form-control" placeholder="Name" name="name" required>
-            <input type="email" class="input form-control" placeholder="Email" name="email" required>
-            <input type="text" class="input form-control" placeholder="Phone" name="phone" required>
-            <input type="text" class="input form-control" placeholder="Subject" name="subject" required>
-          </div>
-          <div class="msg">
-            <textarea class="form-control" placeholder="Message" name="message" required></textarea>
-            <div class="btn1">
-              <button type="submit">send <i class="uil uil-message"></i></button>
+        <div class="col-md-4 col-sm-6 mb-4">
+          <div class="card adventure-card h-100">
+            <img src="{% static 'core/images/category-2.jpg' %}" class="card-img-top" alt="Zip Lines">
+            <div class="card-body">
+              <h3 class="card-title">Zip Lines</h3>
+              <p class="card-text">Soar through the air on exhilarating zip lines amidst lush landscapes.</p>
+              <a href="https://en.wikipedia.org/wiki/Zip_line" class="btn btn-outline-primary btn-sm">Read More</a>
             </div>
           </div>
-        </form>
+        </div>
+        <div class="col-md-4 col-sm-6 mb-4">
+          <div class="card adventure-card h-100">
+            <img src="{% static 'core/images/category-3.jpg' %}" classvans="card-img-top" alt="Canoeing">
+            <div class="card-body">
+              <h3 class="card-title">Canoeing</h3>
+              <p class="card-text">Paddle through serene waters and enjoy a peaceful canoeing adventure.</p>
+              <a href="https://en.wikipedia.org/wiki/Canoeing" class="btn btn-outline-primary btn-sm">Read More</a>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
-  </div>
-</section>
+  </section>
 
-<!-- Footer -->
-<section class="footer">
-  <div class="container">
-    <div class="box-container">
-      <div class="box">
-        <h3>Quick links</h3>
-        <a href="{% url 'home' %}">home</a>
-        <a href="#packages">packages</a>
-        <a href="#contact">contact</a>
-      </div>
-      <div class="box">
-        <h3>Extra links</h3>
-        <a href="#">Terms of use</a>
-        <a href="#">Privacy policy</a>
-      </div>
-      <div class="box">
-        <h3>Contact Info</h3>
-        <a href="tel:+918115585868"><i class="fas fa-phone"></i> +91 8115585868</a>
-        <a href="mailto:your@email.com"><i class="fas fa-envelope"></i> your@email.com</a>
-        <a href="#"><i class="fas fa-map"></i> South India</a>
-      </div>
-      <div class="box">
-        <h3>Follow us</h3>
-        <a href="#"><i class="fab fa-facebook-f"></i> Facebook</a>
-        <a href="#"><i class="fab fa-instagram"></i> Instagram</a>
-        <a href="#"><i class="fab fa-linkedin"></i> LinkedIn</a>
+  <!-- Packages Section -->
+  <section class="packages py-5" id="packages">
+    <div class="container">
+      <h2 class="heading text-center mb-4">Popular Packages</h2>
+      <div class="row justify-content-center">
+        <div class="col-md-4 col-sm-6 mb-4">
+          <div class="card package-card h-100">
+            <img src="{% static 'core/images/img-1.jpg' %}" class="card-img-top" alt="South India Getaway">
+            <div class="card-body">
+              <h3 class="card-title">South India Getaway</h3>
+              <p class="card-text">Explore the vibrant culture and landscapes of South India.</p>
+              <div class="price">Rs 5,999 - Rs 8,999</div>
+              <a href="#contact" class="btn btn-outline-primary btn-sm">Explore Now</a>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
-    <div class="credit">Created by <span>Rahul Nallagattu</span> | All rights reserved!</div>
-  </div>
-</section>
+  </section>
 
-<!-- Admin Modal -->
-<div class="modal fade" id="adminModal" tabindex="-1" aria-labelledby="adminModalLabel" aria-hidden="true">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title" id="adminModalLabel">Add New Hotel</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-      </div>
-      <div class="modal-body">
-        <input type="text" class="form-control mb-2" id="hotelName" placeholder="Hotel Name" required />
-        <select class="form-control mb-2" id="placeName" required>
-          <option value="">Select a Place</option>
-          {% for place in places %}
-            <option value="{{ place.name }}">{{ place.name }}</option>
-          {% endfor %}
-        </select>
-        <input type="text" class="form-control mb-2" id="address" placeholder="Address" required />
-        <input type="text" class="form-control mb-2" id="amenities" placeholder="Amenities (comma-separated)" required />
-        <input type="number" step="0.1" class="form-control mb-2" id="distance" placeholder="Distance (km)" required />
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-        <button type="button" class="btn btn-primary" onclick="addHotel()">Add Hotel</button>
+  <!-- Blog Posts Section -->
+  <section class="posts py-5" id="posts">
+    <div class="container">
+      <h2 class="heading text-center mb-4">Latest Travel Blogs</h2>
+      <div class="row">
+        {% for post in posts %}
+          <div class="col-md-4 mb-4">
+            <div class="card post-card h-100">
+              <div class="card-body">
+                <h5 class="card-title">{{ post.title }}</h5>
+                <p class="card-text">{{ post.content|truncatewords:30 }}</p>
+                <small class="text-muted">Posted on {{ post.created_at }}</small>
+                <div class="mt-2">
+                  <a href="{% url 'post_detail' post.id %}" class="btn btn-primary btn-sm">Read More</a>
+                  {% if user.is_authenticated %}
+                    {% if request.user in post.favorites.all %}
+                      <form action="{% url 'remove_post_favorite' post.id %}" method="post" class="d-inline">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-sm btn-danger">Remove from Favorites</button>
+                      </form>
+                    {% else %}
+                      <form action="{% url 'add_post_favorite' post.id %}" method="post" class="d-inline">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-sm btn-primary">Add to Favorites</button>
+                      </form>
+                    {% endif %}
+                  {% endif %}
+                </div>
+              </div>
+            </div>
+          </div>
+        {% empty %}
+          <div class="col-md-12 text-center">
+            <p>No blog posts available.</p>
+          </div>
+        {% endfor %}
       </div>
     </div>
-  </div>
-</div>
+  </section>
 
-<!-- Scripts -->
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-<script src="{% static 'core/js/scripts.js' %}"></script>
-</body>
-</html>
+  <!-- Contact Section -->
+  <section class="contact py-5" id="contact">
+    <div class="container">
+      <h2 class="heading text-center mb-4">Contact Us</h2>
+      <div class="row justify-content-center">
+        <div class="col-md-8">
+          <form method="post" action="{% url 'contact_submit' %}">
+            {% csrf_token %}
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <input type="text" class="form-control" placeholder="Name" name="name" required>
+              </div>
+              <div class="col-md-6 mb-3">
+                <input type="email" class="form-control" placeholder="Email" name="email" required>
+              </div>
+              <div class="col-md-6 mb-3">
+                <input type="text" class="form-control" placeholder="Phone" name="phone" required>
+              </div>
+              <div class="col-md-6 mb-3">
+                <input type="text" class="form-control" placeholder="Subject" name="subject" required>
+              </div>
+              <div class="col-12 mb-3">
+                <textarea class="form-control" placeholder="Message" name="message" rows="5" required></textarea>
+              </div>
+              <div class="col-12 text-center">
+                <button type="submit" class="btn btn-primary">Send Message</button>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="footer py-4">
+    <div class="container">
+      <div class="row box-container">
+        <div class="col-md-3 col-sm-6 mb-3 box">
+          <h3>Quick Links</h3>
+          <a href="{% url 'home' %}">Home</a>
+          <a href="#packages">Packages</a>
+          <a href="#contact">Contact</a>
+        </div>
+        <div class="col-md-3 col-sm-6 mb-3 box">
+          <h3>Extra Links</h3>
+          <a href="#">Terms of Use</a>
+          <a href="#">Privacy Policy</a>
+        </div>
+        <div class="col-md-3 col-sm-6 mb-3 box">
+          <h3>Contact Info</h3>
+          <a href="tel:+918115585868"><i class="fas fa-phone me-2"></i>+91 8115585868</a>
+          <a href="mailto:your@email.com"><i class="fas fa-envelope me-2"></i>your@email.com</a>
+          <a href="#"><i class="fas fa-map me-2"></i>South India</a>
+        </div>
+        <div class="col-md-3 col-sm-6 mb-3 box">
+          <h3>Follow Us</h3>
+          <a href="#"><i class="fab fa-facebook-f me-2"></i>Facebook</a>
+          <a href="#"><i class="fab fa-instagram me-2"></i>Instagram</a>
+          <a href="#"><i class="fab fa-linkedin me-2"></i>LinkedIn</a>
+        </div>
+      </div>
+      <div class="credit text-center mt-3">
+        Created by <span>Rahul Nallagattu</span> | All rights reserved! © 2025
+      </div>
+    </div>
+  </footer>
+
+  <!-- Admin Modal -->
+  <div class="modal fade" id="adminModal" tabindex="-1" aria-labelledby="adminModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="adminModalLabel">Add New Hotel</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <input type="text" class="form-control mb-2" id="hotelName" placeholder="Hotel Name" required />
+          <select class="form-control mb-2" id="placeName" required>
+            <option value="">Select a Place</option>
+            {% for place in places %}
+              <option value="{{ place.name }}">{{ place.name }}</option>
+            {% endfor %}
+          </select>
+          <input type="text" class="form-control mb-2" id="address" placeholder="Address" required />
+          <input type="text" class="form-control mb-2" id="amenities" placeholder="Amenities (comma-separated)" required />
+          <input type="number" step="0.1
