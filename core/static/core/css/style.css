@@ -4,6 +4,7 @@ body {
     font-size: 16px;
     color: #333;
     background-color: #fff;
+    scroll-behavior: smooth;
 }
 
 h1, h2, h3, h4, h5, h6 {
@@ -11,9 +12,16 @@ h1, h2, h3, h4, h5, h6 {
     font-weight: 600;
     color: #1a3c34;
 }
+/* ...existing code... */
 
+.hero-section.andhra-pradesh {
+    background-image: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url('/static/core/images/andhra_pradesh.jpg');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+}
 .section-title {
-    font-size: 2rem;
+    font-size: 2.5rem;
     color: #1a3c34;
     margin-bottom: 1.5rem;
 }
@@ -53,6 +61,26 @@ h1, h2, h3, h4, h5, h6 {
     border-radius: 5px;
 }
 
+/* Secondary Navigation */
+.secondary-nav {
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #ddd;
+    padding: 10px 0;
+}
+
+.secondary-nav .nav-link {
+    color: #1a3c34 !important;
+    font-size: 1rem;
+    padding: 10px 15px;
+    transition: color 0.3s ease;
+}
+
+.secondary-nav .nav-link:hover,
+.secondary-nav .nav-link.active {
+    color: #d3a625 !important;
+    border-bottom: 3px solid #d3a625;
+}
+
 /* Hero Section */
 .hero-section {
     position: relative;
@@ -67,7 +95,7 @@ h1, h2, h3, h4, h5, h6 {
 .hero-overlay {
     background: rgba(0, 0, 0, 0.5);
     padding: 2rem;
-    border-radius: 10px;
+    border-radius: 15px;
     text-align: center;
 }
 
@@ -81,103 +109,162 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 /* State Details Tabs */
-.state-details, .favorites, .profile, .post-detail, .login, .signup {
-    background-color: #f8f9fa;
+.state-details {
+    background: linear-gradient(135deg, #fff, #f8f9fa);
+}
+
+.state-tabs {
+    border-bottom: 2px solid #ddd;
+    overflow-x: auto;
+    white-space: nowrap;
 }
 
 .state-tabs .nav-link {
-    color: #ffffff;
-    background-color: #1a3c34;
+    color: #1a3c34;
     font-family: 'Montserrat', sans-serif;
     font-weight: 500;
     font-size: 1.1rem;
     padding: 0.75rem 1.5rem;
     border-radius: 5px 5px 0 0;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    border: none;
-    transition: all 0.3s ease;
+    transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 .state-tabs .nav-link.active {
-    color: #ffffff;
     background-color: #1a3c34;
-    border: 2px solid #d3a625;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    color: #fff !important;
+    border-color: #1a3c34;
+    border-bottom: none;
 }
 
 .state-tabs .nav-link:hover {
-    background-color: #0f2c28;
-    color: #ffffff;
-    transform: scale(1.05);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    background-color: #d3a625;
+    color: #fff !important;
 }
 
-/* Places Section */
-.place-card {
-    border: 1px solid #ddd;
-    border-radius: 10px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+/* Cards (Places, Cuisine, Events, Weather, UGC, Safety, Booking) */
+.place-card,
+.cuisine-card,
+.event-card,
+.weather-card,
+.ugc-card,
+.safety-card,
+.booking-card {
+    border: none;
+    border-radius: 15px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
     transition: transform 0.3s ease;
+    overflow: hidden;
 }
 
-.place-card:hover {
-    transform: translateY(-5px);
+.place-card:hover,
+.cuisine-card:hover,
+.event-card:hover,
+.weather-card:hover,
+.ugc-card:hover,
+.safety-card:hover,
+.booking-card:hover {
+    transform: scale(1.05);
 }
 
-.place-card .card-title {
+.place-card .card-img-top {
+    height: 150px;
+    object-fit: cover;
+}
+
+.place-card .card-title,
+.event-card h5,
+.weather-card h4,
+.ugc-card h4,
+.safety-card h4,
+.booking-card h4 {
     font-size: 1.5rem;
     color: #1a3c34;
 }
 
-.place-card .card-text {
+.place-card .card-text,
+.event-card p,
+.weather-card p,
+.ugc-card p,
+.safety-card p {
     font-size: 1rem;
     color: #666;
 }
 
-.place-card .badge {
-    font-size: 0.9rem;
-}
-
-/* Hotel Card */
-.hotel-card {
-    border: 1px solid #eee;
-    border-radius: 5px;
-    background-color: #f9f9f9;
-}
-
-.hotel-card .card-title {
-    font-size: 1.2rem;
-    color: #1a3c34;
-}
-
-/* Itinerary and Transportation */
-.itinerary-list, .transport-list {
+/* Safety Tips List */
+.safety-tips-list {
     list-style: none;
     padding: 0;
 }
 
-.itinerary-list li, .transport-list li {
-    font-size: 1.1rem;
+.safety-tips-list li {
+    font-size: 1rem;
     line-height: 1.8;
     margin-bottom: 0.5rem;
     color: #666;
+    position: relative;
+    padding-left: 20px;
 }
 
-.itinerary-list li strong, .transport-list li strong {
-    color: #1a3c34;
+.safety-tips-list li::before {
+    content: "✔";
+    position: absolute;
+    left: 0;
+    color: #d3a625;
 }
 
-/* Map Placeholder */
-.map-placeholder img {
-    max-height: 300px;
-    border-radius: 10px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+/* Buttons */
+.btn-primary {
+    background-color: #1a3c34;
+    border: none;
+    border-radius: 25px;
+    padding: 10px 20px;
+    font-family: 'Poppins', sans-serif;
+    font-weight: 500;
+    font-size: 1rem;
+    transition: background-color 0.3s ease;
 }
 
-/* Reviews */
-.review {
-    border-bottom: 1px solid #eee;
-    padding-bottom: 0.5rem;
+.btn-primary:hover {
+    background-color: #d3a625;
+}
+
+/* Back to Top Button */
+.back-to-top {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background-color: #1a3c34;
+    color: #fff;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+
+.back-to-top.visible {
+    opacity: 1;
+    visibility: visible;
+}
+
+.back-to-top:hover {
+    background-color: #d3a625;
+}
+
+/* Section Padding */
+.py-6 {
+    padding-top: 4rem;
+    padding-bottom: 4rem;
+}
+
+/* Background Alternation */
+.bg-light {
+    background: linear-gradient(135deg, #f8f9fa, #e9ecef);
 }
 
 /* Footer */
@@ -190,10 +277,6 @@ h1, h2, h3, h4, h5, h6 {
 
 .credit {
     font-size: 0.9rem;
-}
-
-.credit span {
-    color: #d3a625;
 }
 
 /* Responsive Design */
@@ -210,13 +293,26 @@ h1, h2, h3, h4, h5, h6 {
         font-size: 1.2rem;
     }
 
+    .section-title {
+        font-size: 2rem;
+    }
+
     .state-tabs .nav-link {
         font-size: 1rem;
         padding: 0.5rem 1rem;
     }
 
-    .state-tabs .nav-link.active {
-        border: 2px solid #d3a625;
+    .place-card .card-img-top {
+        height: 120px;
+    }
+
+    .py-6 {
+        padding-top: 3rem;
+        padding-bottom: 3rem;
+    }
+
+    .secondary-nav {
+        display: none;
     }
 }
 
@@ -231,28 +327,11 @@ h1, h2, h3, h4, h5, h6 {
         margin-top: 10px;
     }
 
-    .hero-section {
-        height: 30vh;
-    }
-
     .hero-title {
         font-size: 2rem;
     }
 
     .hero-subtitle {
         font-size: 1rem;
-    }
-
-    .state-tabs .nav-link {
-        font-size: 0.9rem;
-        padding: 0.5rem 0.75rem;
-    }
-
-    .state-tabs .nav-link.active {
-        border: 2px solid #d3a625;
-    }
-
-    .section-title {
-        font-size: 1.5rem;
     }
 }

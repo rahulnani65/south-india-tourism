@@ -142,3 +142,5 @@ LOGOUT_REDIRECT_URL = '/'  # Redirect to home page after logout (already handled
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# AUTH_USER_MODEL = 'core.CustomUser'

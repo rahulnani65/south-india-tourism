@@ -9,6 +9,110 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link rel="stylesheet" href="{% static 'core/css/styles.css' %}">
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600&family=Poppins:wght@300;500&display=swap" rel="stylesheet">
+  <style>
+    .hero-box {
+      background: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url('{% static "core/images/home1.jpg" %}');
+      background-size: cover;
+      background-position: center;
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      color: white;
+    }
+
+    .map-section {
+      background: #f8f9fa;
+      padding: 80px 0;
+    }
+
+    .map-container {
+      position: relative;
+      height: 600px;
+      border-radius: 15px;
+      overflow: hidden;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+      background: #e0e4e6;
+    }
+
+    #india-map {
+      width: 100%;
+      height: 100%;
+      position: relative;
+      z-index: 2;
+    }
+
+    .state-info {
+      position: absolute;
+      bottom: 20px;
+      left: 20px;
+      background: rgba(255,255,255,0.95);
+      padding: 15px;
+      border-radius: 10px;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+      display: none;
+      z-index: 10;
+    }
+
+    .state-info.active {
+      display: block;
+    }
+
+    .state-card {
+      transition: transform 0.3s ease;
+      border: none;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+
+    .state-card:hover {
+      transform: translateY(-10px);
+    }
+
+    .state-card img {
+      height: 200px;
+      object-fit: cover;
+    }
+
+    .heading {
+      font-family: 'Montserrat', sans-serif;
+      font-weight: 600;
+      color: #2c3e50;
+      margin-bottom: 2rem;
+    }
+
+    .btn-outline-primary {
+      border-color: #3498db;
+      color: #3498db;
+    }
+
+    .btn-outline-primary:hover {
+      background-color: #3498db;
+      color: white;
+    }
+
+    .svg-wrapper {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100%;
+      width: 100%;
+    }
+    .svg-wrapper svg {
+      width: 80%;
+      height: auto;
+      max-height: 500px;
+      display: block;
+    }
+    .svg-wrapper svg path {
+      cursor: pointer;
+      transition: fill 0.2s;
+    }
+    .svg-wrapper svg path:hover {
+      fill: #3498db !important;
+      opacity: 0.8;
+    }
+  </style>
 </head>
 <body>
   <!-- Navbar -->
@@ -52,8 +156,25 @@
       <div class="content">
         <span>never stop</span>
         <h3>exploring</h3>
-        <p>Travel.com offers the best deals on South India tour packages.</p>
+        <p>Discover the rich culture and beauty of South India</p>
         <a href="#states" class="btn">Get Started</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3D South India Map Section -->
+  <section class="map-section py-5" id="map">
+    <div class="container">
+      <h2 class="heading text-center mb-4">Explore South India in 3D</h2>
+      <div class="map-container" style="position:relative;">
+        <div class="svg-wrapper">
+          <!-- Paste your SVG code here -->
+        </div>
+        <div id="map-container" style="width: 100%; height: 600px;"></div>
+        <div class="state-info" id="stateInfo">
+          <h4 id="stateName"></h4>
+          <p id="stateDescription"></p>
+        </div>
       </div>
     </div>
   </section>
@@ -61,12 +182,12 @@
   <!-- States Section -->
   <section class="states py-5" id="states">
     <div class="container">
-      <h2 class="heading text-center mb-4">Explore South India</h2>
+      <h2 class="heading text-center mb-4">South Indian States</h2>
       <div class="row justify-content-center">
         {% for state in states %}
-          <div class="col-md-2 col-sm-4 mb-4">
+          <div class="col-md-4 col-sm-6 mb-4">
             <div class="card state-card h-100 text-center">
-              <img src="{% static 'core/images/'|add:state.name|lower|add:'.jpg' %}" class="card-img-top" alt="{{ state.name }}" onerror="this.src='{% static 'core/images/india.svg' %}'">
+              <img src="{% static 'core/images/'|add:state.name|lower|add:'.jpg' %}" class="card-img-top" alt="{{ state.name }}">
               <div class="card-body">
                 <h5 class="card-title">{{ state.name }}</h5>
                 <p class="card-text">{{ state.description|truncatewords:10|default:'Discover the wonders of this state.' }}</p>
@@ -93,7 +214,7 @@
             <img src="{% static 'core/images/category-1.jpg' %}" class="card-img-top" alt="Bungee Jump">
             <div class="card-body">
               <h3 class="card-title">Bungee Jump</h3>
-              <p class="card-text">Experience the thrill of bungee jumping in South India’s adventure spots.</p>
+              <p class="card-text">Experience the thrill of bungee jumping in South India's adventure spots.</p>
               <a href="https://en.wikipedia.org/wiki/Bungee_jumping" class="btn btn-outline-primary btn-sm">Read More</a>
             </div>
           </div>
@@ -245,10 +366,16 @@
         </div>
       </div>
       <div class="credit text-center mt-3">
-        Created by <span>Rahul Nallagattu</span> | All rights reserved! © 2025
+        Created by <span>Team</span> | All rights reserved! © 2025
       </div>
     </div>
   </footer>
+
+  <!-- Three.js and Map Scripts -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/SVGLoader.js"></script>
+  <script src="{% static 'core/js/Three.js' %}"></script>
 
   <!-- Admin Modal -->
   <div class="modal fade" id="adminModal" tabindex="-1" aria-labelledby="adminModalLabel" aria-hidden="true">
@@ -268,4 +395,42 @@
           </select>
           <input type="text" class="form-control mb-2" id="address" placeholder="Address" required />
           <input type="text" class="form-control mb-2" id="amenities" placeholder="Amenities (comma-separated)" required />
-          <input type="number" step="0.1
+          <input type="number" step="0.1" class="form-control mb-2" id="price" placeholder="Price" required />
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+          <button type="submit" class="btn btn-primary">Save changes</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // State info (customize as needed)
+    const stateData = {
+      Karnataka: { name: "Karnataka", description: "Known for Bengaluru, Mysore, and beautiful landscapes." },
+      TamilNadu: { name: "Tamil Nadu", description: "Famous for temples, Chennai, and rich culture." },
+      Kerala: { name: "Kerala", description: "God's Own Country, backwaters, and lush greenery." },
+      AndhraPradesh: { name: "Andhra Pradesh", description: "Home to Tirupati, beaches, and spicy cuisine." },
+      Telangana: { name: "Telangana", description: "Known for Hyderabad, biryani, and Charminar." }
+    };
+
+    // Add click listeners to each state
+    document.addEventListener("DOMContentLoaded", function() {
+      Object.keys(stateData).forEach(function(stateId) {
+        const el = document.getElementById(stateId);
+        if (el) {
+          el.addEventListener("click", function() {
+            document.getElementById("stateInfo").classList.add("active");
+            document.getElementById("stateName").textContent = stateData[stateId].name;
+            document.getElementById("stateDescription").textContent = stateData[stateId].description;
+          });
+          el.addEventListener("mouseleave", function() {
+            document.getElementById("stateInfo").classList.remove("active");
+          });
+        }
+      });
+    });
+  </script>
+</body>
+</html>

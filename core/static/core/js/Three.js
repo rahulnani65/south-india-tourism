@@ -17,8 +17,17 @@ const directionalLight = new THREE.DirectionalLight(0xffffff, 0.5);
 directionalLight.position.set(0, 1, 1);
 scene.add(directionalLight);
 
+// Only 5 South Indian states
+const stateData = {
+    'IN-KL': { name: 'Kerala', url: '/states/kerala/' },
+    'IN-KA': { name: 'Karnataka', url: '/states/karnataka/' },
+    'IN-TN': { name: 'Tamil Nadu', url: '/states/tamil-nadu/' },
+    'IN-AP': { name: 'Andhra Pradesh', url: '/states/andhra-pradesh/' },
+    'IN-TG': { name: 'Telangana', url: '/states/telangana/' }
+};
+
 const loader = new THREE.SVGLoader();
-loader.load('{% static "core/images/india.svg" %}', (data) => {
+loader.load('/static/core/images/india-south-5states.svg', (data) => {
     const paths = data.paths;
     const stateMeshes = [];
 

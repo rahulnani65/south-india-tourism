@@ -3,7 +3,7 @@ from . import views
 
 urlpatterns = [
     path('', views.home, name='home'),
-    path('state/<str:state_name>/', views.state_detail, name='state_detail'),
+    path('state/<slug:state_slug>/', views.state_detail, name='state_detail'),
     path('post/<int:post_id>/', views.post_detail, name='post_detail'),
     path('contact/', views.contact_submit, name='contact_submit'),
     path('signup/', views.signup, name='signup'),
@@ -16,6 +16,8 @@ urlpatterns = [
     path('post/<int:post_id>/remove-favorite/', views.remove_post_favorite, name='remove_post_favorite'),
     path('my-favorites/', views.my_favorites, name='my_favorites'),
     path('profile/', views.profile, name='profile'),
-    # path('api/weather/', views.get_weather, name='get_weather'),
-    # path('api/recommendations/', views.get_recommendations, name='get_recommendations'),
+    path('get-weather/', views.get_weather, name='get_weather'),
+    path('get-recommendations/', views.get_recommendations, name='get_recommendations'),
+    path('state/<int:state_id>/inquiry/', views.submit_inquiry, name='submit_inquiry'),
+
 ]

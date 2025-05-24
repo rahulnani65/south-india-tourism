@@ -107,3 +107,14 @@ class TransportationOption(models.Model):
 
     def __str__(self):
         return f"{self.mode} in {self.state.name}"
+    
+class Inquiry(models.Model):
+    state = models.ForeignKey('State', on_delete=models.CASCADE, related_name='inquiries')
+    name = models.CharField(max_length=100)
+    email = models.EmailField()
+    message = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+
+    def __str__(self):
+        return f"Inquiry from {self.name} for {self.state.name}"

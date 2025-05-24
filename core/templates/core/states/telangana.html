@@ -1,0 +1,616 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Telangana - South India Tourism</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="{% static 'core/css/style.css' %}">
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600&family=Poppins:wght@300;500&display=swap" rel="stylesheet">
+</head>
+<body>
+  <!-- Navbar -->
+  <nav class="navbar navbar-expand-lg navbar-dark bg-custom sticky-top">
+    <div class="container-fluid">
+      <a class="navbar-brand" href="{% url 'home' %}">South India Tourism</a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav ms-auto">
+          <li class="nav-item"><a class="nav-link active" href="{% url 'home' %}">Home</a></li>
+          <li class="nav-item"><a class="nav-link" href="{% url 'home' %}#category">Adventures</a></li>
+          <li class="nav-item"><a class="nav-link" href="{% url 'home' %}#packages">Packages</a></li>
+          <li class="nav-item"><a class="nav-link" href="{% url 'home' %}#contact">Contact</a></li>
+          {% if user.is_authenticated %}
+            <li class="nav-item"><a class="nav-link" href="{% url 'my_favorites' %}">My Favorites</a></li>
+            <li class="nav-item"><a class="nav-link" href="{% url 'profile' %}">Profile</a></li>
+            <li class="nav-item">
+              <form action="{% url 'logout' %}" method="post" style="display: inline;">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-light nav-btn">Logout</button>
+              </form>
+            </li>
+          {% else %}
+            <li class="nav-item">
+              <a href="{% url 'login' %}" class="btn btn-light nav-btn">Login</a>
+            </li>
+            <li class="nav-item">
+              <a href="{% url 'signup' %}" class="btn btn-light nav-btn">Sign Up</a>
+            </li>
+          {% endif %}
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Hero Section -->
+  <section class="hero-section" style="background-image: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url('{% static 'core/images/telangana.jpg' %}');">
+    <div class="hero-overlay">
+      <h1 class="hero-title text-white animate__animated animate__fadeIn">Discover Telangana</h1>
+      <p class="hero-subtitle text-white animate__animated animate__fadeIn animate__delay-1s">Experience the rich heritage and modern charm of Telangana</p>
+      {% if user.is_authenticated %}
+        {% if is_favorited %}
+          <form action="{% url 'remove_state_favorite' state.id %}" method="post" class="d-inline">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-danger btn-sm mt-2">Remove from Favorites</button>
+          </form>
+        {% else %}
+          <form action="{% url 'add_state_favorite' state.id %}" method="post" class="d-inline">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-primary btn-sm mt-2">Add to Favorites</button>
+          </form>
+        {% endif %}
+      {% endif %}
+      <a href="#booking" class="btn btn-primary btn-sm mt-2 animate__animated animate__fadeIn animate__delay-2s">Plan Your Trip</a>
+    </div>
+  </section>
+
+  <!-- Secondary Navigation -->
+  <nav class="secondary-nav sticky-top">
+    <div class="container">
+      <ul class="nav justify-content-center">
+        <li class="nav-item"><a class="nav-link" href="#overview">Overview</a></li>
+        <li class="nav-item"><a class="nav-link" href="#places">Places to Visit</a></li>
+        <li class="nav-item"><a class="nav-link" href="#cuisine">Cuisine</a></li>
+        <li class="nav-item"><a class="nav-link" href="#events">Events</a></li>
+        <li class="nav-item"><a class="nav-link" href="#weather">Weather</a></li>
+        <li class="nav-item"><a class="nav-link" href="#ugc">Traveler Stories</a></li>
+        <li class="nav-item"><a class="nav-link" href="#safety">Safety Tips</a></li>
+        <li class="nav-item"><a class="nav-link" href="#booking">Booking</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <!-- Main Content -->
+  <div class="main-content">
+    <!-- State Details Section -->
+    <section class="state-details py-6" id="overview">
+      <div class="container">
+        <ul class="nav nav-tabs state-tabs mb-4" id="stateTabs" role="tablist">
+          <li class="nav-item" role="presentation">
+            <a class="nav-link active" id="overview-tab" data-bs-toggle="tab" href="#overview-tab-content" role="tab" aria-controls="overview-tab-content" aria-selected="true">Overview</a>
+          </li>
+          <li class="nav-item" role="presentation">
+            <a class="nav-link" id="history-tab" data-bs-toggle="tab" href="#history" role="tab" aria-controls="history" aria-selected="false">History</a>
+          </li>
+          <li class="nav-item" role="presentation">
+            <a class="nav-link" id="culture-tab" data-bs-toggle="tab" href="#culture" role="tab" aria-controls="culture" aria-selected="false">Culture</a>
+          </li>
+          <li class="nav-item" role="presentation">
+            <a class="nav-link" id="climate-tab" data-bs-toggle="tab" href="#climate" role="tab" aria-controls="climate" aria-selected="false">Climate</a>
+          </li>
+          <li class="nav-item" role="presentation">
+            <a class="nav-link" id="best-time-tab" data-bs-toggle="tab" href="#best-time" role="tab" aria-controls="best-time" aria-selected="false">Best Time to Visit</a>
+          </li>
+        </ul>
+
+        <div class="tab-content" id="stateTabsContent">
+          <div class="tab-pane fade show active" id="overview-tab-content" role="tabpanel" aria-labelledby="overview-tab">
+            <h2 class="section-title">Overview</h2>
+            <p class="section-content">
+              Telangana, the youngest state in India, is known for its rich cultural heritage and modern development. The state is home to the historic city of Hyderabad, ancient temples, and beautiful lakes. From the iconic Charminar to the modern HITEC City, Telangana offers a perfect blend of tradition and technology.
+            </p>
+          </div>
+          <div class="tab-pane fade" id="history" role="tabpanel" aria-labelledby="history-tab">
+            <h2 class="section-title">History</h2>
+            <p class="section-content">
+              Telangana has a rich historical legacy dating back to ancient times. The region was ruled by various dynasties including the Satavahanas, Kakatiyas, and Qutb Shahis. The state played a crucial role in the development of Indian art, architecture, and literature, with notable contributions in temple architecture and classical music.
+            </p>
+          </div>
+          <div class="tab-pane fade" id="culture" role="tabpanel" aria-labelledby="culture-tab">
+            <h2 class="section-title">Culture</h2>
+            <p class="section-content">
+              Telangana's culture is deeply rooted in tradition and spirituality. The state is known for its classical dance form Kuchipudi, traditional music, and literature. The annual Bathukamma festival is a major cultural event. Telangana's cuisine is diverse, with specialties like Hyderabadi Biryani, Haleem, and Qubani Ka Meetha.
+            </p>
+            <h4 class="mt-4">Cultural Safety Tips</h4>
+            <ul class="safety-tips-list">
+              <li>Dress modestly when visiting temples and religious sites.</li>
+              <li>Always ask for permission before taking photos of locals, especially in rural areas.</li>
+              <li>Remove shoes before entering religious sites—it's a common custom in Telangana.</li>
+            </ul>
+          </div>
+          <div class="tab-pane fade" id="climate" role="tabpanel" aria-labelledby="climate-tab">
+            <h2 class="section-title">Climate</h2>
+            <p class="section-content">
+              Telangana experiences a tropical climate with three distinct seasons: summer (March to May), monsoon (June to September), and winter (October to February). The state has hot summers and mild winters, with moderate rainfall during the monsoon season.
+            </p>
+          </div>
+          <div class="tab-pane fade" id="best-time" role="tabpanel" aria-labelledby="best-time-tab">
+            <h2 class="section-title">Best Time to Visit</h2>
+            <p class="section-content">
+              The best time to visit Telangana is between October and February when the weather is pleasant and ideal for sightseeing. This period avoids the hot summer months and the heavy monsoon rains, making it perfect for exploring temples, forts, and lakes.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Places to Visit -->
+    <section class="places-section py-6 bg-light" id="places">
+      <div class="container">
+        <h2 class="section-title text-center mb-5">Places to Visit</h2>
+        <!-- AI-Powered Recommendations -->
+        <div class="mb-5">
+          <h4 class="text-center">Recommended for You</h4>
+          <div class="row" id="recommended-places">
+            <div class="col-12 text-center">
+              <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+              </div>
+              <p>Loading personalized recommendations...</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="mb-4 text-center">
+          <label for="categoryFilter" class="form-label">Filter by Category:</label>
+          <select id="categoryFilter" class="form-select w-auto d-inline-block mx-auto" onchange="location = this.value;">
+            <option value="{% url 'state_detail' state.name|lower|slugify %}">All Categories</option>
+            {% for category, label in categories %}
+              <option value="{% url 'state_detail' state.name|lower|slugify %}?category={{ category }}" {% if selected_category == category %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="row">
+          {% for place in places %}
+            <div class="col-md-4 mb-4">
+              <div class="card place-card h-100">
+                <img src="{% static 'core/images/'|add:place.name|lower|add:'.jpg' %}" class="card-img-top" alt="{{ place.name }}" onerror="this.src='{% static 'core/images/placeholder.jpg' %}'">
+                <div class="card-body">
+                  <h5 class="card-title">{{ place.name }} <span class="badge bg-secondary">{{ place.category }}</span></h5>
+                  <p class="card-text">{{ place.description }}</p>
+                  <p><strong>Location:</strong> {{ place.location|default:"Not specified" }}</p>
+                  <p><strong>Entry Fee:</strong> {% if place.entry_fee %}${{ place.entry_fee }}{% else %}Free{% endif %}</p>
+                  <p><strong>Visiting Hours:</strong> {{ place.visiting_hours|default:"Not specified" }}</p>
+                  <p><strong>Safety Tip:</strong> {{ place.safety_tip|default:"Keep your belongings secure in crowded areas." }}</p>
+                  {% if user.is_authenticated %}
+                    {% if place.is_favorited %}
+                      <form action="{% url 'remove_favorite' place.id %}" method="post" class="d-inline">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-danger btn-sm mt-2">
+                          <i class="fas fa-heart"></i> Remove from Favorites
+                        </button>
+                      </form>
+                    {% else %}
+                      <form action="{% url 'add_favorite' place.id %}" method="post" class="d-inline">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-primary btn-sm mt-2">
+                          <i class="far fa-heart"></i> Add to Favorites
+                        </button>
+                      </form>
+                    {% endif %}
+                  {% else %}
+                    <a href="{% url 'login' %}" class="btn btn-outline-primary btn-sm mt-2">
+                      <i class="far fa-heart"></i> Login to Add to Favorites
+                    </a>
+                  {% endif %}
+                </div>
+              </div>
+            </div>
+          {% empty %}
+            <div class="col-12 text-center">
+              <p>No places found for this category.</p>
+            </div>
+          {% endfor %}
+        </div>
+      </div>
+    </section>
+
+    <!-- Local Cuisine and Dining Recommendations -->
+    <section class="cuisine-section py-6" id="cuisine">
+      <div class="container">
+        <h2 class="section-title text-center mb-5">Local Cuisine and Dining Recommendations</h2>
+        <div class="row">
+          <div class="col-md-6 mb-4">
+            <div class="card cuisine-card h-100">
+              <div class="card-body">
+                <h4>Iconic Dishes</h4>
+                <p>Indulge in Telangana's culinary delights:</p>
+                <ul>
+                  <li><strong>Hyderabadi Biryani:</strong> Fragrant rice dish with meat and aromatic spices.</li>
+                  <li><strong>Haleem:</strong> Slow-cooked meat and wheat porridge with spices.</li>
+                  <li><strong>Qubani Ka Meetha:</strong> Sweet dessert made with dried apricots.</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-6 mb-4">
+            <div class="card cuisine-card h-100">
+              <div class="card-body">
+                <h4>Top Restaurants</h4>
+                <div class="restaurant-item mb-3">
+                  <h6>Paradise (Hyderabad)</h6>
+                  <p><strong>Specialty:</strong> Hyderabadi Biryani.</p>
+                  <p><strong>Average Cost:</strong> ₹500 per person.</p>
+                </div>
+                <div class="restaurant-item mb-3">
+                  <h6>Shah Ghouse (Hyderabad)</h6>
+                  <p><strong>Specialty:</strong> Authentic Hyderabadi cuisine.</p>
+                  <p><strong>Average Cost:</strong> ₹400 per person.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Events and Festivals -->
+    <section class="events-section py-6 bg-light" id="events">
+      <div class="container">
+        <h2 class="section-title text-center mb-5">Events and Festivals</h2>
+        <div class="row">
+          <div class="col-md-4 mb-4">
+            <div class="card event-card h-100">
+              <div class="card-body">
+                <h5>Bathukamma Festival</h5>
+                <p><strong>Date:</strong> September-October</p>
+                <p><strong>Location:</strong> Throughout Telangana</p>
+                <p>A floral festival celebrating the cultural heritage of Telangana.</p>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-4 mb-4">
+            <div class="card event-card h-100">
+              <div class="card-body">
+                <h5>Bonalu Festival</h5>
+                <p><strong>Date:</strong> July-August</p>
+                <p><strong>Location:</strong> Hyderabad</p>
+                <p>A traditional festival honoring the goddess Mahakali.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Weather and Real-Time Updates -->
+    <section class="weather-section py-6" id="weather">
+      <div class="container">
+        <h2 class="section-title text-center mb-5">Weather Updates</h2>
+        <div class="row">
+          <div class="col-md-6 mb-4">
+            <div class="card weather-card h-100">
+              <div class="card-body">
+                <h4>Current Weather in Hyderabad</h4>
+                <div id="weather-widget">
+                  <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                  </div>
+                  <p>Loading weather data...</p>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-6 mb-4">
+            <div class="card weather-card h-100">
+              <div class="card-body">
+                <h4>Activity Suggestions & Safety Tips</h4>
+                <div id="weather-suggestions">
+                  <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                  </div>
+                  <p>Loading suggestions...</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- User-Generated Content and Social Proof -->
+    <section class="ugc-section py-6 bg-light" id="ugc">
+      <div class="container">
+        <h2 class="section-title text-center mb-5">Traveler Stories</h2>
+        <div class="row">
+          <div class="col-md-6 mb-4 mx-auto">
+            <div class="card ugc-card h-100">
+              <div class="card-body">
+                <h4>User Reviews</h4>
+                <div class="review-item mb-3">
+                  <p><strong>Mike456</strong> (4.7/5): The Charminar and Golconda Fort are must-visit places in Hyderabad. The history and architecture are fascinating!</p>
+                  <small class="text-muted">Posted on May 5, 2025</small>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Travel Safety Tips -->
+    <section class="safety-section py-6" id="safety">
+      <div class="container">
+        <h2 class="section-title text-center mb-5">Travel Safety Tips</h2>
+        <div class="row">
+          <div class="col-md-6 mb-4">
+            <div class="card safety-card h-100">
+              <div class="card-body">
+                <h4>General Safety Tips</h4>
+                <ul class="safety-tips-list">
+                  <li>Be cautious of pickpockets in crowded areas like markets and temples.</li>
+                  <li>Keep your belongings secure while visiting popular tourist spots.</li>
+                  <li>Follow local customs and dress codes when visiting religious sites.</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-6 mb-4">
+            <div class="card safety-card h-100">
+              <div class="card-body">
+                <h4>Emergency Contacts</h4>
+                <ul class="safety-tips-list">
+                  <li><strong>Police:</strong> 100</li>
+                  <li><strong>Tourist Helpline:</strong> 1800-425-31111</li>
+                  <li><strong>Apollo Hospital (Hyderabad):</strong> +91-40-7179-1090</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Booking and Inquiry Options -->
+    <section class="booking-section py-6 bg-light" id="booking">
+      <div class="container">
+        <h2 class="section-title text-center mb-5">Plan Your Trip</h2>
+        <div class="row">
+          <div class="col-md-6 mb-4">
+            <div class="card booking-card h-100">
+              <div class="card-body text-center">
+                <h4>Book a Tour Package</h4>
+                <a href="#" class="btn btn-primary">Explore Packages</a>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-6 mb-4">
+            <div class="card booking-card h-100">
+              <div class="card-body">
+                <h4>Custom Inquiry</h4>
+                <form action="{% url 'submit_inquiry' state.id %}" method="post">
+                  {% csrf_token %}
+                  <div class="mb-3">
+                    <input type="text" name="name" class="form-control" placeholder="Your Name" required>
+                  </div>
+                  <div class="mb-3">
+                    <input type="email" name="email" class="form-control" placeholder="Your Email" required>
+                  </div>
+                  <div class="mb-3">
+                    <textarea name="message" class="form-control" rows="3" placeholder="Tell us about your trip plans..." required></textarea>
+                  </div>
+                  <button type="submit" class="btn btn-primary btn-sm">Submit Inquiry</button>
+                </form>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- Footer -->
+  <footer class="footer py-4">
+    <div class="container text-center">
+      <p class="credit">Created by <span>Team South India Tourism</span> | © 2025</p>
+    </div>
+  </footer>
+
+  <!-- Back to Top Button -->
+  <a href="#" class="back-to-top" aria-label="Back to Top">
+    <i class="fas fa-chevron-up"></i>
+  </a>
+
+  <!-- Scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="{% static 'core/js/scripts.js' %}"></script>
+  <script>
+    // Favorite Button Handling
+    document.addEventListener('DOMContentLoaded', function() {
+      // Handle state favorite button
+      const stateFavoriteForm = document.querySelector('form[action*="state_favorite"]');
+      if (stateFavoriteForm) {
+        stateFavoriteForm.addEventListener('submit', function(e) {
+          e.preventDefault();
+          const button = this.querySelector('button');
+          const isFavorited = button.classList.contains('btn-danger');
+          
+          // Show loading state
+          button.disabled = true;
+          button.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Processing...';
+          
+          // Submit the form
+          fetch(this.action, {
+            method: 'POST',
+            body: new FormData(this),
+            headers: {
+              'X-CSRFToken': this.querySelector('[name=csrfmiddlewaretoken]').value,
+              'X-Requested-With': 'XMLHttpRequest'
+            }
+          })
+          .then(response => {
+            if (!response.ok) {
+              throw new Error('Network response was not ok');
+            }
+            return response.json();
+          })
+          .then(data => {
+            if (data.success) {
+              // Update button state
+              if (isFavorited) {
+                button.className = 'btn btn-outline-light btn-sm mt-2';
+                button.innerHTML = '<i class="far fa-heart"></i> Add to Favorites';
+              } else {
+                button.className = 'btn btn-danger btn-sm mt-2';
+                button.innerHTML = '<i class="fas fa-heart"></i> Remove from Favorites';
+              }
+              // Update the form action for the next click
+              const newAction = isFavorited ? 
+                this.action.replace('remove_state_favorite', 'add_state_favorite') :
+                this.action.replace('add_state_favorite', 'remove_state_favorite');
+              this.action = newAction;
+            }
+          })
+          .catch(error => {
+            console.error('Error:', error);
+            // Reset button state on error
+            button.disabled = false;
+            if (isFavorited) {
+              button.innerHTML = '<i class="fas fa-heart"></i> Remove from Favorites';
+            } else {
+              button.innerHTML = '<i class="far fa-heart"></i> Add to Favorites';
+            }
+          })
+          .finally(() => {
+            button.disabled = false;
+          });
+        });
+      }
+
+      // Handle place favorite buttons
+      const placeFavoriteForms = document.querySelectorAll('form[action*="favorite"]');
+      placeFavoriteForms.forEach(form => {
+        form.addEventListener('submit', function(e) {
+          e.preventDefault();
+          const button = this.querySelector('button');
+          const isFavorited = button.classList.contains('btn-danger');
+          
+          // Show loading state
+          button.disabled = true;
+          button.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Processing...';
+          
+          // Submit the form
+          fetch(this.action, {
+            method: 'POST',
+            body: new FormData(this),
+            headers: {
+              'X-CSRFToken': this.querySelector('[name=csrfmiddlewaretoken]').value,
+              'X-Requested-With': 'XMLHttpRequest'
+            }
+          })
+          .then(response => {
+            if (!response.ok) {
+              throw new Error('Network response was not ok');
+            }
+            return response.json();
+          })
+          .then(data => {
+            if (data.success) {
+              // Update button state
+              if (isFavorited) {
+                button.className = 'btn btn-outline-primary btn-sm mt-2';
+                button.innerHTML = '<i class="far fa-heart"></i> Add to Favorites';
+              } else {
+                button.className = 'btn btn-danger btn-sm mt-2';
+                button.innerHTML = '<i class="fas fa-heart"></i> Remove from Favorites';
+              }
+              // Update the form action for the next click
+              const newAction = isFavorited ? 
+                this.action.replace('remove_favorite', 'add_favorite') :
+                this.action.replace('add_favorite', 'remove_favorite');
+              this.action = newAction;
+            }
+          })
+          .catch(error => {
+            console.error('Error:', error);
+            // Reset button state on error
+            button.disabled = false;
+            if (isFavorited) {
+              button.innerHTML = '<i class="fas fa-heart"></i> Remove from Favorites';
+            } else {
+              button.innerHTML = '<i class="far fa-heart"></i> Add to Favorites';
+            }
+          })
+          .finally(() => {
+            button.disabled = false;
+          });
+        });
+      });
+    });
+
+    // Back to Top Button
+    const backToTopButton = document.querySelector('.back-to-top');
+    
+    window.addEventListener('scroll', () => {
+      if (window.scrollY > 300) {
+        backToTopButton.classList.add('visible');
+      } else {
+        backToTopButton.classList.remove('visible');
+      }
+    });
+
+    backToTopButton.addEventListener('click', (e) => {
+      e.preventDefault();
+      window.scrollTo({
+        top: 0,
+        behavior: 'smooth'
+      });
+    });
+
+    // Active Navigation Link
+    const sections = document.querySelectorAll('.section');
+    const navLinks = document.querySelectorAll('.secondary-nav .nav-link');
+
+    window.addEventListener('scroll', () => {
+      let current = '';
+      
+      sections.forEach(section => {
+        const sectionTop = section.offsetTop;
+        const sectionHeight = section.clientHeight;
+        
+        if (window.scrollY >= (sectionTop - 200)) {
+          current = section.getAttribute('id');
+        }
+      });
+
+      navLinks.forEach(link => {
+        link.classList.remove('active');
+        if (link.getAttribute('href').substring(1) === current) {
+          link.classList.add('active');
+        }
+      });
+    });
+
+    // Smooth Scroll for Navigation
+    document.querySelectorAll('.secondary-nav .nav-link').forEach(link => {
+      link.addEventListener('click', (e) => {
+        e.preventDefault();
+        const targetId = link.getAttribute('href').substring(1);
+        const targetSection = document.getElementById(targetId);
+        
+        if (targetSection) {
+          targetSection.scrollIntoView({
+            behavior: 'smooth'
+          });
+        }
+      });
+    });
+  </script>
+
+</body>
+</html> 
