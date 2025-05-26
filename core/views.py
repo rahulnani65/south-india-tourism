@@ -21,6 +21,9 @@ def state_detail(request, state_slug):
     state = get_object_or_404(State, name__iexact=state_slug.replace('-', ' '))
     places = Place.objects.filter(state=state)
     hotels = Hotel.objects.filter(place__state=state)
+    reviews = Review.objects.filter(place__state=state).order_by('-created_on')[:5]
+    itineraries = Itinerary.objects.filter(state=state).order_by('day')
+    transport_options = TransportationOption.objects.filter(state=state)
     
     # Get the template name based on the state
     template_name = f'core/states/{state.name.lower().replace(" ", "_")}.html'
@@ -29,12 +32,64 @@ def state_detail(request, state_slug):
     if not os.path.exists(os.path.join(settings.BASE_DIR, 'core', 'templates', template_name)):
         template_name = 'core/state.html'
     
+    # Get weather data for the state's main city
+    weather_data = None
+    if state.name == 'Andhra Pradesh':
+        weather_data = get_weather_data('Visakhapatnam')
+    elif state.name == 'Tamil Nadu':
+        weather_data = get_weather_data('Chennai')
+    elif state.name == 'Kerala':
+        weather_data = get_weather_data('Kochi')
+    elif state.name == 'Karnataka':
+        weather_data = get_weather_data('Bangalore')
+    elif state.name == 'Telangana':
+        weather_data = get_weather_data('Hyderabad')
+    
     context = {
         'state': state,
         'places': places,
         'hotels': hotels,
+        'reviews': reviews,
+        'itineraries': itineraries,
+        'transport_options': transport_options,
+        'weather_data': weather_data,
     }
     return render(request, template_name, context)
+
+def get_weather_data(city):
+    api_key = "0b8486e199e0b1fc6fd9897e7190f88c"  # Your OpenWeatherMap API key
+    url = f"http://api.openweathermap.org/data/2.5/weather?q={city}&appid={api_key}&units=metric"
+    try:
+        response = requests.get(url)
+        data = response.json()
+        if response.status_code == 200:
+            weather_data = {
+                'city': city,
+                'temperature': data['main']['temp'],
+                'humidity': data['main']['humidity'],
+                'condition': data['weather'][0]['description'].capitalize(),
+            }
+            suggestions = []
+            safety_tips = []
+            temp = weather_data['temperature']
+            condition = weather_data['condition'].lower()
+            
+            if "rain" in condition:
+                suggestions.append(f"It's raining in {city}—visit indoor attractions.")
+                safety_tips.append("Avoid coastal areas due to potential flooding.")
+            elif temp > 30:
+                suggestions.append(f"It's hot today in {city}—stay hydrated and visit shaded spots.")
+                safety_tips.append("Wear sunscreen and light clothing to protect against the heat.")
+            else:
+                suggestions.append(f"It's a pleasant day in {city}—perfect for outdoor activities!")
+                safety_tips.append("Keep an eye on your belongings in crowded areas.")
+            
+            weather_data['suggestions'] = suggestions
+            weather_data['safety_tips'] = safety_tips
+            return weather_data
+    except Exception as e:
+        print(f"Error fetching weather data: {e}")
+    return None
 
 def post_detail(request, post_id):
     post = get_object_or_404(Post, id=post_id)

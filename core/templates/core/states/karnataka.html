@@ -9,8 +9,33 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link rel="stylesheet" href="{% static 'core/css/style.css' %}">
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600&family=Poppins:wght@300;500&display=swap" rel="stylesheet">
+  <style>
+    .hero-section {
+      background: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url('{% static "core/images/karnataka.jpg" %}');
+      background-size: cover;
+      background-position: center;
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      color: white;
+    }
+  </style>
 </head>
 <body>
+  <!-- Messages Section -->
+  {% if messages %}
+    <div class="messages">
+      {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+          {{ message }}
+          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+
   <!-- Navbar -->
   <nav class="navbar navbar-expand-lg navbar-dark bg-custom sticky-top">
     <div class="container-fluid">
@@ -47,12 +72,12 @@
   </nav>
 
   <!-- Hero Section -->
-  <section class="hero-section" style="background-image: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url('{% static 'core/images/karnataka.jpg' %}');">
+  <section class="hero-section">
     <div class="hero-overlay">
       <h1 class="hero-title text-white animate__animated animate__fadeIn">Discover Karnataka</h1>
-      <p class="hero-subtitle text-white animate__animated animate__fadeIn animate__delay-1s">Experience the rich heritage and vibrant culture of Karnataka</p>
+      <p class="hero-subtitle text-white animate__animated animate__fadeIn animate__delay-1s">Experience the One State, Many Worlds</p>
       {% if user.is_authenticated %}
-        {% if is_favorited %}
+        {% if state in user.favorite_states.all %}
           <form action="{% url 'remove_state_favorite' state.id %}" method="post" class="d-inline">
             {% csrf_token %}
             <button type="submit" class="btn btn-danger btn-sm mt-2">
@@ -183,7 +208,7 @@
           {% for place in places %}
             <div class="col-md-4 mb-4">
               <div class="card place-card h-100">
-                <img src="{% static 'core/images/'|add:place.name|lower|add:'.jpg' %}" class="card-img-top" alt="{{ place.name }}" onerror="this.src='{% static 'core/images/placeholder.jpg' %}'">
+                <img src="{% static 'core/images/'|add:place.name|lower|add:'.jpg' %}" class="card-img-top" alt="{{ place.name }}" >
                 <div class="card-body">
                   <h5 class="card-title">{{ place.name }} <span class="badge bg-secondary">{{ place.category }}</span></h5>
                   <p class="card-text">{{ place.description }}</p>
@@ -295,35 +320,43 @@
     <!-- Weather and Real-Time Updates -->
     <section class="weather-section py-6" id="weather">
       <div class="container">
-        <h2 class="section-title text-center mb-5">Weather Updates</h2>
-        <div class="row">
-          <div class="col-md-6 mb-4">
-            <div class="card weather-card h-100">
-              <div class="card-body">
-                <h4>Current Weather in Chennai</h4>
-                <div id="weather-widget">
-                  <div class="spinner-border text-primary" role="status">
-                    <span class="visually-hidden">Loading...</span>
+        <h2 class="section-title text-center mb-5">Current Weather in Bangalore</h2>
+        {% if weather_data %}
+          <div class="row justify-content-center">
+            <div class="col-md-6">
+              <div class="card weather-card">
+                <div class="card-body text-center">
+                  <h3 class="card-title">{{ weather_data.city }}</h3>
+                  <div class="weather-info">
+                    <p class="temperature">{{ weather_data.temperature }}°C</p>
+                    <p class="condition">{{ weather_data.condition }}</p>
+                    <p class="humidity">Humidity: {{ weather_data.humidity }}%</p>
                   </div>
-                  <p>Loading weather data...</p>
+                  <div class="weather-suggestions mt-4">
+                    <h4>Travel Suggestions</h4>
+                    <ul class="list-unstyled">
+                      {% for suggestion in weather_data.suggestions %}
+                        <li><i class="fas fa-check-circle text-success"></i> {{ suggestion }}</li>
+                      {% endfor %}
+                    </ul>
+                  </div>
+                  <div class="weather-safety mt-4">
+                    <h4>Safety Tips</h4>
+                    <ul class="list-unstyled">
+                      {% for tip in weather_data.safety_tips %}
+                        <li><i class="fas fa-exclamation-triangle text-warning"></i> {{ tip }}</li>
+                      {% endfor %}
+                    </ul>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
-          <div class="col-md-6 mb-4">
-            <div class="card weather-card h-100">
-              <div class="card-body">
-                <h4>Activity Suggestions & Safety Tips</h4>
-                <div id="weather-suggestions">
-                  <div class="spinner-border text-primary" role="status">
-                    <span class="visually-hidden">Loading...</span>
-                  </div>
-                  <p>Loading suggestions...</p>
-                </div>
-              </div>
-            </div>
+        {% else %}
+          <div class="text-center">
+            <p>Weather information is currently unavailable.</p>
           </div>
-        </div>
+        {% endif %}
       </div>
     </section>
 
@@ -432,190 +465,26 @@
 
   <!-- Scripts -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-  <script src="{% static 'core/js/scripts.js' %}"></script>
+  <script src="https://unpkg.com/aos@next/dist/aos.js"></script>
   <script>
-    // Favorite Button Handling
-    document.addEventListener('DOMContentLoaded', function() {
-      // Handle state favorite button
-      const stateFavoriteForm = document.querySelector('form[action*="state_favorite"]');
-      if (stateFavoriteForm) {
-        stateFavoriteForm.addEventListener('submit', function(e) {
-          e.preventDefault();
-          const button = this.querySelector('button');
-          const isFavorited = button.classList.contains('btn-danger');
-          
-          // Show loading state
-          button.disabled = true;
-          button.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Processing...';
-          
-          // Submit the form
-          fetch(this.action, {
-            method: 'POST',
-            body: new FormData(this),
-            headers: {
-              'X-CSRFToken': this.querySelector('[name=csrfmiddlewaretoken]').value,
-              'X-Requested-With': 'XMLHttpRequest'
-            }
-          })
-          .then(response => {
-            if (!response.ok) {
-              throw new Error('Network response was not ok');
-            }
-            return response.json();
-          })
-          .then(data => {
-            if (data.success) {
-              // Update button state
-              if (isFavorited) {
-                button.className = 'btn btn-outline-light btn-sm mt-2';
-                button.innerHTML = '<i class="far fa-heart"></i> Add to Favorites';
-              } else {
-                button.className = 'btn btn-danger btn-sm mt-2';
-                button.innerHTML = '<i class="fas fa-heart"></i> Remove from Favorites';
-              }
-              // Update the form action for the next click
-              const newAction = isFavorited ? 
-                this.action.replace('remove_state_favorite', 'add_state_favorite') :
-                this.action.replace('add_state_favorite', 'remove_state_favorite');
-              this.action = newAction;
-            }
-          })
-          .catch(error => {
-            console.error('Error:', error);
-            // Reset button state on error
-            button.disabled = false;
-            if (isFavorited) {
-              button.innerHTML = '<i class="fas fa-heart"></i> Remove from Favorites';
-            } else {
-              button.innerHTML = '<i class="far fa-heart"></i> Add to Favorites';
-            }
-          })
-          .finally(() => {
-            button.disabled = false;
-          });
-        });
-      }
-
-      // Handle place favorite buttons
-      const placeFavoriteForms = document.querySelectorAll('form[action*="favorite"]');
-      placeFavoriteForms.forEach(form => {
-        form.addEventListener('submit', function(e) {
-          e.preventDefault();
-          const button = this.querySelector('button');
-          const isFavorited = button.classList.contains('btn-danger');
-          
-          // Show loading state
-          button.disabled = true;
-          button.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Processing...';
-          
-          // Submit the form
-          fetch(this.action, {
-            method: 'POST',
-            body: new FormData(this),
-            headers: {
-              'X-CSRFToken': this.querySelector('[name=csrfmiddlewaretoken]').value,
-              'X-Requested-With': 'XMLHttpRequest'
-            }
-          })
-          .then(response => {
-            if (!response.ok) {
-              throw new Error('Network response was not ok');
-            }
-            return response.json();
-          })
-          .then(data => {
-            if (data.success) {
-              // Update button state
-              if (isFavorited) {
-                button.className = 'btn btn-outline-primary btn-sm mt-2';
-                button.innerHTML = '<i class="far fa-heart"></i> Add to Favorites';
-              } else {
-                button.className = 'btn btn-danger btn-sm mt-2';
-                button.innerHTML = '<i class="fas fa-heart"></i> Remove from Favorites';
-              }
-              // Update the form action for the next click
-              const newAction = isFavorited ? 
-                this.action.replace('remove_favorite', 'add_favorite') :
-                this.action.replace('add_favorite', 'remove_favorite');
-              this.action = newAction;
-            }
-          })
-          .catch(error => {
-            console.error('Error:', error);
-            // Reset button state on error
-            button.disabled = false;
-            if (isFavorited) {
-              button.innerHTML = '<i class="fas fa-heart"></i> Remove from Favorites';
-            } else {
-              button.innerHTML = '<i class="far fa-heart"></i> Add to Favorites';
-            }
-          })
-          .finally(() => {
-            button.disabled = false;
-          });
-        });
-      });
-    });
-
-    // Back to Top Button
-    const backToTopButton = document.querySelector('.back-to-top');
-    
-    window.addEventListener('scroll', () => {
-      if (window.scrollY > 300) {
-        backToTopButton.classList.add('visible');
-      } else {
-        backToTopButton.classList.remove('visible');
+    // Navbar/Secondary Nav scroll effect for state pages
+    window.addEventListener('scroll', function() {
+      const navbar = document.querySelector('.navbar');
+      const secondaryNav = document.querySelector('.secondary-nav');
+      if (secondaryNav) {
+        if (window.scrollY > 100) {
+          navbar.style.display = 'none';
+          secondaryNav.classList.add('active');
+        } else {
+          navbar.style.display = '';
+          secondaryNav.classList.remove('active');
+        }
       }
     });
-
-    backToTopButton.addEventListener('click', (e) => {
-      e.preventDefault();
-      window.scrollTo({
-        top: 0,
-        behavior: 'smooth'
-      });
-    });
-
-    // Active Navigation Link
-    const sections = document.querySelectorAll('.section');
-    const navLinks = document.querySelectorAll('.secondary-nav .nav-link');
-
-    window.addEventListener('scroll', () => {
-      let current = '';
-      
-      sections.forEach(section => {
-        const sectionTop = section.offsetTop;
-        const sectionHeight = section.clientHeight;
-        
-        if (window.scrollY >= (sectionTop - 200)) {
-          current = section.getAttribute('id');
-        }
-      });
-
-      navLinks.forEach(link => {
-        link.classList.remove('active');
-        if (link.getAttribute('href').substring(1) === current) {
-          link.classList.add('active');
-        }
-      });
-    });
-
-    // Smooth Scroll for Navigation
-    document.querySelectorAll('.secondary-nav .nav-link').forEach(link => {
-      link.addEventListener('click', (e) => {
-        e.preventDefault();
-        const targetId = link.getAttribute('href').substring(1);
-        const targetSection = document.getElementById(targetId);
-        
-        if (targetSection) {
-          targetSection.scrollIntoView({
-            behavior: 'smooth'
-          });
-        }
-      });
-    });
+    // Initialize AOS
+    AOS.init({ duration: 1000, once: true });
   </script>
-
+  <script src="{% static 'core/js/scripts.js' %}"></script>
+  <script src="{% static 'core/js/state.js' %}"></script>
 </body>
-</html> 
-</html> 
+</html>
