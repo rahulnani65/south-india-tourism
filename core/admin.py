@@ -29,7 +29,7 @@ from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 from django.contrib.auth.models import User
 from django.shortcuts import render
-from .models import State, Place, Hotel, Contact
+from .models import State, Place, Hotel, Cuisine, Restaurant, Event, Itinerary, UserProfile, Review, TelegramUser
 
 # Unregister the default UserAdmin
 admin.site.unregister(User)
@@ -119,4 +119,10 @@ class StateAdmin(admin.ModelAdmin):
 # Register other models
 admin.site.register(Place)
 admin.site.register(Hotel)
-admin.site.register(Contact)
+admin.site.register(Cuisine)
+admin.site.register(Restaurant)
+admin.site.register(Event)
+admin.site.register(Itinerary)
+admin.site.register(UserProfile)
+admin.site.register(Review)
+admin.site.register(TelegramUser)

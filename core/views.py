@@ -21,7 +21,7 @@ def state_detail(request, state_slug):
     state = get_object_or_404(State, name__iexact=state_slug.replace('-', ' '))
     places = Place.objects.filter(state=state)
     hotels = Hotel.objects.filter(place__state=state)
-    reviews = Review.objects.filter(place__state=state).order_by('-created_on')[:5]
+    reviews = Review.objects.filter(place__state=state).order_by('-created_at')[:5]
     itineraries = Itinerary.objects.filter(state=state).order_by('day')
     transport_options = TransportationOption.objects.filter(state=state)
     
@@ -215,7 +215,7 @@ def remove_post_favorite(request, post_id):
 
 @login_required
 def my_favorites(request):
-    favorite_places = Place.objects.filter(favorited_by__user=request.user)
+    favorite_places = Place.objects.filter(favorited_by=request.user)
     favorite_states = State.objects.filter(favorites=request.user)
     return render(request, 'core/favorites.html', {
         'favorite_places': favorite_places,
@@ -267,7 +267,7 @@ def get_recommendations(request):
     places = Place.objects.filter(state=state)
     preferred_category = None
     if request.user.is_authenticated:
-        user_favorites = Place.objects.filter(favorited_by__user=request.user)
+        user_favorites = Place.objects.filter(favorited_by=request.user)
         if user_favorites.exists():
             categories = user_favorites.values('category').annotate(count=Count('category')).order_by('-count')
             if categories:

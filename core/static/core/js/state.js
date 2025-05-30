@@ -1,6 +1,12 @@
 // Back to Top Button
 const backToTopButton = document.querySelector('.back-to-top');
 
+// Client-side filtering (optional, currently handled by server-side redirect)
+document.addEventListener('DOMContentLoaded', function() {
+  // Placeholder for additional state-specific JavaScript functionality
+  console.log("State-specific JavaScript loaded.");
+});
+
 window.addEventListener('scroll', () => {
   if (window.scrollY > 300) {
     backToTopButton.classList.add('visible');

@@ -9,9 +9,17 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link rel="stylesheet" href="{% static 'core/css/style.css' %}">
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600&family=Poppins:wght@300;500&display=swap" rel="stylesheet">
+  <!-- Load Google Maps JavaScript API -->
+  <script>
+    (g=>{var h,a,k,p="The Google Maps JavaScript API",c="google",l="importLibrary",q="__ib__",m=document,b=window;b=b[c]||(b[c]={});var d=b.maps||(b.maps={}),r=new Set,e=new URLSearchParams,u=()=>h||(h=new Promise(async(f,n)=>{await (a=m.createElement("script"));e.set("libraries",[...r]+"");for(k in g)e.set(k.replace(/[A-Z]/g,t=>"_"+t[0].toLowerCase()),g[k]);e.set("callback",c+".maps."+q);a.src=`https://maps.${c}apis.com/maps/api/js?`+e;d[q]=f;a.onerror=()=>h=n(Error(p+" could not load."));a.nonce=m.querySelector("script[nonce]")?.nonce||"";m.head.append(a)}));d[l]?console.warn(p+" only loads once. Ignoring:",g):d[l]=(f,...n)=>r.add(f)&&u().then(()=>d[l](f,...n))})({
+      key: "YOUR_API_KEY",
+      v: "weekly",
+      libraries: "places"  // Include Places library for future use (nearby search)
+    });
+  </script>
   <style>
     .hero-section {
-      background: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url('{% static "core/images/tamil nadu.jpg" %}');
+      background: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url('{% static "core/images/tamil_nadu.jpg" %}');
       background-size: cover;
       background-position: center;
       height: 100vh;
@@ -20,6 +28,10 @@
       justify-content: center;
       text-align: center;
       color: white;
+    }
+    .place-card img {
+      height: 200px;
+      object-fit: cover;
     }
   </style>
 </head>
@@ -138,40 +150,34 @@
 
         <div class="tab-content" id="stateTabsContent">
           <div class="tab-pane fade show active" id="overview-tab-content" role="tabpanel" aria-labelledby="overview-tab">
-            <h2 class="section-title">Overview</h2>
+            <h2 class="section-title">{{ state.description }}</h2>
             <p class="section-content">
               Tamil Nadu, located in the southernmost part of India, is known for its ancient temples, classical arts, and rich cultural heritage. The state is home to magnificent Dravidian temples, beautiful hill stations, and pristine beaches. From the bustling city of Chennai to the spiritual town of Madurai, Tamil Nadu offers a perfect blend of tradition and modernity.
             </p>
           </div>
           <div class="tab-pane fade" id="history" role="tabpanel" aria-labelledby="history-tab">
             <h2 class="section-title">History</h2>
-            <p class="section-content">
-              Tamil Nadu has a rich historical legacy dating back to ancient times. The region was ruled by various dynasties including the Cholas, Pandyas, and Pallavas. The state played a crucial role in the development of Indian art, architecture, and literature, with notable contributions in temple architecture and classical music.
-            </p>
+            <p class="section-content">{{ state.history }}</p>
           </div>
           <div class="tab-pane fade" id="culture" role="tabpanel" aria-labelledby="culture-tab">
             <h2 class="section-title">Culture</h2>
-            <p class="section-content">
-              Tamil Nadu's culture is deeply rooted in tradition and spirituality. The state is known for its classical dance form Bharatanatyam, traditional music, and literature. The annual Pongal festival is a major cultural event. Tamil Nadu's cuisine is diverse, with specialties like Idli, Dosa, and Chettinad dishes.
-            </p>
+            <p class="section-content">{{ state.culture }}</p>
             <h4 class="mt-4">Cultural Safety Tips</h4>
             <ul class="safety-tips-list">
-              <li>Dress modestly when visiting temples and religious sites.</li>
-              <li>Always ask for permission before taking photos of locals, especially in rural areas.</li>
-              <li>Remove shoes before entering religious sites—it's a common custom in Tamil Nadu.</li>
+              {% for tip in state.cultural_safety_tips %}
+                <li>{{ tip }}</li>
+              {% empty %}
+                <li>No specific cultural safety tips available.</li>
+              {% endfor %}
             </ul>
           </div>
           <div class="tab-pane fade" id="climate" role="tabpanel" aria-labelledby="climate-tab">
             <h2 class="section-title">Climate</h2>
-            <p class="section-content">
-              Tamil Nadu experiences a tropical climate with three distinct seasons: summer (March to May), monsoon (June to September), and winter (October to February). The coastal region is humid, while the interior regions have a more moderate climate. Hill stations like Ooty and Kodaikanal offer pleasant weather throughout the year.
-            </p>
+            <p class="section-content">{{ state.climate }}</p>
           </div>
           <div class="tab-pane fade" id="best-time" role="tabpanel" aria-labelledby="best-time-tab">
             <h2 class="section-title">Best Time to Visit</h2>
-            <p class="section-content">
-              The best time to visit Tamil Nadu is between October and February when the weather is pleasant and ideal for sightseeing. This period avoids the hot summer months and the heavy monsoon rains, making it perfect for exploring temples, beaches, and hill stations.
-            </p>
+            <p class="section-content">{{ state.best_time_to_visit }}</p>
           </div>
         </div>
       </div>
@@ -204,34 +210,50 @@
           </select>
         </div>
 
-        <div class="row">
+        <!-- Places List -->
+        <div class="row" id="places-list">
           {% for place in places %}
-            <div class="col-md-4 mb-4">
+            <div class="col-md-4 mb-4 place-item" 
+                 data-category="{{ place.category }}" 
+                 data-entry-fee="{{ place.entry_fee|default:0 }}"
+                 data-family-friendly="{% if place.category in 'cultural,natural' %}true{% else %}false{% endif %}">
               <div class="card place-card h-100">
-                <img src="{% static 'core/images/'|add:place.name|lower|add:'.jpg' %}" class="card-img-top" alt="{{ place.name }}" >
+                {% with image_path='core/images/'|add:place.name|lower|slugify|add:'.jpg' %}
+                  <img src="{% static image_path %}" class="card-img-top" alt="{{ place.name }}">
+                {% endwith %}
                 <div class="card-body">
                   <h5 class="card-title">{{ place.name }} <span class="badge bg-secondary">{{ place.category }}</span></h5>
                   <p class="card-text">{{ place.description }}</p>
                   <p><strong>Location:</strong> {{ place.location|default:"Not specified" }}</p>
-                  <p><strong>Entry Fee:</strong> {% if place.entry_fee %}${{ place.entry_fee }}{% else %}Free{% endif %}</p>
+                  <p><strong>Entry Fee:</strong> {% if place.entry_fee %}₹{{ place.entry_fee }}{% else %}Free{% endif %}</p>
                   <p><strong>Visiting Hours:</strong> {{ place.visiting_hours|default:"Not specified" }}</p>
                   <p><strong>Safety Tip:</strong> {{ place.safety_tip|default:"Keep your belongings secure in crowded areas." }}</p>
+                  <!-- Map View Button -->
+                  {% if place.latitude and place.longitude %}
+                    <button class="btn btn-outline-success btn-sm mt-2" 
+                            data-bs-toggle="modal" 
+                            data-bs-target="#mapModal" 
+                            onclick="showPlaceOnMap({{ place.latitude }}, {{ place.longitude }}, '{{ place.name }}')">
+                      <i class="fas fa-map-marker-alt"></i> Map View
+                    </button>
+                  {% endif %}
                   {% if user.is_authenticated %}
-                    {% if place.is_favorited %}
-                      <form action="{% url 'remove_favorite' place.id %}" method="post" class="d-inline">
+                    {% if place in user.favorite_places.all %}
+                      <form action="{% url 'remove_favorite' place.id %}" method="post" class="d-inline favorite-form">
                         {% csrf_token %}
                         <button type="submit" class="btn btn-danger btn-sm mt-2">
                           <i class="fas fa-heart"></i> Remove from Favorites
                         </button>
                       </form>
                     {% else %}
-                      <form action="{% url 'add_favorite' place.id %}" method="post" class="d-inline">
+                      <form action="{% url 'add_favorite' place.id %}" method="post" class="d-inline favorite-form">
                         {% csrf_token %}
                         <button type="submit" class="btn btn-outline-primary btn-sm mt-2">
                           <i class="far fa-heart"></i> Add to Favorites
                         </button>
                       </form>
                     {% endif %}
+                    <a href="{% url 'add_review' place.id %}" class="btn btn-outline-secondary btn-sm mt-2">Add Review</a>
                   {% else %}
                     <a href="{% url 'login' %}" class="btn btn-outline-primary btn-sm mt-2">
                       <i class="far fa-heart"></i> Login to Add to Favorites
@@ -260,9 +282,11 @@
                 <h4>Iconic Dishes</h4>
                 <p>Indulge in Tamil Nadu's culinary delights:</p>
                 <ul>
-                  <li><strong>Idli and Dosa:</strong> Steamed rice cakes and crispy crepes served with sambar and chutney.</li>
-                  <li><strong>Chettinad Chicken:</strong> Spicy chicken curry with aromatic spices.</li>
-                  <li><strong>Pongal:</strong> A savory rice dish made with lentils and spices.</li>
+                  {% for cuisine in state.cuisines.all %}
+                    <li><strong>{{ cuisine.name }}:</strong> {{ cuisine.description }}</li>
+                  {% empty %}
+                    <li>No iconic dishes listed.</li>
+                  {% endfor %}
                 </ul>
               </div>
             </div>
@@ -271,16 +295,15 @@
             <div class="card cuisine-card h-100">
               <div class="card-body">
                 <h4>Top Restaurants</h4>
-                <div class="restaurant-item mb-3">
-                  <h6>Murugan Idli Shop (Chennai)</h6>
-                  <p><strong>Specialty:</strong> Traditional Tamil breakfast items.</p>
-                  <p><strong>Average Cost:</strong> ₹200 per person.</p>
-                </div>
-                <div class="restaurant-item mb-3">
-                  <h6>Karaikudi (Chennai)</h6>
-                  <p><strong>Specialty:</strong> Authentic Chettinad cuisine.</p>
-                  <p><strong>Average Cost:</strong> ₹800 per person.</p>
-                </div>
+                {% for restaurant in state.restaurants.all %}
+                  <div class="restaurant-item mb-3">
+                    <h6>{{ restaurant.name }}</h6>
+                    <p><strong>Specialty:</strong> {{ restaurant.specialty }}</p>
+                    <p><strong>Average Cost:</strong> ₹{{ restaurant.average_cost }} per person.</p>
+                  </div>
+                {% empty %}
+                  <p>No top restaurants listed.</p>
+                {% endfor %}
               </div>
             </div>
           </div>
@@ -293,26 +316,22 @@
       <div class="container">
         <h2 class="section-title text-center mb-5">Events and Festivals</h2>
         <div class="row">
-          <div class="col-md-4 mb-4">
-            <div class="card event-card h-100">
-              <div class="card-body">
-                <h5>Pongal Festival</h5>
-                <p><strong>Date:</strong> January</p>
-                <p><strong>Location:</strong> Throughout Tamil Nadu</p>
-                <p>A harvest festival celebrating the sun god and agricultural prosperity.</p>
+          {% for event in state.events.all %}
+            <div class="col-md-4 mb-4">
+              <div class="card event-card h-100">
+                <div class="card-body">
+                  <h5>{{ event.name }}</h5>
+                  <p><strong>Date:</strong> {{ event.date }}</p>
+                  <p><strong>Location:</strong> {{ event.location }}</p>
+                  <p>{{ event.description }}</p>
+                </div>
               </div>
             </div>
-          </div>
-          <div class="col-md-4 mb-4">
-            <div class="card event-card h-100">
-              <div class="card-body">
-                <h5>Madurai Meenakshi Temple Festival</h5>
-                <p><strong>Date:</strong> April-May</p>
-                <p><strong>Location:</strong> Madurai</p>
-                <p>A grand celebration featuring cultural performances and temple rituals.</p>
-              </div>
+          {% empty %}
+            <div class="col-12 text-center">
+              <p>No upcoming events or festivals listed.</p>
             </div>
-          </div>
+          {% endfor %}
         </div>
       </div>
     </section>
@@ -339,7 +358,7 @@
                         <li><i class="fas fa-check-circle text-success"></i> {{ suggestion }}</li>
                       {% endfor %}
                     </ul>
-                </div>
+                  </div>
                   <div class="weather-safety mt-4">
                     <h4>Safety Tips</h4>
                     <ul class="list-unstyled">
@@ -355,7 +374,7 @@
         {% else %}
           <div class="text-center">
             <p>Weather information is currently unavailable.</p>
-        </div>
+          </div>
         {% endif %}
       </div>
     </section>
@@ -369,10 +388,14 @@
             <div class="card ugc-card h-100">
               <div class="card-body">
                 <h4>User Reviews</h4>
-                <div class="review-item mb-3">
-                  <p><strong>John456</strong> (4.8/5): The Meenakshi Temple in Madurai is a masterpiece of Dravidian architecture. The evening aarti ceremony is a must-see!</p>
-                  <small class="text-muted">Posted on May 15, 2025</small>
-                </div>
+                {% for review in state.reviews.all %}
+                  <div class="review-item mb-3">
+                    <p><strong>{{ review.user.username }}</strong> ({{ review.rating }}/5): {{ review.comment }}</p>
+                    <small class="text-muted">Posted on {{ review.created_at|date:"F d, Y" }}</small>
+                  </div>
+                {% empty %}
+                  <p>No reviews available. Be the first to share your experience!</p>
+                {% endfor %}
               </div>
             </div>
           </div>
@@ -447,8 +470,46 @@
             </div>
           </div>
         </div>
+        <!-- Itinerary Suggestion -->
+        <div class="mt-5">
+          <h3 class="text-center">Suggested Itinerary</h3>
+          <div class="row">
+            {% for itinerary in state.itineraries.all %}
+              <div class="col-md-4 mb-4">
+                <div class="card itinerary-card h-100">
+                  <div class="card-body">
+                    <h5>Day {{ itinerary.day }}</h5>
+                    <p>{{ itinerary.description }}</p>
+                  </div>
+                </div>
+              </div>
+            {% empty %}
+              <div class="col-12 text-center">
+                <p>No itinerary suggestions available.</p>
+              </div>
+            {% endfor %}
+          </div>
+        </div>
       </div>
     </section>
+  </div>
+
+  <!-- Map Modal -->
+  <div class="modal fade" id="mapModal" tabindex="-1" aria-labelledby="mapModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="mapModalLabel">Place Location</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <div id="map" style="height: 400px; width: 100%;"></div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- Footer -->
@@ -481,8 +542,32 @@
         }
       }
     });
+
     // Initialize AOS
     AOS.init({ duration: 1000, once: true });
+
+    // Google Maps Functionality
+    let map;
+    let marker;
+
+    async function showPlaceOnMap(lat, lng, placeName) {
+      const { Map } = await google.maps.importLibrary("maps");
+      const { Marker } = await google.maps.importLibrary("marker");
+
+      map = new Map(document.getElementById("map"), {
+        zoom: 15,
+        center: { lat: lat, lng: lng },
+        mapId: "TOURISM_MAP_ID",
+      });
+
+      marker = new Marker({
+        map: map,
+        position: { lat: lat, lng: lng },
+        title: placeName,
+      });
+
+      document.getElementById("mapModalLabel").textContent = `Location of ${placeName}`;
+    }
   </script>
   <script src="{% static 'core/js/scripts.js' %}"></script>
   <script src="{% static 'core/js/state.js' %}"></script>

@@ -128,34 +128,63 @@ function fetchWeatherData() {
         });
 }
 
-function fetchRecommendations() {
-    const stateSlug = window.location.pathname.split('/').filter(Boolean).pop();
-    fetch(`/get-recommendations/?state_slug=${stateSlug}`)
-        .then(response => response.json())
-        .then(data => {
-            const recommendedPlaces = document.getElementById('recommended-places');
-            if (recommendedPlaces) {
-                if (data.success && data.recommendations.length > 0) {
-                    recommendedPlaces.innerHTML = data.recommendations.map(place => `
-                        <div class="col-md-4 mb-4">
-                            <div class="card place-card h-100">
-                                <div class="card-body">
-                                    <h5 class="card-title">${place.name} <span class="badge bg-secondary">${place.category}</span></h5>
-                                    <p class="card-text">${place.description}</p>
-                                </div>
-                            </div>
-                        </div>
-                    `).join('');
-                } else {
-                    recommendedPlaces.innerHTML = '<div class="col-12 text-center"><p>No recommendations available.</p></div>';
-                }
-            }
-        })
-        .catch(error => {
-            console.error('Error fetching recommendations:', error);
-            const recommendedPlaces = document.getElementById('recommended-places');
-            if (recommendedPlaces) {
-                recommendedPlaces.innerHTML = '<div class="col-12 text-center"><p>Error loading recommendations.</p></div>';
-            }
-        });
-}
+// Fetch personalized recommendations (placeholder)
+document.addEventListener('DOMContentLoaded', function() {
+  const recommendedPlacesDiv = document.getElementById('recommended-places');
+  if (recommendedPlacesDiv) {
+    // Simulate fetching recommendations (replace with actual API call)
+    setTimeout(() => {
+      recommendedPlacesDiv.innerHTML = `
+        <div class="col-md-4 mb-4">
+          <div class="card place-card h-100">
+            <img src="{% static 'core/images/meenakshi-temple.jpg' %}" class="card-img-top" alt="Meenakshi Temple">
+            <div class="card-body">
+              <h5 class="card-title">Meenakshi Temple <span class="badge bg-secondary">religious</span></h5>
+              <p class="card-text">A historic Hindu temple with towering gopurams, dedicated to Goddess Meenakshi.</p>
+            </div>
+          </div>
+        </div>
+      `;
+    }, 2000);
+  }
+
+  // Back to Top Button Visibility
+  const backToTopButton = document.querySelector('.back-to-top');
+  window.addEventListener('scroll', function() {
+    if (window.scrollY > 300) {
+      backToTopButton.classList.add('visible');
+    } else {
+      backToTopButton.classList.remove('visible');
+    }
+  });
+});
+// Fetch personalized recommendations (placeholder)
+document.addEventListener('DOMContentLoaded', function() {
+    const recommendedPlacesDiv = document.getElementById('recommended-places');
+    if (recommendedPlacesDiv) {
+      // Simulate fetching recommendations (replace with actual API call)
+      setTimeout(() => {
+        recommendedPlacesDiv.innerHTML = `
+          <div class="col-md-4 mb-4">
+            <div class="card place-card h-100">
+              <img src="{% static 'core/images/meenakshi-temple.jpg' %}" class="card-img-top" alt="Meenakshi Temple">
+              <div class="card-body">
+                <h5 class="card-title">Meenakshi Temple <span class="badge bg-secondary">religious</span></h5>
+                <p class="card-text">A historic Hindu temple with towering gopurams, dedicated to Goddess Meenakshi.</p>
+              </div>
+            </div>
+          </div>
+        `;
+      }, 2000);
+    }
+  
+    // Back to Top Button Visibility
+    const backToTopButton = document.querySelector('.back-to-top');
+    window.addEventListener('scroll', function() {
+      if (window.scrollY > 300) {
+        backToTopButton.classList.add('visible');
+      } else {
+        backToTopButton.classList.remove('visible');
+      }
+    });
+  });
