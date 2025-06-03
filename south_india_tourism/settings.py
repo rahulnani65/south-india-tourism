@@ -11,10 +11,18 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
 from pathlib import Path
+import os
+from dotenv import load_dotenv
+import logging
+
+# Load environment variables from .env file
+load_dotenv()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+# Configure logger
+logger = logging.getLogger(__name__)
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
@@ -144,3 +152,12 @@ LOGOUT_REDIRECT_URL = '/'  # Redirect to home page after logout (already handled
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # AUTH_USER_MODEL = 'core.CustomUser'
+
+# API Configuration
+COMPOSIO_API_KEY = os.getenv('COMPOSIO_API_KEY')
+if not COMPOSIO_API_KEY:
+    logger.warning("COMPOSIO_API_KEY not found in environment variables. Some features may not work.")
+
+GOOGLE_MAPS_API_KEY = os.getenv('GOOGLE_MAPS_API_KEY')
+if not GOOGLE_MAPS_API_KEY:
+    logger.warning("GOOGLE_MAPS_API_KEY not found in environment variables. Maps features will not work.")

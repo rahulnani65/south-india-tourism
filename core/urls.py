@@ -19,4 +19,11 @@ urlpatterns = [
     path('get-weather/', views.get_weather, name='get_weather'),
     path('get-recommendations/', views.get_recommendations, name='get_recommendations'),
     path('submit-inquiry/<int:state_id>/', views.submit_inquiry, name='submit_inquiry'),
+    # Map and nearby places endpoints
+    path('map/', views.map_view, name='map_view'),
+    path('api/nearby-places/', views.nearby_places, name='nearby_places'),
+    path('api/place-details/', views.fetch_place_info, name='fetch_place_info'),
+    path('api/route-info/', views.fetch_route_info, name='fetch_route_info'),
+    path('test-api/', views.test_api_view, name='test_api'),
+    path('api/github/repos/', views.fetch_github_repos, name='github_repos'),
 ]

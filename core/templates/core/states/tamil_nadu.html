@@ -33,6 +33,19 @@
       height: 200px;
       object-fit: cover;
     }
+    .map-modal .modal-dialog {
+      max-width: 800px;
+    }
+    .map-container {
+      height: 400px;
+      width: 100%;
+    }
+    .place-card .map-btn {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      z-index: 1;
+    }
   </style>
 </head>
 <body>
@@ -212,53 +225,127 @@
 
         <!-- Places List -->
         <div class="row" id="places-list">
-          {% for place in places %}
+          {% for place_data in places_with_weather %}
             <div class="col-md-4 mb-4 place-item" 
-                 data-category="{{ place.category }}" 
-                 data-entry-fee="{{ place.entry_fee|default:0 }}"
-                 data-family-friendly="{% if place.category in 'cultural,natural' %}true{% else %}false{% endif %}">
+                 data-category="{{ place_data.place.category }}" 
+                 data-entry-fee="{{ place_data.place.entry_fee|default:0 }}"
+                 data-family-friendly="{% if place_data.place.category in 'cultural,natural' %}true{% else %}false{% endif %}">
               <div class="card place-card h-100">
-                {% with image_path='core/images/'|add:place.name|lower|slugify|add:'.jpg' %}
-                  <img src="{% static image_path %}" class="card-img-top" alt="{{ place.name }}">
+                {% with image_path='core/images/'|add:place_data.place.name|lower|slugify|add:'.jpg' %}
+                  <img src="{% static image_path %}" class="card-img-top" alt="{{ place_data.place.name }}">
                 {% endwith %}
+                <button class="btn btn-primary btn-sm map-btn" 
+                        data-bs-toggle="modal" 
+                        data-bs-target="#mapModal{{ place_data.place.id }}"
+                        title="View on Map">
+                  <i class="fas fa-map-marker-alt"></i>
+                </button>
                 <div class="card-body">
-                  <h5 class="card-title">{{ place.name }} <span class="badge bg-secondary">{{ place.category }}</span></h5>
-                  <p class="card-text">{{ place.description }}</p>
-                  <p><strong>Location:</strong> {{ place.location|default:"Not specified" }}</p>
-                  <p><strong>Entry Fee:</strong> {% if place.entry_fee %}₹{{ place.entry_fee }}{% else %}Free{% endif %}</p>
-                  <p><strong>Visiting Hours:</strong> {{ place.visiting_hours|default:"Not specified" }}</p>
-                  <p><strong>Safety Tip:</strong> {{ place.safety_tip|default:"Keep your belongings secure in crowded areas." }}</p>
-                  <!-- Map View Button -->
-                  {% if place.latitude and place.longitude %}
-                    <button class="btn btn-outline-success btn-sm mt-2" 
-                            data-bs-toggle="modal" 
-                            data-bs-target="#mapModal" 
-                            onclick="showPlaceOnMap({{ place.latitude }}, {{ place.longitude }}, '{{ place.name }}')">
-                      <i class="fas fa-map-marker-alt"></i> Map View
-                    </button>
+                  <h5 class="card-title">{{ place_data.place.name }} <span class="badge bg-secondary">{{ place_data.place.category }}</span></h5>
+                  <p class="card-text">{{ place_data.place.description }}</p>
+                  <p><strong>Location:</strong> {{ place_data.place.location|default:"Not specified" }}</p>
+                  <p><strong>Entry Fee:</strong> {% if place_data.place.entry_fee %}₹{{ place_data.place.entry_fee }}{% else %}Free{% endif %}</p>
+                  <p><strong>Visiting Hours:</strong> {{ place_data.place.visiting_hours|default:"Not specified" }}</p>
+                  
+                  <!-- Weather Information -->
+                  {% if place_data.weather %}
+                    <div class="weather-info mt-3 p-3 bg-light rounded">
+                      <h6 class="mb-2">Current Weather in {{ place_data.place.location }}</h6>
+                      <div class="d-flex align-items-center mb-2">
+                        <img src="http://openweathermap.org/img/wn/{{ place_data.weather.icon }}@2x.png" alt="{{ place_data.weather.condition }}">
+                        <div class="ms-2">
+                          <p class="mb-0"><strong>{{ place_data.weather.temperature }}°C</strong></p>
+                          <p class="mb-0">{{ place_data.weather.condition }}</p>
+                        </div>
+                      </div>
+                      <p class="mb-1"><small>Humidity: {{ place_data.weather.humidity }}%</small></p>
+                      <p class="mb-1"><small>Wind: {{ place_data.weather.wind_speed }} m/s</small></p>
+                      
+                      <!-- Weather Suggestions -->
+                      <div class="mt-2">
+                        <p class="mb-1"><small><strong>Suggestions:</strong></small></p>
+                        <ul class="list-unstyled mb-0">
+                          {% for suggestion in place_data.weather.suggestions %}
+                            <li><small><i class="fas fa-info-circle text-info"></i> {{ suggestion }}</small></li>
+                          {% endfor %}
+                        </ul>
+                      </div>
+                      
+                      <!-- Safety Tips -->
+                      <div class="mt-2">
+                        <p class="mb-1"><small><strong>Safety Tips:</strong></small></p>
+                        <ul class="list-unstyled mb-0">
+                          {% for tip in place_data.weather.safety_tips %}
+                            <li><small><i class="fas fa-exclamation-triangle text-warning"></i> {{ tip }}</small></li>
+                          {% endfor %}
+                        </ul>
+                      </div>
+                    </div>
                   {% endif %}
+
+                  <p class="mt-3"><strong>Safety Tip:</strong> {{ place_data.place.safety_tip|default:"Keep your belongings secure in crowded areas." }}</p>
                   {% if user.is_authenticated %}
-                    {% if place in user.favorite_places.all %}
-                      <form action="{% url 'remove_favorite' place.id %}" method="post" class="d-inline favorite-form">
+                    {% if place_data.place in user.favorite_places.all %}
+                      <form action="{% url 'remove_favorite' place_data.place.id %}" method="post" class="d-inline favorite-form">
                         {% csrf_token %}
                         <button type="submit" class="btn btn-danger btn-sm mt-2">
                           <i class="fas fa-heart"></i> Remove from Favorites
                         </button>
                       </form>
                     {% else %}
-                      <form action="{% url 'add_favorite' place.id %}" method="post" class="d-inline favorite-form">
+                      <form action="{% url 'add_favorite' place_data.place.id %}" method="post" class="d-inline favorite-form">
                         {% csrf_token %}
                         <button type="submit" class="btn btn-outline-primary btn-sm mt-2">
                           <i class="far fa-heart"></i> Add to Favorites
                         </button>
                       </form>
                     {% endif %}
-                    <a href="{% url 'add_review' place.id %}" class="btn btn-outline-secondary btn-sm mt-2">Add Review</a>
+                    <a href="{% url 'add_review' place_data.place.id %}" class="btn btn-outline-secondary btn-sm mt-2">Add Review</a>
                   {% else %}
                     <a href="{% url 'login' %}" class="btn btn-outline-primary btn-sm mt-2">
                       <i class="far fa-heart"></i> Login to Add to Favorites
                     </a>
                   {% endif %}
+                </div>
+              </div>
+            </div>
+
+            <!-- Map Modal for each place -->
+            <div class="modal fade map-modal" id="mapModal{{ place_data.place.id }}" tabindex="-1" aria-labelledby="mapModalLabel{{ place_data.place.id }}" aria-hidden="true">
+              <div class="modal-dialog">
+                <div class="modal-content">
+                  <div class="modal-header">
+                    <h5 class="modal-title" id="mapModalLabel{{ place_data.place.id }}">{{ place_data.place.name }} - Location</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                  </div>
+                  <div class="modal-body">
+                    <div class="map-container">
+                      <iframe
+                        width="100%"
+                        height="400"
+                        frameborder="0"
+                        style="border:0"
+                        referrerpolicy="no-referrer-when-downgrade"
+                        src="https://www.google.com/maps/embed/v1/place?key={{ GOOGLE_MAPS_API_KEY }}&q={{ place_data.place.name }},{{ place_data.place.location }}&center={{ place_data.place.latitude }},{{ place_data.place.longitude }}&zoom=15"
+                        allowfullscreen>
+                      </iframe>
+                    </div>
+                    <div class="mt-3">
+                      <h6>Location Details:</h6>
+                      <p><strong>Address:</strong> {{ place_data.place.name }}, {{ place_data.place.location }}</p>
+                      {% if place_data.place.latitude and place_data.place.longitude %}
+                        <p><strong>Coordinates:</strong> {{ place_data.place.latitude }}, {{ place_data.place.longitude }}</p>
+                      {% endif %}
+                    </div>
+                  </div>
+                  <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <a href="https://www.google.com/maps/search/?api=1&query={{ place_data.place.location|urlencode }}" 
+                       class="btn btn-primary" 
+                       target="_blank">
+                      Open in Google Maps
+                    </a>
+                  </div>
                 </div>
               </div>
             </div>
@@ -492,24 +579,6 @@
         </div>
       </div>
     </section>
-  </div>
-
-  <!-- Map Modal -->
-  <div class="modal fade" id="mapModal" tabindex="-1" aria-labelledby="mapModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title" id="mapModalLabel">Place Location</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-        </div>
-        <div class="modal-body">
-          <div id="map" style="height: 400px; width: 100%;"></div>
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-        </div>
-      </div>
-    </div>
   </div>
 
   <!-- Footer -->

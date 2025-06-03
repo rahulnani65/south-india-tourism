@@ -1,0 +1,204 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}API Test - South India Tourism{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2 class="mb-4">API Testing Page</h2>
+    
+    <!-- API Key Verification -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <h5 class="card-title">API Key Verification</h5>
+            <button onclick="verifyAPIKeys()" class="btn btn-primary">Verify API Keys</button>
+            <pre id="keyVerification" class="mt-3 bg-light p-3 rounded"></pre>
+        </div>
+    </div>
+
+    <!-- Route Planning Test -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <h5 class="card-title">Test Route Planning</h5>
+            <div class="row">
+                <div class="col-md-5">
+                    <div class="mb-3">
+                        <label for="origin" class="form-label">Origin</label>
+                        <input type="text" class="form-control" id="origin" placeholder="e.g., Meenakshi Temple, Madurai">
+                    </div>
+                </div>
+                <div class="col-md-5">
+                    <div class="mb-3">
+                        <label for="destination" class="form-label">Destination</label>
+                        <input type="text" class="form-control" id="destination" placeholder="e.g., Marina Beach, Chennai">
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <div class="mb-3">
+                        <label for="travelMode" class="form-label">Mode</label>
+                        <select class="form-control" id="travelMode">
+                            <option value="driving">Driving</option>
+                            <option value="walking">Walking</option>
+                            <option value="transit">Transit</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <button onclick="fetchRoutePlanning()" class="btn btn-primary">Get Route</button>
+            <div class="mt-4">
+                <h6>Response:</h6>
+                <pre id="routeResponse" class="bg-light p-3 rounded" style="max-height: 400px; overflow-y: auto;"></pre>
+            </div>
+        </div>
+    </div>
+
+    <!-- Nearby Places Test -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <h5 class="card-title">Test Nearby Places</h5>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="location" class="form-label">Location</label>
+                        <input type="text" class="form-control" id="location" placeholder="e.g., Meenakshi Temple, Madurai">
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="placeType" class="form-label">Place Type</label>
+                        <select class="form-control" id="placeType">
+                            <option value="lodging">Hotels</option>
+                            <option value="restaurant">Restaurants</option>
+                            <option value="tourist_attraction">Tourist Attractions</option>
+                            <option value="shopping_mall">Shopping</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <button onclick="fetchNearbyPlaces()" class="btn btn-primary">Find Nearby Places</button>
+            <div class="mt-4">
+                <h6>Response:</h6>
+                <pre id="nearbyResponse" class="bg-light p-3 rounded" style="max-height: 400px; overflow-y: auto;"></pre>
+            </div>
+        </div>
+    </div>
+
+    <!-- Place Details Test -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <h5 class="card-title">Test Place Details API</h5>
+            <div class="mb-3">
+                <label for="placeName" class="form-label">Place Name</label>
+                <input type="text" class="form-control" id="placeName" value="Hyderabad">
+            </div>
+            <button onclick="fetchPlaceDetails()" class="btn btn-primary">Fetch Details</button>
+            <div class="mt-4">
+                <h6>Response:</h6>
+                <pre id="placeResponse" class="bg-light p-3 rounded" style="max-height: 400px; overflow-y: auto;"></pre>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function verifyAPIKeys() {
+    const verificationElement = document.getElementById('keyVerification');
+    verificationElement.textContent = 'Verifying API keys...';
+    
+    // Test all APIs
+    Promise.all([
+        fetch('/api/place-details/?place=Hyderabad'),
+        fetch('/api/github/repos/')
+    ])
+    .then(responses => Promise.all(responses.map(res => res.json())))
+    .then(([placeData, githubData]) => {
+        const verification = {
+            google_maps: {
+                status: 'success',
+                message: 'Google Maps API key is configured'
+            },
+            composio: {
+                status: 'success',
+                message: 'Composio API key is working'
+            },
+            github: {
+                status: 'success',
+                message: 'GitHub integration is working'
+            }
+        };
+        
+        if (placeData.error) {
+            verification.composio = {
+                status: 'error',
+                message: placeData.error
+            };
+        }
+        
+        if (githubData.error) {
+            verification.github = {
+                status: 'error',
+                message: githubData.error
+            };
+        }
+        
+        verificationElement.textContent = JSON.stringify(verification, null, 2);
+    })
+    .catch(error => {
+        verificationElement.textContent = `Error verifying API keys: ${error.message}`;
+    });
+}
+
+function fetchRoutePlanning() {
+    const origin = document.getElementById('origin').value;
+    const destination = document.getElementById('destination').value;
+    const mode = document.getElementById('travelMode').value;
+    const responseElement = document.getElementById('routeResponse');
+    
+    responseElement.textContent = 'Fetching route information...';
+    
+    fetch(`/api/route-info/?origin=${encodeURIComponent(origin)}&destination=${encodeURIComponent(destination)}&mode=${mode}`)
+        .then(response => response.json())
+        .then(data => {
+            responseElement.textContent = JSON.stringify(data, null, 2);
+        })
+        .catch(error => {
+            responseElement.textContent = `Error: ${error.message}`;
+        });
+}
+
+function fetchNearbyPlaces() {
+    const location = document.getElementById('location').value;
+    const type = document.getElementById('placeType').value;
+    const responseElement = document.getElementById('nearbyResponse');
+    
+    responseElement.textContent = 'Fetching nearby places...';
+    
+    fetch(`/api/nearby-places/?location=${encodeURIComponent(location)}&type=${type}`)
+        .then(response => response.json())
+        .then(data => {
+            responseElement.textContent = JSON.stringify(data, null, 2);
+        })
+        .catch(error => {
+            responseElement.textContent = `Error: ${error.message}`;
+        });
+}
+
+function fetchPlaceDetails() {
+    const placeName = document.getElementById('placeName').value;
+    const responseElement = document.getElementById('placeResponse');
+    
+    responseElement.textContent = 'Fetching place details...';
+    
+    fetch(`/api/place-details/?place=${encodeURIComponent(placeName)}`)
+        .then(response => response.json())
+        .then(data => {
+            responseElement.textContent = JSON.stringify(data, null, 2);
+        })
+        .catch(error => {
+            responseElement.textContent = `Error: ${error.message}`;
+        });
+}
+</script>
+{% endblock %} 

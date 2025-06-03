@@ -7,10 +7,16 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.http import JsonResponse
 from django.db.models import Count
+from django.views.decorators.http import require_GET
+from django.core.cache import cache
 from .models import State, Contact, Hotel, Place, UserProfile, Favorite, Review, Post, Itinerary, TransportationOption, Inquiry
 from .forms import UserProfileForm
 from django.conf import settings
+from composio_openai import ComposioToolSet, Action
+from .composio_utils import get_place_details, get_route_planning
+import logging
 
+logger = logging.getLogger(__name__)
 
 def home(request):
     states = State.objects.all()
@@ -32,27 +38,23 @@ def state_detail(request, state_slug):
     if not os.path.exists(os.path.join(settings.BASE_DIR, 'core', 'templates', template_name)):
         template_name = 'core/state.html'
     
-    # Get weather data for the state's main city
-    weather_data = None
-    if state.name == 'Andhra Pradesh':
-        weather_data = get_weather_data('Visakhapatnam')
-    elif state.name == 'Tamil Nadu':
-        weather_data = get_weather_data('Chennai')
-    elif state.name == 'Kerala':
-        weather_data = get_weather_data('Kochi')
-    elif state.name == 'Karnataka':
-        weather_data = get_weather_data('Bangalore')
-    elif state.name == 'Telangana':
-        weather_data = get_weather_data('Hyderabad')
+    # Get weather data for each place
+    places_with_weather = []
+    for place in places:
+        place_data = {
+            'place': place,
+            'weather': get_weather_data(place.location) if place.location else None
+        }
+        places_with_weather.append(place_data)
     
     context = {
         'state': state,
-        'places': places,
+        'places_with_weather': places_with_weather,
         'hotels': hotels,
         'reviews': reviews,
         'itineraries': itineraries,
         'transport_options': transport_options,
-        'weather_data': weather_data,
+        'GOOGLE_MAPS_API_KEY': settings.GOOGLE_MAPS_API_KEY
     }
     return render(request, template_name, context)
 
@@ -68,6 +70,8 @@ def get_weather_data(city):
                 'temperature': data['main']['temp'],
                 'humidity': data['main']['humidity'],
                 'condition': data['weather'][0]['description'].capitalize(),
+                'icon': data['weather'][0]['icon'],
+                'wind_speed': data['wind']['speed'],
             }
             suggestions = []
             safety_tips = []
@@ -76,7 +80,7 @@ def get_weather_data(city):
             
             if "rain" in condition:
                 suggestions.append(f"It's raining in {city}—visit indoor attractions.")
-                safety_tips.append("Avoid coastal areas due to potential flooding.")
+                safety_tips.append("Carry an umbrella and avoid outdoor activities.")
             elif temp > 30:
                 suggestions.append(f"It's hot today in {city}—stay hydrated and visit shaded spots.")
                 safety_tips.append("Wear sunscreen and light clothing to protect against the heat.")
@@ -310,3 +314,124 @@ def submit_inquiry(request, state_id):
         return redirect('state_detail', state_slug=state.name.lower().replace(' ', '-'))
     # If not a POST request, redirect back to the state page
     return redirect('state_detail', state_slug=state.name.lower().replace(' ', '-'))
+
+def fetch_route_info(request):
+    """
+    API endpoint to fetch route planning information using Composio.
+    """
+    origin = request.GET.get('origin')
+    destination = request.GET.get('destination')
+    mode = request.GET.get('mode', 'driving')
+    
+    if not all([origin, destination]):
+        return JsonResponse({"error": "Origin and destination are required"}, status=400)
+    
+    try:
+        data = get_route_planning(origin, destination, mode)
+        if "error" in data:
+            return JsonResponse({"error": data["error"]}, status=500)
+        return JsonResponse(data)
+    except Exception as e:
+        logger.error(f"Error in fetch_route_info: {str(e)}")
+        return JsonResponse({"error": str(e)}, status=500)
+
+def nearby_places(request):
+    """
+    API endpoint to fetch nearby places using Composio.
+    """
+    location = request.GET.get('location')
+    place_type = request.GET.get('type', 'lodging')
+    
+    if not location:
+        return JsonResponse({"error": "Location is required"}, status=400)
+    
+    try:
+        url = 'https://api.composio.dev/v1/agents/invoke'
+        headers = {
+            'Authorization': f'Bearer {settings.COMPOSIO_API_KEY}',
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+        }
+        
+        payload = {
+            "agent_id": "google-maps-agent",
+            "action": "find_places_nearby",
+            "parameters": {
+                "location": location,
+                "radius": 5000,  # 5km radius
+                "type": place_type
+            }
+        }
+        
+        logger.info(f"Making request to Composio API for nearby places around {location}")
+        response = requests.post(url, headers=headers, json=payload, timeout=10)
+        response.raise_for_status()
+        
+        data = response.json()
+        logger.info(f"Successfully received response from Composio API")
+        return JsonResponse(data)
+    except requests.exceptions.RequestException as e:
+        logger.error(f"Error fetching nearby places: {str(e)}")
+        return JsonResponse({"error": f"Failed to fetch nearby places: {str(e)}"}, status=500)
+    except Exception as e:
+        logger.error(f"Unexpected error in nearby_places: {str(e)}")
+        return JsonResponse({"error": f"Unexpected error: {str(e)}"}, status=500)
+
+def map_view(request):
+    context = {
+        'GOOGLE_MAPS_API_KEY': settings.GOOGLE_MAPS_API_KEY
+    }
+    return render(request, 'core/map_view.html', context)
+
+def fetch_place_info(request):
+    """
+    API endpoint to fetch detailed information about a place.
+    """
+    place_name = request.GET.get('place')
+    if not place_name:
+        return JsonResponse({"error": "Place not provided"}, status=400)
+    
+    try:
+        data = get_place_details(place_name)
+        if "error" in data:
+            return JsonResponse({"error": data["error"]}, status=500)
+        return JsonResponse(data)
+    except Exception as e:
+        logger.error(f"Error in fetch_place_info: {str(e)}")
+        return JsonResponse({"error": str(e)}, status=500)
+
+def test_api_view(request):
+    """View function for testing API endpoints."""
+    context = {
+        'GOOGLE_MAPS_API_KEY': settings.GOOGLE_MAPS_API_KEY
+    }
+    return render(request, 'core/test_api.html', context)
+
+def fetch_github_repos(request):
+    """
+    Fetch GitHub repositories for the authenticated user using Composio.
+    """
+    try:
+        toolset = ComposioToolSet()
+        tools = toolset.get_tools(actions=[Action.GITHUB_LIST_REPOSITORIES_FOR_THE_AUTHENTICATED_USER])
+        
+        if not tools:
+            return JsonResponse({"error": "GitHub tool not found"}, status=404)
+        
+        # Get the first tool and ensure it's callable
+        github_tool = tools[0]
+        if not hasattr(github_tool, 'run'):
+            return JsonResponse({"error": "GitHub tool does not have run method"}, status=500)
+        
+        # Run the GitHub tool with empty parameters
+        result = github_tool.run({})
+        
+        # Check if the result is valid
+        if not result:
+            return JsonResponse({"error": "No repositories found"}, status=404)
+            
+        return JsonResponse(result, safe=False)
+    
+    except Exception as e:
+        logger.error(f"Error fetching GitHub repos: {str(e)}")
+        return JsonResponse({"error": str(e)}, status=500)
