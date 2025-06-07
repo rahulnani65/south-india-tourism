@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tamil Nadu Tourism</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="CSS/style.css">
+    <script src="https://maps.googleapis.com/maps/api/js?key=YOUR_GOOGLE_MAPS_API_KEY"></script>
+    <style>
+        .place-card {
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .map-container {
+            height: 300px;
+            width: 100%;
+            margin-top: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="/">South India Tourism</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/">Home</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="/tamil-nadu">Tamil Nadu</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <h1 class="text-center mb-4">Tamil Nadu Tourism</h1>
+        <div class="row" id="places-container">
+            <!-- Places will be dynamically loaded here -->
+        </div>
+    </div>
+
+    <script>
+        // Function to initialize Google Maps
+        function initMap(placeId, lat, lng, name) {
+            const map = new google.maps.Map(document.getElementById(`map-${placeId}`), {
+                center: { lat: parseFloat(lat), lng: parseFloat(lng) },
+                zoom: 15
+            });
+
+            new google.maps.Marker({
+                position: { lat: parseFloat(lat), lng: parseFloat(lng) },
+                map: map,
+                title: name
+            });
+        }
+
+        // Function to fetch places from the backend
+        async function loadPlaces() {
+            try {
+                const response = await fetch('/api/places/tamil-nadu/');
+                const places = await response.json();
+                const container = document.getElementById('places-container');
+
+                places.forEach(place => {
+                    const card = `
+                        <div class="col-md-6 col-lg-4">
+                            <div class="card place-card">
+                                <img src="${place.image_url}" class="card-img-top" alt="${place.name}">
+                                <div class="card-body">
+                                    <h5 class="card-title">${place.name}</h5>
+                                    <p class="card-text">${place.description}</p>
+                                    <div class="map-container" id="map-${place.id}"></div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    container.innerHTML += card;
+
+                    // Initialize map for this place
+                    initMap(place.id, place.latitude, place.longitude, place.name);
+                });
+            } catch (error) {
+                console.error('Error loading places:', error);
+            }
+        }
+
+        // Load places when the page loads
+        document.addEventListener('DOMContentLoaded', loadPlaces);
+    </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html> 

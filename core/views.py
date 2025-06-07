@@ -12,11 +12,17 @@ from django.core.cache import cache
 from .models import State, Contact, Hotel, Place, UserProfile, Favorite, Review, Post, Itinerary, TransportationOption, Inquiry
 from .forms import UserProfileForm
 from django.conf import settings
-from composio_openai import ComposioToolSet, Action
-from .composio_utils import get_place_details, get_route_planning
+from composio_openai import ComposioToolSet, Action, App
+from datetime import datetime
+import pytz
+import google.generativeai as genai
 import logging
+from django.db import transaction
 
 logger = logging.getLogger(__name__)
+
+# Configure Gemini API
+genai.configure(api_key=settings.GEMINI_API_KEY)
 
 def home(request):
     states = State.objects.all()
@@ -43,7 +49,9 @@ def state_detail(request, state_slug):
     for place in places:
         place_data = {
             'place': place,
-            'weather': get_weather_data(place.location) if place.location else None
+            'weather': get_weather_data(place.location) if place.location else None,
+            'latitude': place.latitude,
+            'longitude': place.longitude
         }
         places_with_weather.append(place_data)
     
@@ -59,7 +67,7 @@ def state_detail(request, state_slug):
     return render(request, template_name, context)
 
 def get_weather_data(city):
-    api_key = "0b8486e199e0b1fc6fd9897e7190f88c"  # Your OpenWeatherMap API key
+    api_key = settings.OPENWEATHERMAP_API_KEY
     url = f"http://api.openweathermap.org/data/2.5/weather?q={city}&appid={api_key}&units=metric"
     try:
         response = requests.get(url)
@@ -92,7 +100,7 @@ def get_weather_data(city):
             weather_data['safety_tips'] = safety_tips
             return weather_data
     except Exception as e:
-        print(f"Error fetching weather data: {e}")
+        logger.error(f"Error fetching weather data: {e}")
     return None
 
 def post_detail(request, post_id):
@@ -155,16 +163,29 @@ def profile(request):
 @login_required
 def add_review(request, place_id):
     place = get_object_or_404(Place, id=place_id)
+    if not place.state:
+        messages.error(request, "Cannot add review: Place has no associated state.")
+        return redirect('state_detail', state_slug='tamil-nadu')
+        
     if request.method == 'POST':
         rating = request.POST.get('rating')
         comment = request.POST.get('comment')
-        Review.objects.create(
-            user=request.user,
-            place=place,
-            rating=rating,
-            comment=comment
-        )
-        messages.success(request, "Review added successfully!")
+        
+        try:
+            with transaction.atomic():
+                review = Review(
+                    user=request.user,
+                    place=place,
+                    state=place.state,
+                    rating=rating,
+                    comment=comment
+                )
+                review.save()
+                messages.success(request, "Review added successfully!")
+        except Exception as e:
+            logger.error(f"Error creating review: {str(e)}")
+            messages.error(request, "An error occurred while adding your review. Please try again.")
+            
     return redirect('state_detail', state_slug=place.state.name.lower().replace(' ', '-'))
 
 @login_required
@@ -228,68 +249,204 @@ def my_favorites(request):
 
 # --- Weather API endpoint ---
 def get_weather(request):
-    api_key = "0b8486e199e0b1fc6fd9897e7190f88c"  # Your OpenWeatherMap API key
+    api_key = settings.OPENWEATHERMAP_API_KEY
     city = "Chennai"
     url = f"http://api.openweathermap.org/data/2.5/weather?q={city}&appid={api_key}&units=metric"
     try:
         response = requests.get(url)
         data = response.json()
         if response.status_code == 200:
-            weather_data = {
+            return JsonResponse({
                 'temperature': data['main']['temp'],
                 'humidity': data['main']['humidity'],
                 'condition': data['weather'][0]['description'].capitalize(),
-            }
-            suggestions = []
-            safety_tips = []
-            temp = weather_data['temperature']
-            condition = weather_data['condition'].lower()
-            if "rain" in condition:
-                suggestions.append("It's raining in Chennai—visit indoor attractions like the Government Museum.")
-                safety_tips.append("Avoid coastal areas like Marina Beach due to potential flooding.")
-            elif temp > 30:
-                suggestions.append("It's hot today—stay hydrated and visit shaded spots like Guindy National Park.")
-                safety_tips.append("Wear sunscreen and light clothing to protect against the heat.")
-            else:
-                suggestions.append("It's a pleasant day—perfect for a walk along Marina Beach!")
-                safety_tips.append("Keep an eye on your belongings in crowded areas.")
-            return JsonResponse({
-                'success': True,
-                'weather': weather_data,
-                'suggestions': suggestions,
-                'safety_tips': safety_tips,
+                'icon': data['weather'][0]['icon'],
+                'wind_speed': data['wind']['speed'],
             })
-        else:
-            return JsonResponse({'success': False, 'error': 'Unable to fetch weather data'})
     except Exception as e:
-        return JsonResponse({'success': False, 'error': str(e)})
+        logger.error(f"Error fetching weather data: {str(e)}")
+    return JsonResponse({'error': 'Failed to fetch weather data'}, status=500)
 
-# --- Recommendations endpoint ---
-def get_recommendations(request):
-    state_slug = request.GET.get('state_slug')
-    state = get_object_or_404(State, slug=state_slug)
-    places = Place.objects.filter(state=state)
-    preferred_category = None
-    if request.user.is_authenticated:
-        user_favorites = Place.objects.filter(favorited_by=request.user)
-        if user_favorites.exists():
-            categories = user_favorites.values('category').annotate(count=Count('category')).order_by('-count')
-            if categories:
-                preferred_category = categories[0]['category']
-    if preferred_category:
-        recommended_places = places.filter(category=preferred_category)[:3]
-    else:
-        recommended_places = places.filter(category='historical')[:3]
-    recommendations = [
-        {
-            'name': place.name,
-            'category': place.category,
-            'description': place.description,
-        }
-        for place in recommended_places
-    ]
-    return JsonResponse({'success': True, 'recommendations': recommendations})
+@require_GET
+def get_gemini_recommendations(request):
+    latitude = request.GET.get('latitude')
+    longitude = request.GET.get('longitude')
+    user_place = request.GET.get('user_place', '')
+    place_type = request.GET.get('place_type', 'tourist_attraction')
+    budget = request.GET.get('budget', 'medium')
 
+    if not all([latitude, longitude, user_place]):
+        return JsonResponse({'error': 'Missing required parameters'}, status=400)
+
+    if not settings.GEMINI_API_KEY:
+        return JsonResponse({'error': 'Gemini API key not configured'}, status=500)
+
+    if not settings.GOOGLE_MAPS_API_KEY:
+        return JsonResponse({'error': 'Google Maps API key not configured'}, status=500)
+
+    cache_key = f"gemini_recommendations_{latitude}_{longitude}_{user_place}_{place_type}_{budget}"
+    cached_data = cache.get(cache_key)
+
+    if cached_data:
+        return JsonResponse(cached_data)
+
+    try:
+        # Step 1: Fetch current weather
+        weather_url = f"https://api.openweathermap.org/data/2.5/weather?lat={latitude}&lon={longitude}&appid={settings.OPENWEATHERMAP_API_KEY}&units=metric"
+        weather_response = requests.get(weather_url)
+        weather_response.raise_for_status()
+        weather_data = weather_response.json()
+
+        weather_condition = weather_data['weather'][0]['main'].lower()
+        temperature = weather_data['main']['temp']
+        humidity = weather_data['main']['humidity']
+        location_name = weather_data.get('name', user_place)
+        weather_description = weather_data['weather'][0]['description']
+
+        # Step 2: Get current time dynamically
+        ist = pytz.timezone('Asia/Kolkata')
+        current_time = datetime.now(ist).strftime('%I:%M %p IST')
+
+        # Step 3: Construct the natural language prompt for Gemini
+        prompt = (
+            f"You are a travel guide for South India. The user is currently at '{user_place}' "
+            f"where it's {weather_condition} with a temperature of {temperature}°C "
+            f"at {current_time}. They are looking for {place_type.replace('_', ' ')}s "
+            f"with a {budget} budget. Suggest exactly 5 nearby places they can visit, considering:\n"
+            f"1. The current weather and time\n"
+            f"2. Their budget preference\n"
+            f"3. The type of place they're interested in\n"
+            f"4. The cultural and historical significance of the places\n"
+            f"5. Practical considerations like accessibility and crowd levels\n\n"
+            f"Provide the response **strictly** in the following format (one place per line):\n"
+            f"1. Place Name - Reason to visit\n"
+            f"2. Place Name - Reason to visit\n"
+            f"3. Place Name - Reason to visit\n"
+            f"4. Place Name - Reason to visit\n"
+            f"5. Place Name - Reason to visit\n"
+            f"Each reason must be concise (under 20 words) and explain why this place is suitable right now. "
+            f"Do not include any additional text, headings, or explanations outside this format."
+        )
+
+        try:
+            # Step 4: Call Gemini API to get recommendations
+            model = genai.GenerativeModel('gemini-1.5-flash')
+            response = model.generate_content(prompt)
+            
+            # Log the raw response for debugging
+            logger.info(f"Gemini API raw response: {response.text}")
+            
+            if not response or not response.text:
+                raise ValueError("Empty response from Gemini API")
+                
+            recommendations_text = response.text
+
+            # Parse the response with improved error handling
+            recommended_places = []
+            lines = recommendations_text.strip().split('\n')
+            
+            for line in lines:
+                if not line.strip():
+                    continue
+                    
+                try:
+                    # Handle both numbered and unnumbered formats
+                    if '.' in line:
+                        place_name, explanation = line.split('.', 1)[1].split('-', 1)
+                    else:
+                        place_name, explanation = line.split('-', 1)
+                        
+                    place_name = place_name.strip()
+                    explanation = explanation.strip()
+                    
+                    if place_name and explanation:
+                        recommended_places.append({
+                            "name": place_name,
+                            "reasoning": explanation
+                        })
+                except Exception as e:
+                    logger.warning(f"Failed to parse line: {line}. Error: {str(e)}")
+                    continue
+
+            if not recommended_places:
+                logger.error(f"Failed to parse any recommendations from response: {recommendations_text}")
+                return JsonResponse({
+                    'error': 'Failed to parse recommendations from Gemini API response',
+                    'raw_response': recommendations_text
+                }, status=500)
+
+            # Step 5: Cross-reference with Google Maps API
+            final_recommendations = []
+            for place in recommended_places:
+                try:
+                    place_name = place['name']
+                    places_url = (
+                        f"https://maps.googleapis.com/maps/api/place/textsearch/json?"
+                        f"query={place_name}+near+{user_place}&key={settings.GOOGLE_MAPS_API_KEY}"
+                    )
+                    places_response = requests.get(places_url)
+                    places_response.raise_for_status()
+                    places_data = places_response.json()
+
+                    if places_data['status'] == 'OK' and places_data['results']:
+                        place_details = places_data['results'][0]
+                        final_recommendations.append({
+                            'name': place_details.get('name', place_name),
+                            'latitude': place_details['geometry']['location']['lat'],
+                            'longitude': place_details['geometry']['location']['lng'],
+                            'rating': place_details.get('rating', 0),
+                            'reasoning': place['reasoning']
+                        })
+                    else:
+                        logger.warning(f"Google Maps API returned status: {places_data.get('status')} for place: {place_name}")
+                        # Add the place without coordinates if Google Maps fails
+                        final_recommendations.append({
+                            'name': place_name,
+                            'latitude': None,
+                            'longitude': None,
+                            'rating': 0,
+                            'reasoning': place['reasoning']
+                        })
+                except Exception as e:
+                    logger.warning(f"Failed to get Google Maps data for {place['name']}: {str(e)}")
+                    # Add the place without coordinates if Google Maps fails
+                    final_recommendations.append({
+                        'name': place['name'],
+                        'latitude': None,
+                        'longitude': None,
+                        'rating': 0,
+                        'reasoning': place['reasoning']
+                    })
+
+            if not final_recommendations:
+                logger.error("No valid places found in Google Maps")
+                return JsonResponse({
+                    'error': 'Failed to find places in Google Maps',
+                    'raw_response': recommendations_text
+                }, status=500)
+
+            result = {
+                'gemini_recommended_places': final_recommendations[:5],
+                'weather_data': {
+                    'temperature': temperature,
+                    'weather': weather_condition,
+                    'humidity': humidity,
+                    'description': weather_description
+                }
+            }
+            cache.set(cache_key, result, timeout=3600)
+            return JsonResponse(result)
+
+        except Exception as e:
+            logger.error(f"Error in Gemini API call: {str(e)}")
+            return JsonResponse({'error': f'Failed to get recommendations: {str(e)}'}, status=500)
+
+    except requests.exceptions.RequestException as e:
+        logger.error(f"API request error in get_gemini_recommendations: {str(e)}")
+        return JsonResponse({'error': f'Failed to fetch data from external API: {str(e)}'}, status=500)
+    except Exception as e:
+        logger.error(f"Error in get_gemini_recommendations: {str(e)}")
+        return JsonResponse({'error': str(e)}, status=500)
 
 def submit_inquiry(request, state_id):
     state = get_object_or_404(State, id=state_id)
@@ -315,6 +472,31 @@ def submit_inquiry(request, state_id):
     # If not a POST request, redirect back to the state page
     return redirect('state_detail', state_slug=state.name.lower().replace(' ', '-'))
 
+def fetch_place_info(request):
+    """
+    API endpoint to fetch detailed information about a place using Composio.
+    """
+    place_name = request.GET.get('place')
+    if not place_name:
+        return JsonResponse({"error": "Place not provided"}, status=400)
+    
+    try:
+        toolset = ComposioToolSet()
+        result = toolset.execute_action(
+            action=Action.GOOGLEMAPS_GET_PLACE_INFO,
+            params={
+                "place_name": place_name
+            }
+        )
+        
+        if not result.get("successful"):
+            return JsonResponse({"error": result.get("error", "Failed to fetch place details")}, status=500)
+            
+        return JsonResponse(result.get("data", {}), safe=False)
+    except Exception as e:
+        logger.error(f"Error in fetch_place_info: {str(e)}")
+        return JsonResponse({"error": str(e)}, status=500)
+
 def fetch_route_info(request):
     """
     API endpoint to fetch route planning information using Composio.
@@ -327,10 +509,20 @@ def fetch_route_info(request):
         return JsonResponse({"error": "Origin and destination are required"}, status=400)
     
     try:
-        data = get_route_planning(origin, destination, mode)
-        if "error" in data:
-            return JsonResponse({"error": data["error"]}, status=500)
-        return JsonResponse(data)
+        toolset = ComposioToolSet()
+        result = toolset.execute_action(
+            action=Action.GOOGLEMAPS_GET_DIRECTIONS,
+            params={
+                "origin": origin,
+                "destination": destination,
+                "mode": mode
+            }
+        )
+        
+        if not result.get("successful"):
+            return JsonResponse({"error": result.get("error", "Failed to fetch route planning")}, status=500)
+            
+        return JsonResponse(result.get("data", {}), safe=False)
     except Exception as e:
         logger.error(f"Error in fetch_route_info: {str(e)}")
         return JsonResponse({"error": str(e)}, status=500)
@@ -346,59 +538,29 @@ def nearby_places(request):
         return JsonResponse({"error": "Location is required"}, status=400)
     
     try:
-        url = 'https://api.composio.dev/v1/agents/invoke'
-        headers = {
-            'Authorization': f'Bearer {settings.COMPOSIO_API_KEY}',
-            'Content-Type': 'application/json',
-            'Accept': 'application/json'
-        }
-        
-        payload = {
-            "agent_id": "google-maps-agent",
-            "action": "find_places_nearby",
-            "parameters": {
+        toolset = ComposioToolSet()
+        result = toolset.execute_action(
+            action=Action.GOOGLEMAPS_FIND_PLACES_NEARBY,
+            params={
                 "location": location,
                 "radius": 5000,  # 5km radius
                 "type": place_type
             }
-        }
+        )
         
-        logger.info(f"Making request to Composio API for nearby places around {location}")
-        response = requests.post(url, headers=headers, json=payload, timeout=10)
-        response.raise_for_status()
-        
-        data = response.json()
-        logger.info(f"Successfully received response from Composio API")
-        return JsonResponse(data)
-    except requests.exceptions.RequestException as e:
-        logger.error(f"Error fetching nearby places: {str(e)}")
-        return JsonResponse({"error": f"Failed to fetch nearby places: {str(e)}"}, status=500)
+        if not result.get("successful"):
+            return JsonResponse({"error": result.get("error", "Failed to fetch nearby places")}, status=500)
+            
+        return JsonResponse(result.get("data", {}), safe=False)
     except Exception as e:
-        logger.error(f"Unexpected error in nearby_places: {str(e)}")
-        return JsonResponse({"error": f"Unexpected error: {str(e)}"}, status=500)
+        logger.error(f"Error in nearby_places: {str(e)}")
+        return JsonResponse({"error": str(e)}, status=500)
 
 def map_view(request):
     context = {
         'GOOGLE_MAPS_API_KEY': settings.GOOGLE_MAPS_API_KEY
     }
     return render(request, 'core/map_view.html', context)
-
-def fetch_place_info(request):
-    """
-    API endpoint to fetch detailed information about a place.
-    """
-    place_name = request.GET.get('place')
-    if not place_name:
-        return JsonResponse({"error": "Place not provided"}, status=400)
-    
-    try:
-        data = get_place_details(place_name)
-        if "error" in data:
-            return JsonResponse({"error": data["error"]}, status=500)
-        return JsonResponse(data)
-    except Exception as e:
-        logger.error(f"Error in fetch_place_info: {str(e)}")
-        return JsonResponse({"error": str(e)}, status=500)
 
 def test_api_view(request):
     """View function for testing API endpoints."""
@@ -413,25 +575,15 @@ def fetch_github_repos(request):
     """
     try:
         toolset = ComposioToolSet()
-        tools = toolset.get_tools(actions=[Action.GITHUB_LIST_REPOSITORIES_FOR_THE_AUTHENTICATED_USER])
+        result = toolset.execute_action(
+            action=Action.GITHUB_LIST_REPOSITORIES_FOR_THE_AUTHENTICATED_USER,
+            params={}
+        )
         
-        if not tools:
-            return JsonResponse({"error": "GitHub tool not found"}, status=404)
+        if not result.get("successful"):
+            return JsonResponse({"error": result.get("error", "Failed to fetch GitHub repositories")}, status=500)
         
-        # Get the first tool and ensure it's callable
-        github_tool = tools[0]
-        if not hasattr(github_tool, 'run'):
-            return JsonResponse({"error": "GitHub tool does not have run method"}, status=500)
-        
-        # Run the GitHub tool with empty parameters
-        result = github_tool.run({})
-        
-        # Check if the result is valid
-        if not result:
-            return JsonResponse({"error": "No repositories found"}, status=404)
-            
-        return JsonResponse(result, safe=False)
-    
+        return JsonResponse(result.get("data", {}), safe=False)
     except Exception as e:
         logger.error(f"Error fetching GitHub repos: {str(e)}")
         return JsonResponse({"error": str(e)}, status=500)

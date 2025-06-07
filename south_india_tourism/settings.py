@@ -142,7 +142,19 @@ STATICFILES_DIRS = [
     BASE_DIR / "core/static",
 ]
 STATIC_ROOT = BASE_DIR / "staticfiles"
-DEBUG = True  # Ensure this is True for development
+
+# Media files
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / "media"
+
+# Ensure static files are served in development
+if DEBUG:
+    STATICFILES_DIRS = [
+        BASE_DIR / "core/static",
+    ]
+else:
+    STATIC_ROOT = BASE_DIR / "staticfiles"
+
 # Add these settings
 LOGIN_REDIRECT_URL = '/'  # Redirect to home page after login
 LOGOUT_REDIRECT_URL = '/'  # Redirect to home page after logout (already handled, but good to set explicitly)
@@ -161,3 +173,11 @@ if not COMPOSIO_API_KEY:
 GOOGLE_MAPS_API_KEY = os.getenv('GOOGLE_MAPS_API_KEY')
 if not GOOGLE_MAPS_API_KEY:
     logger.warning("GOOGLE_MAPS_API_KEY not found in environment variables. Maps features will not work.")
+
+GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
+if not GEMINI_API_KEY:
+    logger.warning("GEMINI_API_KEY not found in environment variables. Gemini recommendations will not work.")
+
+OPENWEATHERMAP_API_KEY = os.getenv('OPENWEATHERMAP_API_KEY')
+if not OPENWEATHERMAP_API_KEY:
+    logger.warning("OPENWEATHERMAP_API_KEY not found in environment variables. Weather features will not work.")

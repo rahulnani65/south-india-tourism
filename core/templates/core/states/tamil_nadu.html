@@ -12,14 +12,14 @@
   <!-- Load Google Maps JavaScript API -->
   <script>
     (g=>{var h,a,k,p="The Google Maps JavaScript API",c="google",l="importLibrary",q="__ib__",m=document,b=window;b=b[c]||(b[c]={});var d=b.maps||(b.maps={}),r=new Set,e=new URLSearchParams,u=()=>h||(h=new Promise(async(f,n)=>{await (a=m.createElement("script"));e.set("libraries",[...r]+"");for(k in g)e.set(k.replace(/[A-Z]/g,t=>"_"+t[0].toLowerCase()),g[k]);e.set("callback",c+".maps."+q);a.src=`https://maps.${c}apis.com/maps/api/js?`+e;d[q]=f;a.onerror=()=>h=n(Error(p+" could not load."));a.nonce=m.querySelector("script[nonce]")?.nonce||"";m.head.append(a)}));d[l]?console.warn(p+" only loads once. Ignoring:",g):d[l]=(f,...n)=>r.add(f)&&u().then(()=>d[l](f,...n))})({
-      key: "YOUR_API_KEY",
+      key: "AIzaSyD3WSnlZlux7vVPP2LQ7fZvg8O43J01mK8",
       v: "weekly",
       libraries: "places"  // Include Places library for future use (nearby search)
     });
   </script>
   <style>
     .hero-section {
-      background: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url('{% static "core/images/tamil_nadu.jpg" %}');
+      background: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url("{% static 'core/images/tamil_nadu.jpg' %}");
       background-size: cover;
       background-position: center;
       height: 100vh;
@@ -47,6 +47,8 @@
       z-index: 1;
     }
   </style>
+  <!-- Add Font Awesome in the head section -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
 </head>
 <body>
   <!-- Messages Section -->
@@ -64,19 +66,19 @@
   <!-- Navbar -->
   <nav class="navbar navbar-expand-lg navbar-dark bg-custom sticky-top">
     <div class="container-fluid">
-      <a class="navbar-brand" href="{% url 'home' %}">South India Tourism</a>
+      <a class="navbar-brand" href="{% url 'core:home' %}">South India Tourism</a>
       <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
         <span class="navbar-toggler-icon"></span>
       </button>
       <div class="collapse navbar-collapse" id="navbarNav">
         <ul class="navbar-nav ms-auto">
-          <li class="nav-item"><a class="nav-link active" href="{% url 'home' %}">Home</a></li>
-          <li class="nav-item"><a class="nav-link" href="{% url 'home' %}#category">Adventures</a></li>
-          <li class="nav-item"><a class="nav-link" href="{% url 'home' %}#packages">Packages</a></li>
-          <li class="nav-item"><a class="nav-link" href="{% url 'home' %}#contact">Contact</a></li>
+          <li class="nav-item"><a class="nav-link active" href="{% url 'core:home' %}">Home</a></li>
+          <li class="nav-item"><a class="nav-link" href="{% url 'core:home' %}#category">Adventures</a></li>
+          <li class="nav-item"><a class="nav-link" href="{% url 'core:home' %}#packages">Packages</a></li>
+          <li class="nav-item"><a class="nav-link" href="{% url 'core:home' %}#contact">Contact</a></li>
           {% if user.is_authenticated %}
-            <li class="nav-item"><a class="nav-link" href="{% url 'my_favorites' %}">My Favorites</a></li>
-            <li class="nav-item"><a class="nav-link" href="{% url 'profile' %}">Profile</a></li>
+            <li class="nav-item"><a class="nav-link" href="{% url 'core:my_favorites' %}">My Favorites</a></li>
+            <li class="nav-item"><a class="nav-link" href="{% url 'core:profile' %}">Profile</a></li>
             <li class="nav-item">
               <form action="{% url 'logout' %}" method="post" style="display: inline;">
                 {% csrf_token %}
@@ -103,14 +105,14 @@
       <p class="hero-subtitle text-white animate__animated animate__fadeIn animate__delay-1s">Experience the Land of Temples</p>
       {% if user.is_authenticated %}
         {% if state in user.favorite_states.all %}
-          <form action="{% url 'remove_state_favorite' state.id %}" method="post" class="d-inline">
+          <form action="{% url 'core:remove_state_favorite' state.id %}" method="post" class="d-inline">
             {% csrf_token %}
             <button type="submit" class="btn btn-danger btn-sm mt-2">
               <i class="fas fa-heart"></i> Remove from Favorites
             </button>
           </form>
         {% else %}
-          <form action="{% url 'add_state_favorite' state.id %}" method="post" class="d-inline">
+          <form action="{% url 'core:add_state_favorite' state.id %}" method="post" class="d-inline">
             {% csrf_token %}
             <button type="submit" class="btn btn-outline-light btn-sm mt-2">
               <i class="far fa-heart"></i> Add to Favorites
@@ -216,9 +218,9 @@
         <div class="mb-4 text-center">
           <label for="categoryFilter" class="form-label">Filter by Category:</label>
           <select id="categoryFilter" class="form-select w-auto d-inline-block mx-auto" onchange="location = this.value;">
-            <option value="{% url 'state_detail' state.name|lower|slugify %}">All Categories</option>
+            <option value="{% url 'core:state_detail' state.name|lower|slugify %}">All Categories</option>
             {% for category, label in categories %}
-              <option value="{% url 'state_detail' state.name|lower|slugify %}?category={{ category }}" {% if selected_category == category %}selected{% endif %}>{{ label }}</option>
+              <option value="{% url 'core:state_detail' state.name|lower|slugify %}?category={{ category }}" {% if selected_category == category %}selected{% endif %}>{{ label }}</option>
             {% endfor %}
           </select>
         </div>
@@ -226,125 +228,72 @@
         <!-- Places List -->
         <div class="row" id="places-list">
           {% for place_data in places_with_weather %}
-            <div class="col-md-4 mb-4 place-item" 
-                 data-category="{{ place_data.place.category }}" 
-                 data-entry-fee="{{ place_data.place.entry_fee|default:0 }}"
-                 data-family-friendly="{% if place_data.place.category in 'cultural,natural' %}true{% else %}false{% endif %}">
-              <div class="card place-card h-100">
-                {% with image_path='core/images/'|add:place_data.place.name|lower|slugify|add:'.jpg' %}
-                  <img src="{% static image_path %}" class="card-img-top" alt="{{ place_data.place.name }}">
-                {% endwith %}
-                <button class="btn btn-primary btn-sm map-btn" 
-                        data-bs-toggle="modal" 
-                        data-bs-target="#mapModal{{ place_data.place.id }}"
-                        title="View on Map">
-                  <i class="fas fa-map-marker-alt"></i>
-                </button>
+            <div class="col-md-6 col-lg-4 mb-4">
+              <div class="card h-100">
+                {% if place_data.place.image %}
+                  <img src="{{ place_data.place.image.url }}" class="card-img-top" alt="{{ place_data.place.name }}">
+                {% endif %}
                 <div class="card-body">
-                  <h5 class="card-title">{{ place_data.place.name }} <span class="badge bg-secondary">{{ place_data.place.category }}</span></h5>
+                  <h5 class="card-title">{{ place_data.place.name }}</h5>
                   <p class="card-text">{{ place_data.place.description }}</p>
-                  <p><strong>Location:</strong> {{ place_data.place.location|default:"Not specified" }}</p>
-                  <p><strong>Entry Fee:</strong> {% if place_data.place.entry_fee %}₹{{ place_data.place.entry_fee }}{% else %}Free{% endif %}</p>
-                  <p><strong>Visiting Hours:</strong> {{ place_data.place.visiting_hours|default:"Not specified" }}</p>
                   
                   <!-- Weather Information -->
                   {% if place_data.weather %}
-                    <div class="weather-info mt-3 p-3 bg-light rounded">
-                      <h6 class="mb-2">Current Weather in {{ place_data.place.location }}</h6>
-                      <div class="d-flex align-items-center mb-2">
-                        <img src="http://openweathermap.org/img/wn/{{ place_data.weather.icon }}@2x.png" alt="{{ place_data.weather.condition }}">
-                        <div class="ms-2">
-                          <p class="mb-0"><strong>{{ place_data.weather.temperature }}°C</strong></p>
-                          <p class="mb-0">{{ place_data.weather.condition }}</p>
-                        </div>
-                      </div>
-                      <p class="mb-1"><small>Humidity: {{ place_data.weather.humidity }}%</small></p>
-                      <p class="mb-1"><small>Wind: {{ place_data.weather.wind_speed }} m/s</small></p>
-                      
-                      <!-- Weather Suggestions -->
-                      <div class="mt-2">
-                        <p class="mb-1"><small><strong>Suggestions:</strong></small></p>
-                        <ul class="list-unstyled mb-0">
-                          {% for suggestion in place_data.weather.suggestions %}
-                            <li><small><i class="fas fa-info-circle text-info"></i> {{ suggestion }}</small></li>
-                          {% endfor %}
-                        </ul>
-                      </div>
-                      
-                      <!-- Safety Tips -->
-                      <div class="mt-2">
-                        <p class="mb-1"><small><strong>Safety Tips:</strong></small></p>
-                        <ul class="list-unstyled mb-0">
-                          {% for tip in place_data.weather.safety_tips %}
-                            <li><small><i class="fas fa-exclamation-triangle text-warning"></i> {{ tip }}</small></li>
-                          {% endfor %}
-                        </ul>
-                      </div>
+                    <div class="weather-info mb-3">
+                      <h6>Current Weather</h6>
+                      <p>Temperature: {{ place_data.weather.temperature }}°C</p>
+                      <p>Condition: {{ place_data.weather.condition }}</p>
                     </div>
                   {% endif %}
-
-                  <p class="mt-3"><strong>Safety Tip:</strong> {{ place_data.place.safety_tip|default:"Keep your belongings secure in crowded areas." }}</p>
-                  {% if user.is_authenticated %}
-                    {% if place_data.place in user.favorite_places.all %}
-                      <form action="{% url 'remove_favorite' place_data.place.id %}" method="post" class="d-inline favorite-form">
+                  
+                  <!-- Map Container -->
+                  <div class="map-container" id="map-{{ place_data.place.id }}" style="height: 300px;"></div>
+                  
+                  <!-- Action Buttons -->
+                  <div class="mt-3">
+                    {% if user.is_authenticated %}
+                      <form method="post" action="{% url 'core:add_favorite' place_data.place.id %}" class="d-inline">
                         {% csrf_token %}
-                        <button type="submit" class="btn btn-danger btn-sm mt-2">
-                          <i class="fas fa-heart"></i> Remove from Favorites
-                        </button>
-                      </form>
-                    {% else %}
-                      <form action="{% url 'add_favorite' place_data.place.id %}" method="post" class="d-inline favorite-form">
-                        {% csrf_token %}
-                        <button type="submit" class="btn btn-outline-primary btn-sm mt-2">
-                          <i class="far fa-heart"></i> Add to Favorites
+                        <button type="submit" class="btn btn-outline-primary btn-sm">
+                          <i class="fas fa-heart"></i> Add to Favorites
                         </button>
                       </form>
                     {% endif %}
-                    <a href="{% url 'add_review' place_data.place.id %}" class="btn btn-outline-secondary btn-sm mt-2">Add Review</a>
-                  {% else %}
-                    <a href="{% url 'login' %}" class="btn btn-outline-primary btn-sm mt-2">
-                      <i class="far fa-heart"></i> Login to Add to Favorites
+                    <a href="#" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#reviewModal{{ place_data.place.id }}">
+                      Write a Review
                     </a>
-                  {% endif %}
+                  </div>
                 </div>
               </div>
             </div>
-
-            <!-- Map Modal for each place -->
-            <div class="modal fade map-modal" id="mapModal{{ place_data.place.id }}" tabindex="-1" aria-labelledby="mapModalLabel{{ place_data.place.id }}" aria-hidden="true">
+            
+            <!-- Review Modal -->
+            <div class="modal fade" id="reviewModal{{ place_data.place.id }}" tabindex="-1">
               <div class="modal-dialog">
                 <div class="modal-content">
                   <div class="modal-header">
-                    <h5 class="modal-title" id="mapModalLabel{{ place_data.place.id }}">{{ place_data.place.name }} - Location</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <h5 class="modal-title">Write a Review for {{ place_data.place.name }}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                   </div>
                   <div class="modal-body">
-                    <div class="map-container">
-                      <iframe
-                        width="100%"
-                        height="400"
-                        frameborder="0"
-                        style="border:0"
-                        referrerpolicy="no-referrer-when-downgrade"
-                        src="https://www.google.com/maps/embed/v1/place?key={{ GOOGLE_MAPS_API_KEY }}&q={{ place_data.place.name }},{{ place_data.place.location }}&center={{ place_data.place.latitude }},{{ place_data.place.longitude }}&zoom=15"
-                        allowfullscreen>
-                      </iframe>
-                    </div>
-                    <div class="mt-3">
-                      <h6>Location Details:</h6>
-                      <p><strong>Address:</strong> {{ place_data.place.name }}, {{ place_data.place.location }}</p>
-                      {% if place_data.place.latitude and place_data.place.longitude %}
-                        <p><strong>Coordinates:</strong> {{ place_data.place.latitude }}, {{ place_data.place.longitude }}</p>
-                      {% endif %}
-                    </div>
-                  </div>
-                  <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                    <a href="https://www.google.com/maps/search/?api=1&query={{ place_data.place.location|urlencode }}" 
-                       class="btn btn-primary" 
-                       target="_blank">
-                      Open in Google Maps
-                    </a>
+                    <form method="post" action="{% url 'core:add_review' place_data.place.id %}">
+                      {% csrf_token %}
+                      <div class="mb-3">
+                        <label for="rating" class="form-label">Rating</label>
+                        <select name="rating" id="rating" class="form-select" required>
+                          <option value="5">5 Stars</option>
+                          <option value="4">4 Stars</option>
+                          <option value="3">3 Stars</option>
+                          <option value="2">2 Stars</option>
+                          <option value="1">1 Star</option>
+                        </select>
+                      </div>
+                      <div class="mb-3">
+                        <label for="comment" class="form-label">Comment</label>
+                        <textarea name="comment" id="comment" class="form-control" rows="3" required></textarea>
+                      </div>
+                      <button type="submit" class="btn btn-primary">Submit Review</button>
+                    </form>
                   </div>
                 </div>
               </div>
@@ -357,6 +306,63 @@
         </div>
       </div>
     </section>
+
+    <!-- Add this section after the existing recommendations section -->
+    <div class="container mt-5">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h3 class="mb-0">Gemini-Powered Recommendations</h3>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <label for="user-place">Select Your Current Place:</label>
+                            <select id="user-place" class="form-control">
+                                {% for place_data in places_with_weather %}
+                                    <option value="{{ place_data.place.name }}" 
+                                            data-lat="{{ place_data.latitude }}" 
+                                            data-lng="{{ place_data.longitude }}">
+                                        {{ place_data.place.name }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <label for="gemini-place-type">Preferred Place Type:</label>
+                            <select id="gemini-place-type" class="form-control">
+                                <option value="tourist_attraction">Tourist Attraction</option>
+                                <option value="hindu_temple">Temple</option>
+                                <option value="park">Hill Station/Park</option>
+                                <option value="beach">Beach</option>
+                                <option value="museum">Museum</option>
+                                <option value="restaurant">Restaurant</option>
+                                <option value="shopping_mall">Shopping</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <label for="budget">Budget Preference:</label>
+                            <select id="budget" class="form-control">
+                                <option value="low">Low (Free or Minimal Cost)</option>
+                                <option value="medium">Medium (Moderate Cost)</option>
+                                <option value="high">High (Premium Experiences)</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="text-center mt-3">
+                    <button class="btn btn-primary" onclick="fetchGeminiRecommendations()">Get Personalized Recommendations</button>
+                </div>
+                <div id="gemini-recommended-places" class="mt-4">
+                    <!-- Gemini Recommendations will be displayed here -->
+                </div>
+            </div>
+        </div>
+    </div>
 
     <!-- Local Cuisine and Dining Recommendations -->
     <section class="cuisine-section py-6" id="cuisine">
@@ -540,7 +546,7 @@
             <div class="card booking-card h-100">
               <div class="card-body">
                 <h4>Custom Inquiry</h4>
-                <form action="{% url 'submit_inquiry' state.id %}" method="post">
+                <form action="{% url 'core:submit_inquiry' state.id %}" method="post">
                   {% csrf_token %}
                   <div class="mb-3">
                     <input type="text" name="name" class="form-control" placeholder="Your Name" required>
@@ -615,27 +621,172 @@
     // Initialize AOS
     AOS.init({ duration: 1000, once: true });
 
-    // Google Maps Functionality
-    let map;
-    let marker;
-
-    async function showPlaceOnMap(lat, lng, placeName) {
-      const { Map } = await google.maps.importLibrary("maps");
-      const { Marker } = await google.maps.importLibrary("marker");
-
-      map = new Map(document.getElementById("map"), {
-        zoom: 15,
-        center: { lat: lat, lng: lng },
-        mapId: "TOURISM_MAP_ID",
+    // Initialize maps for each place
+    function initMaps() {
+      {% for place_data in places_with_weather %}
+      new google.maps.Map(document.getElementById('map-{{ place_data.place.id }}'), {
+        center: { lat: {{ place_data.latitude }}, lng: {{ place_data.longitude }} },
+        zoom: 15
       });
+      {% endfor %}
+    }
 
-      marker = new Marker({
-        map: map,
-        position: { lat: lat, lng: lng },
-        title: placeName,
-      });
+    // Load Google Maps API
+    function loadGoogleMapsAPI() {
+      const script = document.createElement('script');
+      script.src = `https://maps.googleapis.com/maps/api/js?key={{ GOOGLE_MAPS_API_KEY }}&callback=initMaps`;
+      script.async = true;
+      script.defer = true;
+      document.head.appendChild(script);
+    }
 
-      document.getElementById("mapModalLabel").textContent = `Location of ${placeName}`;
+    // Load the API when the page loads
+    window.onload = loadGoogleMapsAPI;
+
+    // Define the Gemini endpoint URL using Django's URL template tag
+    const geminiRecommendationsUrl = "{% url 'core:get_gemini_recommendations' %}";
+
+    function showOnMap(lat, lng, title) {
+        // Get the map container
+        const mapContainer = document.getElementById("state-map");
+        
+        // Clear any existing map
+        mapContainer.innerHTML = '';
+        
+        // Create a new map instance
+        const map = new google.maps.Map(mapContainer, {
+            center: { lat: parseFloat(lat), lng: parseFloat(lng) },
+            zoom: 15,
+            mapTypeControl: true,
+            streetViewControl: true,
+            fullscreenControl: true
+        });
+
+        // Add a marker for the selected place
+        const marker = new google.maps.Marker({
+            position: { lat: parseFloat(lat), lng: parseFloat(lng) },
+            map: map,
+            title: title,
+            animation: google.maps.Animation.DROP
+        });
+
+        // Add an info window
+        const infoWindow = new google.maps.InfoWindow({
+            content: `<div><h5>${title}</h5></div>`
+        });
+
+        // Show info window on marker click
+        marker.addListener("click", () => {
+            infoWindow.open(map, marker);
+        });
+
+        // Open info window by default
+        infoWindow.open(map, marker);
+    }
+
+    function fetchGeminiRecommendations() {
+        const placeSelect = document.getElementById("user-place");
+        const selectedOption = placeSelect.options[placeSelect.selectedIndex];
+        const userPlace = selectedOption.value;
+        const latitude = selectedOption.getAttribute('data-lat');
+        const longitude = selectedOption.getAttribute('data-lng');
+        const placeType = document.getElementById("gemini-place-type").value;
+        const budget = document.getElementById("budget").value;
+
+        if (!latitude || !longitude) {
+            alert("Please select a valid place");
+            return;
+        }
+
+        // Show loading state
+        const geminiRecommendedPlacesDiv = document.getElementById("gemini-recommended-places");
+        geminiRecommendedPlacesDiv.innerHTML = '<div class="text-center"><div class="spinner-border text-primary" role="status"><span class="sr-only">Loading...</span></div></div>';
+
+        // Construct the URL with query parameters
+        const url = `${geminiRecommendationsUrl}?latitude=${latitude}&longitude=${longitude}&user_place=${encodeURIComponent(userPlace)}&place_type=${placeType}&budget=${budget}`;
+
+        fetch(url)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.error) {
+                    geminiRecommendedPlacesDiv.innerHTML = `<div class="alert alert-danger">Error: ${data.error}</div>`;
+                    return;
+                }
+
+                const places = data.gemini_recommended_places;
+                const weatherData = data.weather_data;
+
+                if (!places || places.length === 0) {
+                    geminiRecommendedPlacesDiv.innerHTML = "<div class='alert alert-info'>No recommendations available at the moment.</div>";
+                    return;
+                }
+
+                // Display weather information
+                let html = `
+                    <div class="weather-info mb-4">
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 class="card-title"><i class="fas fa-cloud-sun"></i> Current Weather</h5>
+                                <div class="row">
+                                    <div class="col-md-3">
+                                        <p class="mb-0"><strong>Temperature:</strong> ${weatherData.temperature}°C</p>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <p class="mb-0"><strong>Weather:</strong> ${weatherData.weather}</p>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <p class="mb-0"><strong>Humidity:</strong> ${weatherData.humidity}%</p>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <p class="mb-0"><strong>Description:</strong> ${weatherData.description}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                `;
+
+                places.forEach(place => {
+                    const hasCoordinates = place.latitude && place.longitude;
+                    html += `
+                        <div class="col-md-6 mb-4">
+                            <div class="card h-100">
+                                <div class="card-body">
+                                    <h5 class="card-title">${place.name}</h5>
+                                    <p class="card-text">
+                                        ${place.rating ? `<span class="badge bg-primary">Rating: ${place.rating}</span><br>` : ''}
+                                        ${hasCoordinates ? 
+                                            `<small class="text-muted">Location: ${place.latitude}, ${place.longitude}</small><br>` : 
+                                            '<small class="text-muted">Location: Not available</small><br>'
+                                        }
+                                        <em>${place.reasoning}</em>
+                                    </p>
+                                    ${hasCoordinates ? 
+                                        `<button class="btn btn-sm btn-outline-primary" onclick="showOnMap(${place.latitude}, ${place.longitude}, '${place.name}')">
+                                            Show on Map
+                                        </button>` :
+                                        `<button class="btn btn-sm btn-outline-secondary" disabled>
+                                            Location Unavailable
+                                        </button>`
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+                html += "</div>";
+                geminiRecommendedPlacesDiv.innerHTML = html;
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                geminiRecommendedPlacesDiv.innerHTML = `<div class="alert alert-danger">Error: ${error.message}</div>`;
+            });
     }
   </script>
   <script src="{% static 'core/js/scripts.js' %}"></script>
