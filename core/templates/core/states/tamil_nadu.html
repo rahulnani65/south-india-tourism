@@ -46,6 +46,126 @@
       right: 10px;
       z-index: 1;
     }
+    .social-post {
+      border: none;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      transition: transform 0.2s;
+    }
+    
+    .social-post:hover {
+      transform: translateY(-5px);
+    }
+    
+    .post-image {
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    
+    .post-content {
+      font-size: 1.1rem;
+      line-height: 1.6;
+    }
+    
+    .post-stats {
+      color: #666;
+      font-size: 0.9rem;
+    }
+    
+    .post-stats i {
+      margin-right: 4px;
+    }
+    
+    .comment-content {
+      background: #f8f9fa;
+      padding: 8px 12px;
+      border-radius: 12px;
+      margin-left: 8px;
+    }
+    
+    .comment-content p {
+      font-size: 0.9rem;
+      margin: 0;
+    }
+    
+    /* Add these new styles for place cards */
+    .place-card {
+      height: 100%;
+      transition: transform 0.2s, box-shadow 0.2s;
+      border: none;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .place-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    }
+
+    .place-card .card-body {
+      padding: 1.5rem;
+    }
+
+    .place-card .card-title {
+      font-size: 1.25rem;
+      margin-bottom: 1rem;
+      color: #2c3e50;
+      font-weight: 600;
+    }
+
+    .place-card .rating-badge {
+      font-size: 0.9rem;
+      padding: 0.4rem 0.8rem;
+      margin-bottom: 0.8rem;
+    }
+
+    .place-card .location-info {
+      font-size: 0.85rem;
+      color: #6c757d;
+      margin-bottom: 0.8rem;
+    }
+
+    .place-card .reasoning {
+      font-size: 0.95rem;
+      color: #495057;
+      margin-bottom: 1.2rem;
+      line-height: 1.5;
+      font-style: italic;
+    }
+
+    .place-card .card-actions {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: auto;
+    }
+
+    .place-card .btn-map {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 1rem;
+      font-size: 0.9rem;
+    }
+
+    .place-card .btn-map i {
+      font-size: 1rem;
+    }
+
+    .place-card .weather-info {
+      background-color: #f8f9fa;
+      border-radius: 0.5rem;
+      padding: 0.8rem;
+      margin-bottom: 1rem;
+    }
+
+    .place-card .weather-info p {
+      margin-bottom: 0.3rem;
+      font-size: 0.9rem;
+    }
+
+    .place-card .weather-info i {
+      margin-right: 0.5rem;
+      color: #0d6efd;
+    }
   </style>
   <!-- Add Font Awesome in the head section -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
@@ -229,7 +349,7 @@
         <div class="row" id="places-list">
           {% for place_data in places_with_weather %}
             <div class="col-md-6 col-lg-4 mb-4">
-              <div class="card h-100">
+              <div class="card place-card">
                 {% if place_data.place.image %}
                   <img src="{{ place_data.place.image.url }}" class="card-img-top" alt="{{ place_data.place.name }}">
                 {% endif %}
@@ -241,59 +361,25 @@
                   {% if place_data.weather %}
                     <div class="weather-info mb-3">
                       <h6>Current Weather</h6>
-                      <p>Temperature: {{ place_data.weather.temperature }}°C</p>
-                      <p>Condition: {{ place_data.weather.condition }}</p>
+                      <p><i class="fas fa-temperature-high"></i> Temperature: {{ place_data.weather.temperature }}°C</p>
+                      <p><i class="fas fa-cloud"></i> Condition: {{ place_data.weather.condition }}</p>
                     </div>
                   {% endif %}
                   
-                  <!-- Map Container -->
-                  <div class="map-container" id="map-{{ place_data.place.id }}" style="height: 300px;"></div>
-                  
                   <!-- Action Buttons -->
-                  <div class="mt-3">
+                  <div class="card-actions">
+                    <button class="btn btn-outline-primary btn-map" 
+                            onclick="showMainPlaceOnMap({{ place_data.latitude }}, {{ place_data.longitude }}, '{{ place_data.place.name }}')">
+                      <i class="fas fa-map-marker-alt"></i> Show on Map
+                    </button>
                     {% if user.is_authenticated %}
                       <form method="post" action="{% url 'core:add_favorite' place_data.place.id %}" class="d-inline">
                         {% csrf_token %}
-                        <button type="submit" class="btn btn-outline-primary btn-sm">
-                          <i class="fas fa-heart"></i> Add to Favorites
+                        <button type="submit" class="btn btn-outline-secondary btn-sm">
+                          <i class="far fa-heart"></i>
                         </button>
                       </form>
                     {% endif %}
-                    <a href="#" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#reviewModal{{ place_data.place.id }}">
-                      Write a Review
-                    </a>
-                  </div>
-                </div>
-              </div>
-            </div>
-            
-            <!-- Review Modal -->
-            <div class="modal fade" id="reviewModal{{ place_data.place.id }}" tabindex="-1">
-              <div class="modal-dialog">
-                <div class="modal-content">
-                  <div class="modal-header">
-                    <h5 class="modal-title">Write a Review for {{ place_data.place.name }}</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                  </div>
-                  <div class="modal-body">
-                    <form method="post" action="{% url 'core:add_review' place_data.place.id %}">
-                      {% csrf_token %}
-                      <div class="mb-3">
-                        <label for="rating" class="form-label">Rating</label>
-                        <select name="rating" id="rating" class="form-select" required>
-                          <option value="5">5 Stars</option>
-                          <option value="4">4 Stars</option>
-                          <option value="3">3 Stars</option>
-                          <option value="2">2 Stars</option>
-                          <option value="1">1 Star</option>
-                        </select>
-                      </div>
-                      <div class="mb-3">
-                        <label for="comment" class="form-label">Comment</label>
-                        <textarea name="comment" id="comment" class="form-control" rows="3" required></textarea>
-                      </div>
-                      <button type="submit" class="btn btn-primary">Submit Review</button>
-                    </form>
                   </div>
                 </div>
               </div>
@@ -477,18 +563,135 @@
       <div class="container">
         <h2 class="section-title text-center mb-5">Traveler Stories</h2>
         <div class="row">
-          <div class="col-md-6 mb-4 mx-auto">
-            <div class="card ugc-card h-100">
+          <!-- Sample Social Media Posts -->
+          <div class="col-md-6 mb-4">
+            <div class="card social-post">
               <div class="card-body">
-                <h4>User Reviews</h4>
-                {% for review in state.reviews.all %}
-                  <div class="review-item mb-3">
-                    <p><strong>{{ review.user.username }}</strong> ({{ review.rating }}/5): {{ review.comment }}</p>
-                    <small class="text-muted">Posted on {{ review.created_at|date:"F d, Y" }}</small>
+                <div class="d-flex align-items-center mb-3">
+                  <img src="https://randomuser.me/api/portraits/women/44.jpg" class="rounded-circle me-3" width="50" height="50" alt="User Avatar">
+                  <div>
+                    <h6 class="mb-0">Sarah Johnson</h6>
+                    <small class="text-muted">Travel Blogger</small>
                   </div>
-                {% empty %}
-                  <p>No reviews available. Be the first to share your experience!</p>
-                {% endfor %}
+                </div>
+                <div class="post-image mb-3">
+                  <img src="{% static 'core/images/tamil_nadu.jpg' %}" class="img-fluid rounded" alt="Tamil Nadu Temple">
+                </div>
+                <p class="post-content">Just visited the magnificent Meenakshi Temple in Madurai! The intricate architecture and spiritual atmosphere are absolutely breathtaking. A must-visit destination in Tamil Nadu! 🏛️✨</p>
+                <div class="post-stats mb-3">
+                  <span><i class="fas fa-heart text-danger"></i> 2.4k</span>
+                  <span class="ms-3"><i class="fas fa-comment"></i> 156</span>
+                  <span class="ms-3"><i class="fas fa-share"></i> 89</span>
+                </div>
+                <div class="post-comments">
+                  <div class="d-flex mb-2">
+                    <img src="https://randomuser.me/api/portraits/men/32.jpg" class="rounded-circle me-2" width="32" height="32" alt="Commenter Avatar">
+                    <div class="comment-content">
+                      <small class="fw-bold">Rajesh Kumar</small>
+                      <p class="mb-0">The temple is even more beautiful during the evening aarti ceremony! 🌅</p>
+                    </div>
+                  </div>
+                </div>
+                <small class="text-muted">Posted 2 days ago</small>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-md-6 mb-4">
+            <div class="card social-post">
+              <div class="card-body">
+                <div class="d-flex align-items-center mb-3">
+                  <img src="https://randomuser.me/api/portraits/men/67.jpg" class="rounded-circle me-3" width="50" height="50" alt="User Avatar">
+                  <div>
+                    <h6 class="mb-0">Michael Chen</h6>
+                    <small class="text-muted">Photography Enthusiast</small>
+                  </div>
+                </div>
+                <div class="post-image mb-3">
+                  <img src="{% static 'core/images/tamil_nadu.jpg' %}" class="img-fluid rounded" alt="Ooty Hills">
+                </div>
+                <p class="post-content">Exploring the beautiful Nilgiri Hills in Ooty! The tea gardens and mountain views are absolutely stunning. Perfect weather for a morning trek! 🏔️☕</p>
+                <div class="post-stats mb-3">
+                  <span><i class="fas fa-heart text-danger"></i> 1.8k</span>
+                  <span class="ms-3"><i class="fas fa-comment"></i> 98</span>
+                  <span class="ms-3"><i class="fas fa-share"></i> 45</span>
+                </div>
+                <div class="post-comments">
+                  <div class="d-flex mb-2">
+                    <img src="https://randomuser.me/api/portraits/women/22.jpg" class="rounded-circle me-2" width="32" height="32" alt="Commenter Avatar">
+                    <div class="comment-content">
+                      <small class="fw-bold">Priya Sharma</small>
+                      <p class="mb-0">Don't forget to try the local tea and homemade chocolates! 🍫</p>
+                    </div>
+                  </div>
+                </div>
+                <small class="text-muted">Posted 1 week ago</small>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-md-6 mb-4">
+            <div class="card social-post">
+              <div class="card-body">
+                <div class="d-flex align-items-center mb-3">
+                  <img src="https://randomuser.me/api/portraits/women/28.jpg" class="rounded-circle me-3" width="50" height="50" alt="User Avatar">
+                  <div>
+                    <h6 class="mb-0">Emma Wilson</h6>
+                    <small class="text-muted">Food Blogger</small>
+                  </div>
+                </div>
+                <div class="post-image mb-3">
+                  <img src="{% static 'core/images/tamil_nadu.jpg' %}" class="img-fluid rounded" alt="Tamil Nadu Food">
+                </div>
+                <p class="post-content">Food heaven in Chennai! The authentic Chettinad cuisine is a flavor explosion. From spicy curries to crispy dosas, every bite is a delight! 🍛✨</p>
+                <div class="post-stats mb-3">
+                  <span><i class="fas fa-heart text-danger"></i> 3.2k</span>
+                  <span class="ms-3"><i class="fas fa-comment"></i> 245</span>
+                  <span class="ms-3"><i class="fas fa-share"></i> 167</span>
+                </div>
+                <div class="post-comments">
+                  <div class="d-flex mb-2">
+                    <img src="https://randomuser.me/api/portraits/men/45.jpg" class="rounded-circle me-2" width="32" height="32" alt="Commenter Avatar">
+                    <div class="comment-content">
+                      <small class="fw-bold">Arun Kumar</small>
+                      <p class="mb-0">Try the filter coffee next time! It's a must-have experience ☕</p>
+                    </div>
+                  </div>
+                </div>
+                <small class="text-muted">Posted 3 days ago</small>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-md-6 mb-4">
+            <div class="card social-post">
+              <div class="card-body">
+                <div class="d-flex align-items-center mb-3">
+                  <img src="https://randomuser.me/api/portraits/men/89.jpg" class="rounded-circle me-3" width="50" height="50" alt="User Avatar">
+                  <div>
+                    <h6 class="mb-0">David Park</h6>
+                    <small class="text-muted">Adventure Seeker</small>
+                  </div>
+                </div>
+                <div class="post-image mb-3">
+                  <img src="{% static 'core/images/tamil_nadu.jpg' %}" class="img-fluid rounded" alt="Kanyakumari">
+                </div>
+                <p class="post-content">Witnessed the magical sunrise at Kanyakumari - where three oceans meet! The Vivekananda Rock Memorial is a spiritual experience. 🌅🌊</p>
+                <div class="post-stats mb-3">
+                  <span><i class="fas fa-heart text-danger"></i> 2.9k</span>
+                  <span class="ms-3"><i class="fas fa-comment"></i> 178</span>
+                  <span class="ms-3"><i class="fas fa-share"></i> 92</span>
+                </div>
+                <div class="post-comments">
+                  <div class="d-flex mb-2">
+                    <img src="https://randomuser.me/api/portraits/women/56.jpg" class="rounded-circle me-2" width="32" height="32" alt="Commenter Avatar">
+                    <div class="comment-content">
+                      <small class="fw-bold">Lakshmi Devi</small>
+                      <p class="mb-0">The sunset view is equally mesmerizing! 🌅</p>
+                    </div>
+                  </div>
+                </div>
+                <small class="text-muted">Posted 5 days ago</small>
               </div>
             </div>
           </div>
@@ -599,6 +802,36 @@
     <i class="fas fa-chevron-up"></i>
   </a>
 
+  <!-- Map Modal -->
+  <div class="modal fade" id="mapModal" tabindex="-1" aria-labelledby="mapModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="mapModalLabel">Location on Map</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <div id="recommendationMap" style="height: 500px; width: 100%;"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Places Map Modal -->
+  <div class="modal fade" id="mainPlacesMapModal" tabindex="-1" aria-labelledby="mainPlacesMapModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="mainPlacesMapModalLabel">Location on Map</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <div id="mainPlacesMap" style="height: 500px; width: 100%;"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Scripts -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script src="https://unpkg.com/aos@next/dist/aos.js"></script>
@@ -646,42 +879,52 @@
     // Define the Gemini endpoint URL using Django's URL template tag
     const geminiRecommendationsUrl = "{% url 'core:get_gemini_recommendations' %}";
 
-    function showOnMap(lat, lng, title) {
-        // Get the map container
-        const mapContainer = document.getElementById("state-map");
-        
-        // Clear any existing map
-        mapContainer.innerHTML = '';
-        
-        // Create a new map instance
-        const map = new google.maps.Map(mapContainer, {
-            center: { lat: parseFloat(lat), lng: parseFloat(lng) },
-            zoom: 15,
-            mapTypeControl: true,
-            streetViewControl: true,
-            fullscreenControl: true
-        });
+    // Add these new functions for map handling
+    let recommendationMap = null;
+    let currentMarker = null;
 
-        // Add a marker for the selected place
-        const marker = new google.maps.Marker({
-            position: { lat: parseFloat(lat), lng: parseFloat(lng) },
-            map: map,
-            title: title,
-            animation: google.maps.Animation.DROP
-        });
+    function showOnMap(latitude, longitude, placeName) {
+      // Show the modal
+      const mapModal = new bootstrap.Modal(document.getElementById('mapModal'));
+      mapModal.show();
 
-        // Add an info window
-        const infoWindow = new google.maps.InfoWindow({
-            content: `<div><h5>${title}</h5></div>`
+      // Initialize map if not already done
+      if (!recommendationMap) {
+        recommendationMap = new google.maps.Map(document.getElementById('recommendationMap'), {
+          center: { lat: latitude, lng: longitude },
+          zoom: 15,
+          mapTypeControl: true,
+          streetViewControl: true,
+          fullscreenControl: true
         });
+      } else {
+        recommendationMap.setCenter({ lat: latitude, lng: longitude });
+      }
 
-        // Show info window on marker click
-        marker.addListener("click", () => {
-            infoWindow.open(map, marker);
-        });
+      // Remove existing marker if any
+      if (currentMarker) {
+        currentMarker.setMap(null);
+      }
 
-        // Open info window by default
-        infoWindow.open(map, marker);
+      // Add new marker
+      currentMarker = new google.maps.Marker({
+        position: { lat: latitude, lng: longitude },
+        map: recommendationMap,
+        title: placeName,
+        animation: google.maps.Animation.DROP
+      });
+
+      // Add info window
+      const infoWindow = new google.maps.InfoWindow({
+        content: `<div class="p-2"><h6>${placeName}</h6><p>Latitude: ${latitude}<br>Longitude: ${longitude}</p></div>`
+      });
+
+      currentMarker.addListener('click', () => {
+        infoWindow.open(recommendationMap, currentMarker);
+      });
+
+      // Open info window by default
+      infoWindow.open(recommendationMap, currentMarker);
     }
 
     function fetchGeminiRecommendations() {
@@ -753,28 +996,49 @@
                 `;
 
                 places.forEach(place => {
-                    const hasCoordinates = place.latitude && place.longitude;
+                    // Default values for missing data
+                    const rating = place.rating || 'N/A';
+                    const reasoning = place.reasoning || 'No description available';
+                    const weather = weatherData || {
+                        temperature: 'N/A',
+                        weather: 'N/A',
+                        humidity: 'N/A',
+                        description: 'Weather data unavailable'
+                    };
+
                     html += `
                         <div class="col-md-6 mb-4">
-                            <div class="card h-100">
+                            <div class="card place-card">
                                 <div class="card-body">
                                     <h5 class="card-title">${place.name}</h5>
-                                    <p class="card-text">
-                                        ${place.rating ? `<span class="badge bg-primary">Rating: ${place.rating}</span><br>` : ''}
-                                        ${hasCoordinates ? 
-                                            `<small class="text-muted">Location: ${place.latitude}, ${place.longitude}</small><br>` : 
-                                            '<small class="text-muted">Location: Not available</small><br>'
-                                        }
-                                        <em>${place.reasoning}</em>
+                                    
+                                    <div class="weather-info">
+                                        <p><i class="fas fa-temperature-high"></i> Temperature: ${weather.temperature}°C</p>
+                                        <p><i class="fas fa-cloud"></i> Weather: ${weather.weather}</p>
+                                        <p><i class="fas fa-tint"></i> Humidity: ${weather.humidity}%</p>
+                                    </div>
+
+                                    <span class="badge bg-primary rating-badge">
+                                        <i class="fas fa-star"></i> Rating: ${rating}
+                                    </span>
+                                    
+                                    <p class="location-info">
+                                        <i class="fas fa-map-marker-alt"></i> 
+                                        Location: ${place.latitude.toFixed(4)}, ${place.longitude.toFixed(4)}
                                     </p>
-                                    ${hasCoordinates ? 
-                                        `<button class="btn btn-sm btn-outline-primary" onclick="showOnMap(${place.latitude}, ${place.longitude}, '${place.name}')">
-                                            Show on Map
-                                        </button>` :
-                                        `<button class="btn btn-sm btn-outline-secondary" disabled>
-                                            Location Unavailable
-                                        </button>`
-                                    }
+                                    
+                                    <p class="reasoning">${reasoning}</p>
+                                    
+                                    <div class="card-actions">
+                                        <button class="btn btn-outline-primary btn-map" 
+                                                onclick="showOnMap(${place.latitude}, ${place.longitude}, '${place.name}')">
+                                            <i class="fas fa-map-marker-alt"></i> Show on Map
+                                        </button>
+                                        <button class="btn btn-outline-secondary btn-sm" 
+                                                onclick="addToFavorites('${place.name}', ${place.latitude}, ${place.longitude}, event)">
+                                            <i class="far fa-heart"></i>
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -788,6 +1052,114 @@
                 geminiRecommendedPlacesDiv.innerHTML = `<div class="alert alert-danger">Error: ${error.message}</div>`;
             });
     }
+
+    // Add this new function for favorites
+    function addToFavorites(name, latitude, longitude, event) {
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+        
+        fetch('{% url "core:add_recommended_favorite" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken
+            },
+            body: JSON.stringify({
+                name: name,
+                latitude: latitude,
+                longitude: longitude
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const button = event.target;
+                button.innerHTML = '<i class="fas fa-heart"></i> Added to Favorites';
+                button.classList.add('favorited');
+                button.disabled = true;
+            } else {
+                alert('Error adding to favorites: ' + data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error adding to favorites');
+        });
+    }
+
+    // Add these new variables and functions for main places map
+    let mainPlacesMap = null;
+    let mainPlacesMarker = null;
+
+    function showMainPlaceOnMap(latitude, longitude, placeName) {
+      // Show the modal
+      const mapModal = new bootstrap.Modal(document.getElementById('mainPlacesMapModal'));
+      mapModal.show();
+
+      // Initialize map if not already done
+      if (!mainPlacesMap) {
+        mainPlacesMap = new google.maps.Map(document.getElementById('mainPlacesMap'), {
+          center: { lat: latitude, lng: longitude },
+          zoom: 15,
+          mapTypeControl: true,
+          streetViewControl: true,
+          fullscreenControl: true
+        });
+      } else {
+        mainPlacesMap.setCenter({ lat: latitude, lng: longitude });
+      }
+
+      // Remove existing marker if any
+      if (mainPlacesMarker) {
+        mainPlacesMarker.setMap(null);
+      }
+
+      // Add new marker
+      mainPlacesMarker = new google.maps.Marker({
+        position: { lat: latitude, lng: longitude },
+        map: mainPlacesMap,
+        title: placeName,
+        animation: google.maps.Animation.DROP
+      });
+
+      // Add info window
+      const infoWindow = new google.maps.InfoWindow({
+        content: `<div class="p-2"><h6>${placeName}</h6><p>Latitude: ${latitude}<br>Longitude: ${longitude}</p></div>`
+      });
+
+      mainPlacesMarker.addListener('click', () => {
+        infoWindow.open(mainPlacesMap, mainPlacesMarker);
+      });
+
+      // Open info window by default
+      infoWindow.open(mainPlacesMap, mainPlacesMarker);
+    }
+
+    // Update the places list section
+    document.addEventListener('DOMContentLoaded', function() {
+      const placesList = document.getElementById('places-list');
+      if (placesList) {
+        const placeCards = placesList.querySelectorAll('.card');
+        placeCards.forEach(card => {
+          const mapContainer = card.querySelector('.map-container');
+          if (mapContainer) {
+            // Remove the map container
+            mapContainer.remove();
+            
+            // Add a show on map button
+            const cardBody = card.querySelector('.card-body');
+            const actionButtons = document.createElement('div');
+            actionButtons.className = 'card-actions mt-3';
+            actionButtons.innerHTML = `
+              <button class="btn btn-outline-primary btn-map" 
+                      onclick="showMainPlaceOnMap(${mapContainer.dataset.lat}, ${mapContainer.dataset.lng}, '${card.querySelector('.card-title').textContent}')">
+                <i class="fas fa-map-marker-alt"></i> Show on Map
+              </button>
+            `;
+            cardBody.appendChild(actionButtons);
+          }
+        });
+      }
+    });
   </script>
   <script src="{% static 'core/js/scripts.js' %}"></script>
   <script src="{% static 'core/js/state.js' %}"></script>

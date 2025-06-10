@@ -7,18 +7,10 @@
 <div class="container mt-5">
     <h2 class="mb-4">API Testing Page</h2>
     
-    <!-- Map Container -->
-    <div class="card mb-4">
-        <div class="card-body">
-            <h5 class="card-title">Map Visualization</h5>
-            <div id="map" style="height: 400px; width: 100%;" class="mb-3"></div>
-        </div>
-    </div>
-
-    <!-- API Key Verification -->
-    <div class="card mb-4">
-        <div class="card-body">
-            <h5 class="card-title">API Key Verification</h5>
+            <!-- API Key Verification -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h5 class="card-title">API Key Verification</h5>
             <button onclick="verifyAPIKeys()" class="btn btn-primary">Verify API Keys</button>
             <pre id="keyVerification" class="mt-3 bg-light p-3 rounded"></pre>
         </div>
@@ -87,22 +79,22 @@
             <div class="mt-4">
                 <h6>Response:</h6>
                 <pre id="nearbyResponse" class="bg-light p-3 rounded" style="max-height: 400px; overflow-y: auto;"></pre>
+                    </div>
+                </div>
             </div>
-        </div>
-    </div>
 
-    <!-- Place Details Test -->
-    <div class="card mb-4">
-        <div class="card-body">
-            <h5 class="card-title">Test Place Details API</h5>
-            <div class="mb-3">
-                <label for="placeName" class="form-label">Place Name</label>
-                <input type="text" class="form-control" id="placeName" value="Hyderabad">
-            </div>
-            <button onclick="fetchPlaceDetails()" class="btn btn-primary">Fetch Details</button>
-            <div class="mt-4">
-                <h6>Response:</h6>
-                <pre id="placeResponse" class="bg-light p-3 rounded" style="max-height: 400px; overflow-y: auto;"></pre>
+            <!-- Place Details Test -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h5 class="card-title">Test Place Details API</h5>
+                    <div class="mb-3">
+                        <label for="placeName" class="form-label">Place Name</label>
+                        <input type="text" class="form-control" id="placeName" value="Hyderabad">
+                    </div>
+                    <button onclick="fetchPlaceDetails()" class="btn btn-primary">Fetch Details</button>
+                    <div class="mt-4">
+                        <h6>Response:</h6>
+                        <pre id="placeResponse" class="bg-light p-3 rounded" style="max-height: 400px; overflow-y: auto;"></pre>
             </div>
         </div>
     </div>
@@ -110,62 +102,52 @@
 {% endblock %}
 
 {% block extra_js %}
-<script src="https://maps.googleapis.com/maps/api/js?key={{ GOOGLE_MAPS_API_KEY }}&libraries=places"></script>
 <script>
-let map;
-let markers = [];
-let directionsService;
-let directionsRenderer;
-
-function initMap() {
-    // Initialize the map centered on South India
-    map = new google.maps.Map(document.getElementById('map'), {
-        center: { lat: 13.0827, lng: 80.2707 }, // Chennai coordinates
-        zoom: 7
-    });
-
-    directionsService = new google.maps.DirectionsService();
-    directionsRenderer = new google.maps.DirectionsRenderer({
-        map: map,
-        suppressMarkers: true
-    });
-}
-
-function clearMarkers() {
-    markers.forEach(marker => marker.setMap(null));
-    markers = [];
-}
-
-function addMarker(position, title) {
-    const marker = new google.maps.Marker({
-        position: position,
-        map: map,
-        title: title
-    });
-    markers.push(marker);
-    return marker;
-}
-
 function verifyAPIKeys() {
     const verificationElement = document.getElementById('keyVerification');
     verificationElement.textContent = 'Verifying API keys...';
     
-    // Test Google Maps API
-    if (typeof google !== 'undefined' && google.maps) {
-        verificationElement.textContent = JSON.stringify({
+    // Test all APIs
+    Promise.all([
+        fetch('/api/place-details/?place=Hyderabad'),
+        fetch('/api/github/repos/')
+    ])
+    .then(responses => Promise.all(responses.map(res => res.json())))
+    .then(([placeData, githubData]) => {
+        const verification = {
             google_maps: {
                 status: 'success',
-                message: 'Google Maps API is loaded and working'
+                message: 'Google Maps API key is configured'
+            },
+            composio: {
+                status: 'success',
+                message: 'Composio API key is working'
+            },
+            github: {
+                status: 'success',
+                message: 'GitHub integration is working'
             }
-        }, null, 2);
-    } else {
-        verificationElement.textContent = JSON.stringify({
-            google_maps: {
+        };
+        
+        if (placeData.error) {
+            verification.composio = {
                 status: 'error',
-                message: 'Google Maps API failed to load'
-            }
-        }, null, 2);
-    }
+                message: placeData.error
+            };
+        }
+        
+        if (githubData.error) {
+            verification.github = {
+                status: 'error',
+                message: githubData.error
+            };
+        }
+        
+        verificationElement.textContent = JSON.stringify(verification, null, 2);
+    })
+    .catch(error => {
+        verificationElement.textContent = `Error verifying API keys: ${error.message}`;
+    });
 }
 
 function fetchRoutePlanning() {
@@ -175,44 +157,15 @@ function fetchRoutePlanning() {
     const responseElement = document.getElementById('routeResponse');
     
     responseElement.textContent = 'Fetching route information...';
-    clearMarkers();
     
-    const request = {
-        origin: origin,
-        destination: destination,
-        travelMode: google.maps.TravelMode[mode.toUpperCase()]
-    };
-
-    directionsService.route(request, (result, status) => {
-        if (status === 'OK') {
-            directionsRenderer.setDirections(result);
-            
-            // Add markers for origin and destination
-            const originMarker = addMarker(result.routes[0].legs[0].start_location, 'Origin');
-            const destMarker = addMarker(result.routes[0].legs[0].end_location, 'Destination');
-            
-            // Add info windows
-            const originInfo = new google.maps.InfoWindow({
-                content: `<strong>Origin:</strong> ${result.routes[0].legs[0].start_address}`
-            });
-            const destInfo = new google.maps.InfoWindow({
-                content: `<strong>Destination:</strong> ${result.routes[0].legs[0].end_address}`
-            });
-            
-            originMarker.addListener('click', () => originInfo.open(map, originMarker));
-            destMarker.addListener('click', () => destInfo.open(map, destMarker));
-            
-            responseElement.textContent = JSON.stringify({
-                status: 'success',
-                distance: result.routes[0].legs[0].distance.text,
-                duration: result.routes[0].legs[0].duration.text,
-                start_address: result.routes[0].legs[0].start_address,
-                end_address: result.routes[0].legs[0].end_address
-            }, null, 2);
-        } else {
-            responseElement.textContent = `Error: ${status}`;
-        }
-    });
+    fetch(`/api/route-info/?origin=${encodeURIComponent(origin)}&destination=${encodeURIComponent(destination)}&mode=${mode}`)
+        .then(response => response.json())
+        .then(data => {
+            responseElement.textContent = JSON.stringify(data, null, 2);
+        })
+        .catch(error => {
+            responseElement.textContent = `Error: ${error.message}`;
+        });
 }
 
 function fetchNearbyPlaces() {
@@ -221,61 +174,15 @@ function fetchNearbyPlaces() {
     const responseElement = document.getElementById('nearbyResponse');
     
     responseElement.textContent = 'Fetching nearby places...';
-    clearMarkers();
     
-    // First, geocode the location
-    const geocoder = new google.maps.Geocoder();
-    geocoder.geocode({ address: location }, (results, status) => {
-        if (status === 'OK') {
-            const location = results[0].geometry.location;
-            map.setCenter(location);
-            map.setZoom(14);
-            
-            // Add marker for the search location
-            const marker = addMarker(location, 'Search Location');
-            const infoWindow = new google.maps.InfoWindow({
-                content: `<strong>Search Location:</strong> ${results[0].formatted_address}`
-            });
-            marker.addListener('click', () => infoWindow.open(map, marker));
-            
-            // Search for nearby places
-            const service = new google.maps.places.PlacesService(map);
-            const request = {
-                location: location,
-                radius: '5000',
-                type: [type]
-            };
-            
-            service.nearbySearch(request, (results, status) => {
-                if (status === google.maps.places.PlacesServiceStatus.OK) {
-                    const places = results.slice(0, 5); // Get top 5 results
-                    
-                    places.forEach(place => {
-                        const marker = addMarker(place.geometry.location, place.name);
-                        const infoWindow = new google.maps.InfoWindow({
-                            content: `
-                                <strong>${place.name}</strong><br>
-                                Rating: ${place.rating || 'N/A'}<br>
-                                ${place.vicinity}
-                            `
-                        });
-                        marker.addListener('click', () => infoWindow.open(map, marker));
-                    });
-                    
-                    responseElement.textContent = JSON.stringify(places.map(place => ({
-                        name: place.name,
-                        rating: place.rating,
-                        vicinity: place.vicinity,
-                        location: place.geometry.location.toJSON()
-                    })), null, 2);
-                } else {
-                    responseElement.textContent = `Error: ${status}`;
-                }
-            });
-        } else {
-            responseElement.textContent = `Error: Could not geocode location`;
-        }
-    });
+    fetch(`/api/nearby-places/?location=${encodeURIComponent(location)}&type=${type}`)
+        .then(response => response.json())
+        .then(data => {
+            responseElement.textContent = JSON.stringify(data, null, 2);
+        })
+        .catch(error => {
+            responseElement.textContent = `Error: ${error.message}`;
+        });
 }
 
 function fetchPlaceDetails() {
@@ -283,37 +190,15 @@ function fetchPlaceDetails() {
     const responseElement = document.getElementById('placeResponse');
     
     responseElement.textContent = 'Fetching place details...';
-    clearMarkers();
     
-    const geocoder = new google.maps.Geocoder();
-    geocoder.geocode({ address: placeName }, (results, status) => {
-        if (status === 'OK') {
-            const location = results[0].geometry.location;
-            map.setCenter(location);
-            map.setZoom(15);
-            
-            const marker = addMarker(location, placeName);
-            const infoWindow = new google.maps.InfoWindow({
-                content: `
-                    <strong>${placeName}</strong><br>
-                    ${results[0].formatted_address}
-                `
-            });
-            marker.addListener('click', () => infoWindow.open(map, marker));
-            
-            responseElement.textContent = JSON.stringify({
-                name: placeName,
-                formatted_address: results[0].formatted_address,
-                location: location.toJSON(),
-                place_id: results[0].place_id
-            }, null, 2);
-        } else {
-            responseElement.textContent = `Error: ${status}`;
-        }
-    });
+    fetch(`/api/place-details/?place=${encodeURIComponent(placeName)}`)
+        .then(response => response.json())
+        .then(data => {
+            responseElement.textContent = JSON.stringify(data, null, 2);
+        })
+        .catch(error => {
+            responseElement.textContent = `Error: ${error.message}`;
+});
 }
-
-// Initialize the map when the page loads
-window.onload = initMap;
 </script>
 {% endblock %} 

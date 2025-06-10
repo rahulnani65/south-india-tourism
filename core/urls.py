@@ -14,6 +14,7 @@ urlpatterns = [
     path('add-review/<int:place_id>/', views.add_review, name='add_review'),
     path('add-favorite/<int:place_id>/', views.add_favorite, name='add_favorite'),
     path('remove-favorite/<int:place_id>/', views.remove_favorite, name='remove_favorite'),
+    path('add-recommended-favorite/', views.add_recommended_favorite, name='add_recommended_favorite'),
     path('add-state-favorite/<int:state_id>/', views.add_state_favorite, name='add_state_favorite'),
     path('remove-state-favorite/<int:state_id>/', views.remove_state_favorite, name='remove_state_favorite'),
     path('add-post-favorite/<int:post_id>/', views.add_post_favorite, name='add_post_favorite'),

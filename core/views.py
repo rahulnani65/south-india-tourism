@@ -18,6 +18,7 @@ import pytz
 import google.generativeai as genai
 import logging
 from django.db import transaction
+import json
 
 logger = logging.getLogger(__name__)
 
@@ -155,7 +156,7 @@ def profile(request):
         if form.is_valid():
             form.save()
             messages.success(request, "Profile updated successfully!")
-            return redirect('profile')
+            return redirect('core:profile')
     else:
         form = UserProfileForm(instance=user_profile)
     return render(request, 'core/profile.html', {'form': form})
@@ -192,6 +193,7 @@ def add_review(request, place_id):
 def add_favorite(request, place_id):
     place = get_object_or_404(Place, id=place_id)
     Favorite.objects.get_or_create(user=request.user, place=place)
+    place.favorited_by.add(request.user)
     messages.success(request, f"{place.name} added to favorites!")
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
         return JsonResponse({'success': True})
@@ -199,12 +201,14 @@ def add_favorite(request, place_id):
 
 @login_required
 def remove_favorite(request, place_id):
-    place = get_object_or_404(Place, id=place_id)
-    Favorite.objects.filter(user=request.user, place=place).delete()
-    messages.success(request, f"{place.name} removed from favorites!")
-    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-        return JsonResponse({'success': True})
-    return redirect('state_detail', state_slug=place.state.name.lower().replace(' ', '-'))
+    if request.method == 'POST':
+        try:
+            place = get_object_or_404(Place, id=place_id)
+            place.favorited_by.remove(request.user)
+            messages.success(request, f'Removed {place.name} from your favorites')
+        except Exception as e:
+            messages.error(request, f'Error removing from favorites: {str(e)}')
+    return redirect('core:my_favorites')
 
 @login_required
 def add_state_favorite(request, state_id):
@@ -240,12 +244,29 @@ def remove_post_favorite(request, post_id):
 
 @login_required
 def my_favorites(request):
+    # Get all places favorited by the user
     favorite_places = Place.objects.filter(favorited_by=request.user)
+    
+    # Get all states favorited by the user
     favorite_states = State.objects.filter(favorites=request.user)
-    return render(request, 'core/favorites.html', {
-        'favorite_places': favorite_places,
+    
+    # Get weather data for each place
+    places_with_weather = []
+    for place in favorite_places:
+        place_data = {
+            'place': place,
+            'weather': get_weather_data(place.location) if place.location else None,
+            'latitude': place.latitude,
+            'longitude': place.longitude
+        }
+        places_with_weather.append(place_data)
+    
+    context = {
+        'places_with_weather': places_with_weather,
         'favorite_states': favorite_states,
-    })
+        'GOOGLE_MAPS_API_KEY': settings.GOOGLE_MAPS_API_KEY
+    }
+    return render(request, 'core/my_favorites.html', context)
 
 # --- Weather API endpoint ---
 def get_weather(request):
@@ -587,3 +608,43 @@ def fetch_github_repos(request):
     except Exception as e:
         logger.error(f"Error fetching GitHub repos: {str(e)}")
         return JsonResponse({"error": str(e)}, status=500)
+
+@login_required
+def add_recommended_favorite(request):
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            name = data.get('name')
+            latitude = data.get('latitude')
+            longitude = data.get('longitude')
+            
+            # Find the state based on coordinates
+            state = State.objects.first()  # Default to first state for now
+            
+            # Create a new Place object for the recommended place
+            place = Place.objects.create(
+                name=name,
+                latitude=latitude,
+                longitude=longitude,
+                description=f"Recommended place: {name}",
+                state=state,
+                category='recommended'  # Add a category to identify recommended places
+            )
+            
+            # Add to user's favorites using the favorited_by field
+            place.favorited_by.add(request.user)
+            
+            return JsonResponse({
+                'success': True,
+                'message': f'Added {name} to your favorites'
+            })
+        except Exception as e:
+            logger.error(f"Error adding favorite: {str(e)}")
+            return JsonResponse({
+                'success': False,
+                'error': str(e)
+            }, status=500)
+    return JsonResponse({
+        'success': False,
+        'error': 'Invalid request method'
+    }, status=400)

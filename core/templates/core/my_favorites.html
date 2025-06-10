@@ -1,0 +1,189 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}My Favorites - South India Tourism{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <!-- Favorite States Section -->
+    <section class="mb-5">
+        <h2 class="mb-4">Favorite States</h2>
+        {% if favorite_states %}
+            <div class="row">
+                {% for state in favorite_states %}
+                    <div class="col-md-6 col-lg-4 mb-4">
+                        <div class="card state-card">
+                            {% if state.image %}
+                                <img src="{{ state.image.url }}" class="card-img-top" alt="{{ state.name }}">
+                            {% endif %}
+                            <div class="card-body">
+                                <h5 class="card-title">{{ state.name }}</h5>
+                                <p class="card-text">{{ state.description|truncatewords:30 }}</p>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <a href="{% url 'core:state_detail' state.name|lower|slugify %}" class="btn btn-primary">
+                                        <i class="fas fa-map-marked-alt"></i> Visit State
+                                    </a>
+                                    <form method="post" action="{% url 'core:remove_state_favorite' state.id %}" class="d-inline">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-outline-danger">
+                                            <i class="fas fa-heart"></i> Remove
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="alert alert-info">
+                You haven't added any states to your favorites yet. 
+                <a href="{% url 'core:home' %}" class="alert-link">Explore states</a> to add them to your favorites.
+            </div>
+        {% endif %}
+    </section>
+
+    <!-- Favorite Places Section -->
+    <section>
+        <h2 class="mb-4">Favorite Places</h2>
+        {% if places_with_weather %}
+            <div class="row">
+                {% for place_data in places_with_weather %}
+                    <div class="col-md-6 col-lg-4 mb-4">
+                        <div class="card place-card">
+                            {% if place_data.place.image %}
+                                <img src="{{ place_data.place.image.url }}" class="card-img-top" alt="{{ place_data.place.name }}">
+                            {% endif %}
+                            <div class="card-body">
+                                <h5 class="card-title">{{ place_data.place.name }}</h5>
+                                <p class="card-text">{{ place_data.place.description }}</p>
+                                
+                                <!-- Weather Information -->
+                                {% if place_data.weather %}
+                                    <div class="weather-info mb-3">
+                                        <h6>Current Weather</h6>
+                                        <p><i class="fas fa-temperature-high"></i> Temperature: {{ place_data.weather.temperature }}°C</p>
+                                        <p><i class="fas fa-cloud"></i> Condition: {{ place_data.weather.condition }}</p>
+                                    </div>
+                                {% endif %}
+                                
+                                <!-- Action Buttons -->
+                                <div class="card-actions">
+                                    <a href="{% url 'core:state_detail' place_data.place.state.name|lower|slugify %}" class="btn btn-primary">
+                                        <i class="fas fa-map-marked-alt"></i> Visit State
+                                    </a>
+                                    <form method="post" action="{% url 'core:remove_favorite' place_data.place.id %}" class="d-inline">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-outline-danger">
+                                            <i class="fas fa-heart"></i> Remove
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="alert alert-info">
+                You haven't added any places to your favorites yet. 
+                <a href="{% url 'core:home' %}" class="alert-link">Explore places</a> to add them to your favorites.
+            </div>
+        {% endif %}
+    </section>
+</div>
+
+<style>
+.state-card, .place-card {
+    height: 100%;
+    transition: transform 0.2s, box-shadow 0.2s;
+    border: none;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.state-card:hover, .place-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+
+.card-img-top {
+    height: 200px;
+    object-fit: cover;
+}
+
+.weather-info {
+    background-color: #f8f9fa;
+    border-radius: 0.5rem;
+    padding: 0.8rem;
+    margin-bottom: 1rem;
+}
+
+.weather-info p {
+    margin-bottom: 0.3rem;
+    font-size: 0.9rem;
+}
+
+.weather-info i {
+    margin-right: 0.5rem;
+    color: #0d6efd;
+}
+
+.card-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 1rem;
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let map = null;
+let marker = null;
+
+function showOnMap(latitude, longitude, placeName) {
+    // Show the modal
+    const mapModal = new bootstrap.Modal(document.getElementById('mapModal'));
+    mapModal.show();
+
+    // Initialize map if not already done
+    if (!map) {
+        map = new google.maps.Map(document.getElementById('map'), {
+            center: { lat: latitude, lng: longitude },
+            zoom: 15,
+            mapTypeControl: true,
+            streetViewControl: true,
+            fullscreenControl: true
+        });
+    } else {
+        map.setCenter({ lat: latitude, lng: longitude });
+    }
+
+    // Remove existing marker if any
+    if (marker) {
+        marker.setMap(null);
+    }
+
+    // Add new marker
+    marker = new google.maps.Marker({
+        position: { lat: latitude, lng: longitude },
+        map: map,
+        title: placeName,
+        animation: google.maps.Animation.DROP
+    });
+
+    // Add info window
+    const infoWindow = new google.maps.InfoWindow({
+        content: `<div class="p-2"><h6>${placeName}</h6><p>Latitude: ${latitude}<br>Longitude: ${longitude}</p></div>`
+    });
+
+    marker.addListener('click', () => {
+        infoWindow.open(map, marker);
+    });
+
+    // Open info window by default
+    infoWindow.open(map, marker);
+}
+</script>
+{% endblock %} 

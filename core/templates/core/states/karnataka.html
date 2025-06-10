@@ -39,19 +39,19 @@
   <!-- Navbar -->
   <nav class="navbar navbar-expand-lg navbar-dark bg-custom sticky-top">
     <div class="container-fluid">
-      <a class="navbar-brand" href="{% url 'home' %}">South India Tourism</a>
+      <a class="navbar-brand" href="{% url 'core:home' %}">South India Tourism</a>
       <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
         <span class="navbar-toggler-icon"></span>
       </button>
       <div class="collapse navbar-collapse" id="navbarNav">
         <ul class="navbar-nav ms-auto">
-          <li class="nav-item"><a class="nav-link active" href="{% url 'home' %}">Home</a></li>
-          <li class="nav-item"><a class="nav-link" href="{% url 'home' %}#category">Adventures</a></li>
-          <li class="nav-item"><a class="nav-link" href="{% url 'home' %}#packages">Packages</a></li>
-          <li class="nav-item"><a class="nav-link" href="{% url 'home' %}#contact">Contact</a></li>
+          <li class="nav-item"><a class="nav-link active" href="{% url 'core:home' %}">Home</a></li>
+          <li class="nav-item"><a class="nav-link" href="{% url 'core:home' %}#category">Adventures</a></li>
+          <li class="nav-item"><a class="nav-link" href="{% url 'core:home' %}#packages">Packages</a></li>
+          <li class="nav-item"><a class="nav-link" href="{% url 'core:home' %}#contact">Contact</a></li>
           {% if user.is_authenticated %}
-            <li class="nav-item"><a class="nav-link" href="{% url 'my_favorites' %}">My Favorites</a></li>
-            <li class="nav-item"><a class="nav-link" href="{% url 'profile' %}">Profile</a></li>
+            <li class="nav-item"><a class="nav-link" href="{% url 'core:my_favorites' %}">My Favorites</a></li>
+            <li class="nav-item"><a class="nav-link" href="{% url 'core:profile' %}">Profile</a></li>
             <li class="nav-item">
               <form action="{% url 'logout' %}" method="post" style="display: inline;">
                 {% csrf_token %}
@@ -75,17 +75,17 @@
   <section class="hero-section">
     <div class="hero-overlay">
       <h1 class="hero-title text-white animate__animated animate__fadeIn">Discover Karnataka</h1>
-      <p class="hero-subtitle text-white animate__animated animate__fadeIn animate__delay-1s">Experience the One State, Many Worlds</p>
+      <p class="hero-subtitle text-white animate__animated animate__fadeIn animate__delay-1s">Experience the Land of Heritage</p>
       {% if user.is_authenticated %}
         {% if state in user.favorite_states.all %}
-          <form action="{% url 'remove_state_favorite' state.id %}" method="post" class="d-inline">
+          <form action="{% url 'core:remove_state_favorite' state.id %}" method="post" class="d-inline">
             {% csrf_token %}
             <button type="submit" class="btn btn-danger btn-sm mt-2">
               <i class="fas fa-heart"></i> Remove from Favorites
             </button>
           </form>
         {% else %}
-          <form action="{% url 'add_state_favorite' state.id %}" method="post" class="d-inline">
+          <form action="{% url 'core:add_state_favorite' state.id %}" method="post" class="d-inline">
             {% csrf_token %}
             <button type="submit" class="btn btn-outline-light btn-sm mt-2">
               <i class="far fa-heart"></i> Add to Favorites
@@ -197,9 +197,9 @@
         <div class="mb-4 text-center">
           <label for="categoryFilter" class="form-label">Filter by Category:</label>
           <select id="categoryFilter" class="form-select w-auto d-inline-block mx-auto" onchange="location = this.value;">
-            <option value="{% url 'state_detail' state.name|lower|slugify %}">All Categories</option>
+            <option value="{% url 'core:state_detail' state.name|lower|slugify %}">All Categories</option>
             {% for category, label in categories %}
-              <option value="{% url 'state_detail' state.name|lower|slugify %}?category={{ category }}" {% if selected_category == category %}selected{% endif %}>{{ label }}</option>
+              <option value="{% url 'core:state_detail' state.name|lower|slugify %}?category={{ category }}" {% if selected_category == category %}selected{% endif %}>{{ label }}</option>
             {% endfor %}
           </select>
         </div>
@@ -218,14 +218,14 @@
                   <p><strong>Safety Tip:</strong> {{ place.safety_tip|default:"Keep your belongings secure in crowded areas." }}</p>
                   {% if user.is_authenticated %}
                     {% if place.is_favorited %}
-                      <form action="{% url 'remove_favorite' place.id %}" method="post" class="d-inline">
+                      <form action="{% url 'core:remove_favorite' place.id %}" method="post" class="d-inline">
                         {% csrf_token %}
                         <button type="submit" class="btn btn-danger btn-sm mt-2">
                           <i class="fas fa-heart"></i> Remove from Favorites
                         </button>
                       </form>
                     {% else %}
-                      <form action="{% url 'add_favorite' place.id %}" method="post" class="d-inline">
+                      <form action="{% url 'core:add_favorite' place.id %}" method="post" class="d-inline">
                         {% csrf_token %}
                         <button type="submit" class="btn btn-outline-primary btn-sm mt-2">
                           <i class="far fa-heart"></i> Add to Favorites
@@ -430,7 +430,7 @@
             <div class="card booking-card h-100">
               <div class="card-body">
                 <h4>Custom Inquiry</h4>
-                <form action="{% url 'submit_inquiry' state.id %}" method="post">
+                <form action="{% url 'core:submit_inquiry' state.id %}" method="post">
                   {% csrf_token %}
                   <div class="mb-3">
                     <input type="text" name="name" class="form-control" placeholder="Your Name" required>
