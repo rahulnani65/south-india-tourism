@@ -47,3 +47,4 @@ class UserProfileForm(forms.ModelForm):
         if categories:
             return json.dumps(list(categories))
         return json.dumps([])
+    
