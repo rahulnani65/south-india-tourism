@@ -7,16 +7,12 @@
 <style>
     .map-container {
         position: relative;
-        overflow: hidden;
-        padding-top: 56.25%; /* 16:9 Aspect Ratio */
-    }
-    .map-container iframe {
-        position: absolute;
-        top: 0;
-        left: 0;
+        height: 600px;
         width: 100%;
+    }
+    #map {
         height: 100%;
-        border: 0;
+        width: 100%;
     }
     .list-group-item {
         transition: background-color 0.2s;
@@ -42,15 +38,9 @@
 <div class="container mt-4">
     <div class="row">
         <div class="col-md-8">
-            <!-- Google Maps Embed -->
+            <!-- Google Maps Container -->
             <div class="map-container mb-4">
-                <iframe
-                    id="mapFrame"
-                    loading="lazy"
-                    allowfullscreen
-                    referrerpolicy="no-referrer-when-downgrade"
-                    src="https://www.google.com/maps/embed/v1/place?key={{ GOOGLE_MAPS_API_KEY }}&q=Mysore+Palace">
-                </iframe>
+                <div id="map"></div>
             </div>
         </div>
         <div class="col-md-4">
@@ -89,10 +79,10 @@
                         <div class="mb-3">
                             <label for="travelMode" class="form-label">Travel Mode</label>
                             <select class="form-select" id="travelMode">
-                                <option value="driving">Driving</option>
-                                <option value="walking">Walking</option>
-                                <option value="bicycling">Bicycling</option>
-                                <option value="transit">Transit</option>
+                                <option value="DRIVING">Driving</option>
+                                <option value="WALKING">Walking</option>
+                                <option value="BICYCLING">Bicycling</option>
+                                <option value="TRANSIT">Transit</option>
                             </select>
                         </div>
                         <button type="submit" class="btn btn-success">Get Directions</button>
@@ -118,18 +108,68 @@
 {% endblock %}
 
 {% block extra_js %}
+<script src="https://maps.googleapis.com/maps/api/js?key={{ GOOGLE_MAPS_API_KEY }}&libraries=places&callback=initMap" async defer></script>
 <script>
-document.addEventListener('DOMContentLoaded', function() {
+let map;
+let markers = [];
+let directionsService;
+let directionsRenderer;
+let placesService;
+
+function initMap() {
+    // Initialize the map
+    map = new google.maps.Map(document.getElementById('map'), {
+        center: { lat: 12.2958, lng: 76.6394 }, // Mysore coordinates
+        zoom: 13
+    });
+
+    directionsService = new google.maps.DirectionsService();
+    directionsRenderer = new google.maps.DirectionsRenderer({
+        map: map,
+        suppressMarkers: true
+    });
+
+    placesService = new google.maps.places.PlacesService(map);
+
+    // Initialize the search functionality
+    initializeSearch();
+}
+
+function initializeSearch() {
     const searchForm = document.getElementById('searchForm');
     const routeForm = document.getElementById('routeForm');
     const resultsContainer = document.getElementById('resultsContainer');
     const routeInfo = document.getElementById('routeInfo');
-    const mapFrame = document.getElementById('mapFrame');
 
-    // Function to update map
-    function updateMap(location) {
-        const encodedLocation = encodeURIComponent(location);
-        mapFrame.src = `https://www.google.com/maps/embed/v1/place?key={{ GOOGLE_MAPS_API_KEY }}&q=${encodedLocation}`;
+    // Function to clear existing markers
+    function clearMarkers() {
+        markers.forEach(marker => marker.setMap(null));
+        markers = [];
+    }
+
+    // Function to add a marker
+    function addMarker(place) {
+        const marker = new google.maps.Marker({
+            position: place.geometry.location,
+            map: map,
+            title: place.name
+        });
+
+        const infoWindow = new google.maps.InfoWindow({
+            content: `
+                <div>
+                    <h6>${place.name}</h6>
+                    <p>${place.vicinity || place.formatted_address}</p>
+                    ${place.rating ? `<p>Rating: ${place.rating} ⭐</p>` : ''}
+                </div>
+            `
+        });
+
+        marker.addListener('click', () => {
+            infoWindow.open(map, marker);
+        });
+
+        markers.push(marker);
     }
 
     // Function to display results
@@ -172,8 +212,9 @@ document.addEventListener('DOMContentLoaded', function() {
             placeElement.style.cursor = 'pointer';
             placeElement.addEventListener('click', () => {
                 if (place.geometry && place.geometry.location) {
-                    const { lat, lng } = place.geometry.location;
-                    updateMap(`${lat},${lng}`);
+                    map.setCenter(place.geometry.location);
+                    map.setZoom(15);
+                    addMarker(place);
                 }
             });
             
@@ -200,10 +241,6 @@ document.addEventListener('DOMContentLoaded', function() {
             <h6>Route Information</h6>
             <p><strong>Distance:</strong> ${leg.distance.text}</p>
             <p><strong>Duration:</strong> ${leg.duration.text}</p>
-            <h6 class="mt-3">Directions:</h6>
-            <ol class="mt-2">
-                ${leg.steps.map(step => `<li>${step.html_instructions}</li>`).join('')}
-            </ol>
         `;
     }
 
@@ -214,28 +251,41 @@ document.addEventListener('DOMContentLoaded', function() {
         const location = document.getElementById('location').value;
         const type = document.getElementById('placeType').value;
 
-        updateMap(location);
+        clearMarkers();
         resultsContainer.innerHTML = '<p class="text-muted">Loading nearby places...</p>';
         routeInfo.classList.add('d-none');
 
-        try {
-            const response = await fetch(`/api/nearby-places/?location=${encodeURIComponent(location)}&type=${type}`);
-            const data = await response.json();
+        // First, get the coordinates of the search location
+        const geocoder = new google.maps.Geocoder();
+        geocoder.geocode({ address: location }, (results, status) => {
+            if (status === 'OK') {
+                const searchLocation = results[0].geometry.location;
+                map.setCenter(searchLocation);
+                map.setZoom(14);
 
-            if (data.error) {
-                resultsContainer.innerHTML = `<p class="text-danger">${data.error}</p>`;
-                return;
-            }
+                // Create the places request
+                const request = {
+                    location: searchLocation,
+                    radius: '5000', // 5km radius
+                    type: type
+                };
 
-            if (data.results) {
-                displayResults(data.results);
+                // Search for places
+                placesService.nearbySearch(request, (places, status) => {
+                    if (status === google.maps.places.PlacesServiceStatus.OK) {
+                        displayResults(places);
+                        // Add markers for each place
+                        places.forEach(place => {
+                            addMarker(place);
+                        });
+                    } else {
+                        resultsContainer.innerHTML = '<p class="text-danger">No places found nearby. Please try a different location or type.</p>';
+                    }
+                });
             } else {
-                displayResults([]);
+                resultsContainer.innerHTML = '<p class="text-danger">Could not find the location. Please check the spelling and try again.</p>';
             }
-        } catch (error) {
-            resultsContainer.innerHTML = '<p class="text-danger">Error fetching nearby places. Please try again.</p>';
-            console.error('Error:', error);
-        }
+        });
     });
 
     // Handle route form submission
@@ -246,28 +296,29 @@ document.addEventListener('DOMContentLoaded', function() {
         const destination = document.getElementById('destination').value;
         const mode = document.getElementById('travelMode').value;
 
+        clearMarkers();
         routeInfo.innerHTML = '<p class="text-muted">Loading route information...</p>';
         routeInfo.classList.remove('d-none');
         resultsContainer.classList.add('d-none');
 
-        try {
-            const response = await fetch(`/api/route-info/?origin=${encodeURIComponent(origin)}&destination=${encodeURIComponent(destination)}&mode=${mode}`);
-            const data = await response.json();
+        const request = {
+            origin: origin,
+            destination: destination,
+            travelMode: mode
+        };
 
-            if (data.error) {
-                routeInfo.innerHTML = `<p class="text-danger">${data.error}</p>`;
-                return;
+        directionsService.route(request, (result, status) => {
+            if (status === 'OK') {
+                directionsRenderer.setDirections(result);
+                displayRouteInfo(result);
+            } else {
+                routeInfo.innerHTML = '<p class="text-danger">Could not calculate route. Please check your locations.</p>';
             }
-
-            displayRouteInfo(data);
-        } catch (error) {
-            routeInfo.innerHTML = '<p class="text-danger">Error fetching route information. Please try again.</p>';
-            console.error('Error:', error);
-        }
+        });
     });
 
     // Initial search
     searchForm.dispatchEvent(new Event('submit'));
-});
+}
 </script>
 {% endblock %} 

@@ -166,6 +166,42 @@
       margin-right: 0.5rem;
       color: #0d6efd;
     }
+
+    /* Back to Top Button Styles */
+    .back-to-top {
+      position: fixed;
+      bottom: 30px;
+      right: 30px;
+      width: 50px;
+      height: 50px;
+      background-color: #1a472a;  /* Dark green color */
+      color: white;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-decoration: none;
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.3s ease;
+      z-index: 1000;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+    }
+
+    .back-to-top:hover {
+      background-color: #2d5a3f;  /* Slightly lighter green on hover */
+      color: white;
+      transform: translateY(-3px);
+    }
+
+    .back-to-top.show {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .back-to-top i {
+      font-size: 20px;
+    }
   </style>
   <!-- Add Font Awesome in the head section -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
@@ -250,9 +286,9 @@
       <ul class="nav justify-content-center">
         <li class="nav-item"><a class="nav-link" href="#overview">Overview</a></li>
         <li class="nav-item"><a class="nav-link" href="#places">Places to Visit</a></li>
+        <li class="nav-item"><a class="nav-link" href="#gemini-recommendations">Smart Recommendations</a></li>
         <li class="nav-item"><a class="nav-link" href="#cuisine">Cuisine</a></li>
         <li class="nav-item"><a class="nav-link" href="#events">Events</a></li>
-        <li class="nav-item"><a class="nav-link" href="#weather">Weather</a></li>
         <li class="nav-item"><a class="nav-link" href="#ugc">Traveler Stories</a></li>
         <li class="nav-item"><a class="nav-link" href="#safety">Safety Tips</a></li>
         <li class="nav-item"><a class="nav-link" href="#booking">Booking</a></li>
@@ -393,62 +429,62 @@
       </div>
     </section>
 
-    <!-- Add this section after the existing recommendations section -->
-    <div class="container mt-5">
+    <!-- Gemini Recommendations Section -->
+    <section class="gemini-recommendations py-6" id="gemini-recommendations">
+      <div class="container">
+        <h2 class="section-title text-center mb-5">Smart Recommendations</h2>
         <div class="card">
-            <div class="card-header bg-primary text-white">
-                <h3 class="mb-0">Gemini-Powered Recommendations</h3>
+          <div class="card-body">
+            <div class="row">
+              <div class="col-md-4">
+                <div class="form-group">
+                  <label for="user-place">Select Your Current Place:</label>
+                  <select id="user-place" class="form-control">
+                    {% for place_data in places_with_weather %}
+                      <option value="{{ place_data.place.name }}" 
+                              data-lat="{{ place_data.latitude }}" 
+                              data-lng="{{ place_data.longitude }}">
+                        {{ place_data.place.name }}
+                      </option>
+                    {% endfor %}
+                  </select>
+                </div>
+              </div>
+              <div class="col-md-4">
+                <div class="form-group">
+                  <label for="gemini-place-type">Preferred Place Type:</label>
+                  <select id="gemini-place-type" class="form-control">
+                    <option value="tourist_attraction">Tourist Attraction</option>
+                    <option value="hindu_temple">Temple</option>
+                    <option value="park">Hill Station/Park</option>
+                    <option value="beach">Beach</option>
+                    <option value="museum">Museum</option>
+                    <option value="restaurant">Restaurant</option>
+                    <option value="shopping_mall">Shopping</option>
+                  </select>
+                </div>
+              </div>
+              <div class="col-md-4">
+                <div class="form-group">
+                  <label for="budget">Budget Preference:</label>
+                  <select id="budget" class="form-control">
+                    <option value="low">Low (Free or Minimal Cost)</option>
+                    <option value="medium">Medium (Moderate Cost)</option>
+                    <option value="high">High (Premium Experiences)</option>
+                  </select>
+                </div>
+              </div>
             </div>
-            <div class="card-body">
-                <div class="row">
-                    <div class="col-md-4">
-                        <div class="form-group">
-                            <label for="user-place">Select Your Current Place:</label>
-                            <select id="user-place" class="form-control">
-                                {% for place_data in places_with_weather %}
-                                    <option value="{{ place_data.place.name }}" 
-                                            data-lat="{{ place_data.latitude }}" 
-                                            data-lng="{{ place_data.longitude }}">
-                                        {{ place_data.place.name }}
-                                    </option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                    </div>
-                    <div class="col-md-4">
-                        <div class="form-group">
-                            <label for="gemini-place-type">Preferred Place Type:</label>
-                            <select id="gemini-place-type" class="form-control">
-                                <option value="tourist_attraction">Tourist Attraction</option>
-                                <option value="hindu_temple">Temple</option>
-                                <option value="park">Hill Station/Park</option>
-                                <option value="beach">Beach</option>
-                                <option value="museum">Museum</option>
-                                <option value="restaurant">Restaurant</option>
-                                <option value="shopping_mall">Shopping</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="col-md-4">
-                        <div class="form-group">
-                            <label for="budget">Budget Preference:</label>
-                            <select id="budget" class="form-control">
-                                <option value="low">Low (Free or Minimal Cost)</option>
-                                <option value="medium">Medium (Moderate Cost)</option>
-                                <option value="high">High (Premium Experiences)</option>
-                            </select>
-                        </div>
-                    </div>
-                </div>
-                <div class="text-center mt-3">
-                    <button class="btn btn-primary" onclick="fetchGeminiRecommendations()">Get Personalized Recommendations</button>
-                </div>
-                <div id="gemini-recommended-places" class="mt-4">
-                    <!-- Gemini Recommendations will be displayed here -->
-                </div>
+            <div class="text-center mt-3">
+              <button class="btn btn-primary" onclick="fetchGeminiRecommendations()">Get Personalized Recommendations</button>
             </div>
+            <div id="gemini-recommended-places" class="mt-4">
+              <!-- Gemini Recommendations will be displayed here -->
+            </div>
+          </div>
         </div>
-    </div>
+      </div>
+    </section>
 
     <!-- Local Cuisine and Dining Recommendations -->
     <section class="cuisine-section py-6" id="cuisine">
@@ -512,49 +548,6 @@
             </div>
           {% endfor %}
         </div>
-      </div>
-    </section>
-
-    <!-- Weather and Real-Time Updates -->
-    <section class="weather-section py-6" id="weather">
-      <div class="container">
-        <h2 class="section-title text-center mb-5">Current Weather in Chennai</h2>
-        {% if weather_data %}
-          <div class="row justify-content-center">
-            <div class="col-md-6">
-              <div class="card weather-card">
-                <div class="card-body text-center">
-                  <h3 class="card-title">{{ weather_data.city }}</h3>
-                  <div class="weather-info">
-                    <p class="temperature">{{ weather_data.temperature }}°C</p>
-                    <p class="condition">{{ weather_data.condition }}</p>
-                    <p class="humidity">Humidity: {{ weather_data.humidity }}%</p>
-                  </div>
-                  <div class="weather-suggestions mt-4">
-                    <h4>Travel Suggestions</h4>
-                    <ul class="list-unstyled">
-                      {% for suggestion in weather_data.suggestions %}
-                        <li><i class="fas fa-check-circle text-success"></i> {{ suggestion }}</li>
-                      {% endfor %}
-                    </ul>
-                  </div>
-                  <div class="weather-safety mt-4">
-                    <h4>Safety Tips</h4>
-                    <ul class="list-unstyled">
-                      {% for tip in weather_data.safety_tips %}
-                        <li><i class="fas fa-exclamation-triangle text-warning"></i> {{ tip }}</li>
-                      {% endfor %}
-                    </ul>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        {% else %}
-          <div class="text-center">
-            <p>Weather information is currently unavailable.</p>
-          </div>
-        {% endif %}
       </div>
     </section>
 
@@ -1159,6 +1152,27 @@
           }
         });
       }
+    });
+
+    // Back to Top Button Functionality
+    document.addEventListener('DOMContentLoaded', function() {
+      const backToTopButton = document.querySelector('.back-to-top');
+      
+      window.addEventListener('scroll', function() {
+        if (window.pageYOffset > 300) {
+          backToTopButton.classList.add('show');
+        } else {
+          backToTopButton.classList.remove('show');
+        }
+      });
+
+      backToTopButton.addEventListener('click', function(e) {
+        e.preventDefault();
+        window.scrollTo({
+          top: 0,
+          behavior: 'smooth'
+        });
+      });
     });
   </script>
   <script src="{% static 'core/js/scripts.js' %}"></script>

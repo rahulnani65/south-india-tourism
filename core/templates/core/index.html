@@ -92,6 +92,50 @@
     </div>
   </section>
 
+  <!-- Features Section -->
+  <section class="features-section py-5">
+    <div class="container">
+      <h2 class="text-center mb-5" data-aos="fade-up">Explore Our Features</h2>
+      <div class="row g-4">
+        <!-- Interactive Map -->
+        <div class="col-md-6 col-lg-4">
+          <div class="feature-card">
+            <div class="feature-icon">
+              <i class="fas fa-map-marked-alt"></i>
+            </div>
+            <h3>Interactive Map</h3>
+            <p>Explore destinations, find nearby places, and plan your routes</p>
+            <a href="{% url 'core:map_view' %}" class="feature-link">Try Now <i class="fas fa-arrow-right"></i></a>
+          </div>
+        </div>
+
+        <!-- Favorites -->
+        <div class="col-md-6 col-lg-4">
+          <div class="feature-card">
+            <div class="feature-icon">
+              <i class="fas fa-heart"></i>
+            </div>
+            <h3>Save Favorites</h3>
+            <p>Keep track of your favorite places and create your travel wishlist</p>
+            <a href="{% url 'core:my_favorites' %}" class="feature-link">View Favorites <i class="fas fa-arrow-right"></i></a>
+          </div>
+        </div>
+
+        <!-- Travel Packages -->
+        <div class="col-md-6 col-lg-4">
+          <div class="feature-card">
+            <div class="feature-icon">
+              <i class="fas fa-suitcase"></i>
+            </div>
+            <h3>Travel Packages</h3>
+            <p>Discover curated travel packages for the perfect South Indian experience</p>
+            <a href="#packages" class="feature-link">View Packages <i class="fas fa-arrow-right"></i></a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <!-- Experience Section -->
   <section class="experience-section" id="experiences">
     <div class="container">
