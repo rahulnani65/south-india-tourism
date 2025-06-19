@@ -134,7 +134,7 @@
 .hero-section {
   position: relative;
   height: 100vh;
-  background: linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.4)), url('../images/home1.jpg');
+  background: linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.4)), url('../images/image.png');
   background-size: cover;
   background-position: center;
   background-attachment: fixed;

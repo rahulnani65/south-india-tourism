@@ -165,11 +165,16 @@ class TransportationOption(models.Model):
         return f"{self.get_transport_type_display()} - {self.name}"
 
 class Inquiry(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
-    subject = models.CharField(max_length=200)
+    state = models.ForeignKey(State, on_delete=models.CASCADE, related_name='inquiries')
+    name = models.CharField(max_length=100)
+    email = models.EmailField(blank=True, null=True)
+    phone = models.CharField(max_length=20, blank=True)
+    travel_dates = models.CharField(max_length=100, blank=True)
+    travelers = models.CharField(max_length=20, blank=True)
     message = models.TextField()
+    user = models.ForeignKey(User, on_delete=models.CASCADE, blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     is_resolved = models.BooleanField(default=False)
     
     def __str__(self):
-        return f"Inquiry from {self.user.username}: {self.subject}"
+        return f"Inquiry from {self.name} - {self.email}"

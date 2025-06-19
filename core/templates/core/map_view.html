@@ -1,104 +1,354 @@
 {% extends 'core/base.html' %}
 {% load static %}
 
-{% block title %}Map View - South India Tourism{% endblock %}
+{% block title %}Interactive Map - South India Tourism{% endblock %}
 
 {% block extra_css %}
 <style>
+    /* Enhanced Map View Styles */
+    .map-view-container {
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        min-height: 100vh;
+        padding: 2rem 0;
+    }
+
     .map-container {
         position: relative;
-        height: 600px;
+        height: 70vh;
         width: 100%;
+        border-radius: 20px;
+        overflow: hidden;
+        box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+        border: 3px solid #1a472a;
     }
+
     #map {
         height: 100%;
         width: 100%;
+        border-radius: 17px;
     }
-    .list-group-item {
-        transition: background-color 0.2s;
+
+    .sidebar-card {
+        background: white;
+        border-radius: 20px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        border: 1px solid rgba(26, 71, 42, 0.1);
+        overflow: hidden;
+        transition: all 0.3s ease;
     }
-    .list-group-item:hover {
-        background-color: #f8f9fa;
+
+    .sidebar-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 15px 40px rgba(0,0,0,0.15);
     }
+
+    .card-header-custom {
+        background: linear-gradient(135deg, #1a472a, #2d5a3f);
+        color: white;
+        padding: 1.5rem;
+        border-bottom: none;
+    }
+
+    .card-header-custom h5 {
+        margin: 0;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .form-control, .form-select {
+        border: 2px solid #e9ecef;
+        border-radius: 12px;
+        padding: 0.75rem 1rem;
+        transition: all 0.3s ease;
+        font-size: 0.95rem;
+    }
+
+    .form-control:focus, .form-select:focus {
+        border-color: #1a472a;
+        box-shadow: 0 0 0 0.2rem rgba(26, 71, 42, 0.25);
+        transform: translateY(-2px);
+    }
+
+    .btn-custom {
+        border-radius: 12px;
+        padding: 0.75rem 1.5rem;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        border: none;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .btn-primary-custom {
+        background: linear-gradient(135deg, #1a472a, #2d5a3f);
+        color: white;
+    }
+
+    .btn-primary-custom:hover {
+        background: linear-gradient(135deg, #2d5a3f, #1a472a);
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(26, 71, 42, 0.3);
+    }
+
+    .btn-success-custom {
+        background: linear-gradient(135deg, #28a745, #20c997);
+        color: white;
+    }
+
+    .btn-success-custom:hover {
+        background: linear-gradient(135deg, #20c997, #28a745);
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(40, 167, 69, 0.3);
+    }
+
     .route-form {
-        margin-top: 1rem;
-        padding-top: 1rem;
-        border-top: 1px solid #dee2e6;
+        margin-top: 1.5rem;
+        padding-top: 1.5rem;
+        border-top: 2px solid #e9ecef;
     }
+
     .route-info {
+        background: linear-gradient(135deg, #e3f2fd, #bbdefb);
+        border-radius: 15px;
+        padding: 1.5rem;
         margin-top: 1rem;
+        border-left: 4px solid #1976d2;
+    }
+
+    .results-container {
+        max-height: 400px;
+        overflow-y: auto;
+        scrollbar-width: thin;
+        scrollbar-color: #1a472a #f8f9fa;
+    }
+
+    .results-container::-webkit-scrollbar {
+        width: 6px;
+    }
+
+    .results-container::-webkit-scrollbar-track {
+        background: #f8f9fa;
+        border-radius: 3px;
+    }
+
+    .results-container::-webkit-scrollbar-thumb {
+        background: #1a472a;
+        border-radius: 3px;
+    }
+
+    .list-group-item {
+        border: none;
+        border-radius: 12px;
+        margin-bottom: 0.5rem;
         padding: 1rem;
-        background-color: #f8f9fa;
-        border-radius: 0.25rem;
+        transition: all 0.3s ease;
+        background: #f8f9fa;
+        border-left: 4px solid transparent;
+    }
+
+    .list-group-item:hover {
+        background: linear-gradient(135deg, #1a472a, #2d5a3f);
+        color: white;
+        transform: translateX(5px);
+        border-left-color: #ffd700;
+    }
+
+    .list-group-item:hover .text-muted {
+        color: rgba(255, 255, 255, 0.8) !important;
+    }
+
+    .badge {
+        border-radius: 20px;
+        padding: 0.5rem 1rem;
+        font-weight: 600;
+    }
+
+    .badge.bg-primary {
+        background: linear-gradient(135deg, #1a472a, #2d5a3f) !important;
+    }
+
+    .loading-spinner {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 2rem;
+        color: #1a472a;
+    }
+
+    .loading-spinner .spinner-border {
+        width: 2rem;
+        height: 2rem;
+    }
+
+    .error-message {
+        background: linear-gradient(135deg, #ffebee, #ffcdd2);
+        border-radius: 12px;
+        padding: 1rem;
+        color: #c62828;
+        border-left: 4px solid #c62828;
+    }
+
+    .success-message {
+        background: linear-gradient(135deg, #e8f5e8, #c8e6c9);
+        border-radius: 12px;
+        padding: 1rem;
+        color: #2e7d32;
+        border-left: 4px solid #2e7d32;
+    }
+
+    /* Responsive Design */
+    @media (max-width: 768px) {
+        .map-container {
+            height: 50vh;
+            margin-bottom: 1rem;
+        }
+        
+        .sidebar-card {
+            margin-bottom: 1rem;
+        }
+        
+        .btn-custom {
+            width: 100%;
+            margin-bottom: 0.5rem;
+        }
+    }
+
+    /* Animation for results */
+    .result-item {
+        animation: slideIn 0.5s ease-out;
+    }
+
+    @keyframes slideIn {
+        from {
+            opacity: 0;
+            transform: translateX(-20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateX(0);
+        }
+    }
+
+    /* Enhanced form styling */
+    .form-label {
+        font-weight: 600;
+        color: #1a472a;
+        margin-bottom: 0.5rem;
+    }
+
+    .form-group {
+        margin-bottom: 1.5rem;
+    }
+
+    /* Map controls enhancement */
+    .map-controls {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        z-index: 1000;
+        background: white;
+        border-radius: 8px;
+        padding: 0.5rem;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
     }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="container mt-4">
-    <div class="row">
-        <div class="col-md-8">
-            <!-- Google Maps Container -->
-            <div class="map-container mb-4">
-                <div id="map"></div>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <!-- Search Form -->
-            <div class="card mb-4">
-                <div class="card-body">
-                    <h5 class="card-title">Search Nearby Places</h5>
-                    <form id="searchForm" class="mt-3">
-                        <div class="mb-3">
-                            <label for="location" class="form-label">Location</label>
-                            <input type="text" class="form-control" id="location" value="Mysore Palace" required>
-                        </div>
-                        <div class="mb-3">
-                            <label for="placeType" class="form-label">Place Type</label>
-                            <select class="form-select" id="placeType">
-                                <option value="lodging">Hotels</option>
-                                <option value="restaurant">Restaurants</option>
-                                <option value="tourist_attraction">Tourist Attractions</option>
-                                <option value="shopping_mall">Shopping</option>
-                            </select>
-                        </div>
-                        <button type="submit" class="btn btn-primary">Search</button>
-                    </form>
-
-                    <!-- Route Planning Form -->
-                    <form id="routeForm" class="route-form">
-                        <h5 class="card-title">Plan Route</h5>
-                        <div class="mb-3">
-                            <label for="origin" class="form-label">Starting Point</label>
-                            <input type="text" class="form-control" id="origin" required>
-                        </div>
-                        <div class="mb-3">
-                            <label for="destination" class="form-label">Destination</label>
-                            <input type="text" class="form-control" id="destination" required>
-                        </div>
-                        <div class="mb-3">
-                            <label for="travelMode" class="form-label">Travel Mode</label>
-                            <select class="form-select" id="travelMode">
-                                <option value="DRIVING">Driving</option>
-                                <option value="WALKING">Walking</option>
-                                <option value="BICYCLING">Bicycling</option>
-                                <option value="TRANSIT">Transit</option>
-                            </select>
-                        </div>
-                        <button type="submit" class="btn btn-success">Get Directions</button>
-                    </form>
+<div class="map-view-container">
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Map Section -->
+            <div class="col-lg-8">
+                <div class="map-container">
+                    <div id="map"></div>
                 </div>
             </div>
             
-            <!-- Results Container -->
-            <div class="card">
-                <div class="card-body">
-                    <h5 class="card-title">Results</h5>
-                    <div id="resultsContainer" class="mt-3">
-                        <!-- Results will be displayed here -->
+            <!-- Sidebar Section -->
+            <div class="col-lg-4">
+                <!-- Search Form -->
+                <div class="sidebar-card mb-4">
+                    <div class="card-header-custom">
+                        <h5>
+                            <i class="fas fa-search"></i>
+                            Search Nearby Places
+                        </h5>
                     </div>
-                    <div id="routeInfo" class="route-info d-none">
-                        <!-- Route information will be displayed here -->
+                    <div class="card-body">
+                        <form id="searchForm" class="mt-3">
+                            <div class="form-group">
+                                <label for="location" class="form-label">
+                                    <i class="fas fa-map-marker-alt"></i> Location
+                                </label>
+                                <input type="text" class="form-control" id="location" value="Mysore Palace" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="placeType" class="form-label">
+                                    <i class="fas fa-tag"></i> Place Type
+                                </label>
+                                <select class="form-select" id="placeType">
+                                    <option value="lodging">🏨 Hotels</option>
+                                    <option value="restaurant">🍽️ Restaurants</option>
+                                    <option value="tourist_attraction">🏛️ Tourist Attractions</option>
+                                    <option value="shopping_mall">🛍️ Shopping</option>
+                                </select>
+                            </div>
+                            <button type="submit" class="btn btn-primary-custom btn-custom w-100">
+                                <i class="fas fa-search"></i> Search Places
+                            </button>
+                        </form>
+
+                        <!-- Route Planning Form -->
+                        <form id="routeForm" class="route-form">
+                            <h6 class="mb-3">
+                                <i class="fas fa-route"></i> Plan Your Route
+                            </h6>
+                            <div class="form-group">
+                                <label for="origin" class="form-label">Starting Point</label>
+                                <input type="text" class="form-control" id="origin" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="destination" class="form-label">Destination</label>
+                                <input type="text" class="form-control" id="destination" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="travelMode" class="form-label">Travel Mode</label>
+                                <select class="form-select" id="travelMode">
+                                    <option value="DRIVING">🚗 Driving</option>
+                                    <option value="WALKING">🚶 Walking</option>
+                                    <option value="BICYCLING">🚴 Bicycling</option>
+                                    <option value="TRANSIT">🚌 Transit</option>
+                                </select>
+                            </div>
+                            <button type="submit" class="btn btn-success-custom btn-custom w-100">
+                                <i class="fas fa-directions"></i> Get Directions
+                            </button>
+                        </form>
+                    </div>
+                </div>
+                
+                <!-- Results Container -->
+                <div class="sidebar-card">
+                    <div class="card-header-custom">
+                        <h5>
+                            <i class="fas fa-list"></i>
+                            Results
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="resultsContainer" class="results-container">
+                            <div class="text-center py-4">
+                                <i class="fas fa-compass fa-3x text-muted mb-3"></i>
+                                <h6 class="text-muted">Ready to Explore?</h6>
+                                <p class="text-muted">Search for places or plan your route to get started</p>
+                            </div>
+                        </div>
+                        <div id="routeInfo" class="route-info d-none">
+                            <!-- Route information will be displayed here -->
+                        </div>
                     </div>
                 </div>
             </div>
@@ -117,16 +367,31 @@ let directionsRenderer;
 let placesService;
 
 function initMap() {
-    // Initialize the map
+    // Initialize the map with enhanced styling
     map = new google.maps.Map(document.getElementById('map'), {
         center: { lat: 12.2958, lng: 76.6394 }, // Mysore coordinates
-        zoom: 13
+        zoom: 13,
+        styles: [
+            {
+                featureType: "poi",
+                elementType: "labels",
+                stylers: [{ visibility: "off" }]
+            }
+        ],
+        mapTypeControl: true,
+        streetViewControl: true,
+        fullscreenControl: true,
+        zoomControl: true
     });
 
     directionsService = new google.maps.DirectionsService();
     directionsRenderer = new google.maps.DirectionsRenderer({
         map: map,
-        suppressMarkers: true
+        suppressMarkers: true,
+        polylineOptions: {
+            strokeColor: '#1a472a',
+            strokeWeight: 4
+        }
     });
 
     placesService = new google.maps.places.PlacesService(map);
@@ -147,20 +412,25 @@ function initializeSearch() {
         markers = [];
     }
 
-    // Function to add a marker
+    // Function to add a marker with enhanced styling
     function addMarker(place) {
         const marker = new google.maps.Marker({
             position: place.geometry.location,
             map: map,
-            title: place.name
+            title: place.name,
+            animation: google.maps.Animation.DROP,
+            icon: {
+                url: 'https://maps.google.com/mapfiles/ms/icons/red-dot.png',
+                scaledSize: new google.maps.Size(32, 32)
+            }
         });
 
         const infoWindow = new google.maps.InfoWindow({
             content: `
-                <div>
-                    <h6>${place.name}</h6>
-                    <p>${place.vicinity || place.formatted_address}</p>
-                    ${place.rating ? `<p>Rating: ${place.rating} ⭐</p>` : ''}
+                <div style="padding: 10px; max-width: 200px;">
+                    <h6 style="color: #1a472a; margin-bottom: 5px;">${place.name}</h6>
+                    <p style="margin: 0; font-size: 12px;">${place.vicinity || place.formatted_address}</p>
+                    ${place.rating ? `<p style="margin: 5px 0 0 0; color: #ffd700;">⭐ ${place.rating}</p>` : ''}
                 </div>
             `
         });
@@ -172,22 +442,29 @@ function initializeSearch() {
         markers.push(marker);
     }
 
-    // Function to display results
+    // Enhanced function to display results
     function displayResults(places) {
         resultsContainer.innerHTML = '';
         routeInfo.classList.add('d-none');
         
         if (!places || places.length === 0) {
-            resultsContainer.innerHTML = '<p class="text-muted">No places found nearby.</p>';
+            resultsContainer.innerHTML = `
+                <div class="text-center py-4">
+                    <i class="fas fa-search fa-3x text-muted mb-3"></i>
+                    <h6 class="text-muted">No places found nearby</h6>
+                    <p class="text-muted">Try adjusting your search criteria</p>
+                </div>
+            `;
             return;
         }
 
         const resultsList = document.createElement('div');
         resultsList.className = 'list-group';
 
-        places.forEach(place => {
+        places.forEach((place, index) => {
             const placeElement = document.createElement('div');
-            placeElement.className = 'list-group-item';
+            placeElement.className = 'list-group-item result-item';
+            placeElement.style.animationDelay = `${index * 0.1}s`;
             
             placeElement.innerHTML = `
                 <div class="d-flex justify-content-between align-items-start">
@@ -204,7 +481,7 @@ function initializeSearch() {
                 </div>
                 ${place.opening_hours ? `
                     <small class="text-${place.opening_hours.open_now ? 'success' : 'danger'}">
-                        ${place.opening_hours.open_now ? 'Open Now' : 'Closed'}
+                        <i class="fas fa-clock"></i> ${place.opening_hours.open_now ? 'Open Now' : 'Closed'}
                     </small>
                 ` : ''}
             `;
@@ -224,13 +501,17 @@ function initializeSearch() {
         resultsContainer.appendChild(resultsList);
     }
 
-    // Function to display route information
+    // Enhanced function to display route information
     function displayRouteInfo(routeData) {
         resultsContainer.classList.add('d-none');
         routeInfo.classList.remove('d-none');
         
         if (!routeData || !routeData.routes || routeData.routes.length === 0) {
-            routeInfo.innerHTML = '<p class="text-muted">No route found.</p>';
+            routeInfo.innerHTML = `
+                <div class="error-message">
+                    <i class="fas fa-exclamation-triangle"></i> No route found
+                </div>
+            `;
             return;
         }
 
@@ -238,9 +519,15 @@ function initializeSearch() {
         const leg = route.legs[0];
         
         routeInfo.innerHTML = `
-            <h6>Route Information</h6>
-            <p><strong>Distance:</strong> ${leg.distance.text}</p>
-            <p><strong>Duration:</strong> ${leg.duration.text}</p>
+            <h6><i class="fas fa-info-circle"></i> Route Information</h6>
+            <div class="row">
+                <div class="col-6">
+                    <p><strong><i class="fas fa-road"></i> Distance:</strong><br>${leg.distance.text}</p>
+                </div>
+                <div class="col-6">
+                    <p><strong><i class="fas fa-clock"></i> Duration:</strong><br>${leg.duration.text}</p>
+                </div>
+            </div>
         `;
     }
 
@@ -252,7 +539,14 @@ function initializeSearch() {
         const type = document.getElementById('placeType').value;
 
         clearMarkers();
-        resultsContainer.innerHTML = '<p class="text-muted">Loading nearby places...</p>';
+        resultsContainer.innerHTML = `
+            <div class="loading-spinner">
+                <div class="spinner-border" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <p class="mt-2 mb-0">Searching for nearby places...</p>
+            </div>
+        `;
         routeInfo.classList.add('d-none');
 
         // First, get the coordinates of the search location
@@ -279,11 +573,19 @@ function initializeSearch() {
                             addMarker(place);
                         });
                     } else {
-                        resultsContainer.innerHTML = '<p class="text-danger">No places found nearby. Please try a different location or type.</p>';
+                        resultsContainer.innerHTML = `
+                            <div class="error-message">
+                                <i class="fas fa-exclamation-triangle"></i> No places found nearby. Please try a different location or type.
+                            </div>
+                        `;
                     }
                 });
             } else {
-                resultsContainer.innerHTML = '<p class="text-danger">Could not find the location. Please check the spelling and try again.</p>';
+                resultsContainer.innerHTML = `
+                    <div class="error-message">
+                        <i class="fas fa-exclamation-triangle"></i> Could not find the location. Please check the spelling and try again.
+                    </div>
+                `;
             }
         });
     });
@@ -296,8 +598,14 @@ function initializeSearch() {
         const destination = document.getElementById('destination').value;
         const mode = document.getElementById('travelMode').value;
 
-        clearMarkers();
-        routeInfo.innerHTML = '<p class="text-muted">Loading route information...</p>';
+        routeInfo.innerHTML = `
+            <div class="loading-spinner">
+                <div class="spinner-border" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <p class="mt-2 mb-0">Calculating route...</p>
+            </div>
+        `;
         routeInfo.classList.remove('d-none');
         resultsContainer.classList.add('d-none');
 
@@ -312,7 +620,11 @@ function initializeSearch() {
                 directionsRenderer.setDirections(result);
                 displayRouteInfo(result);
             } else {
-                routeInfo.innerHTML = '<p class="text-danger">Could not calculate route. Please check your locations.</p>';
+                routeInfo.innerHTML = `
+                    <div class="error-message">
+                        <i class="fas fa-exclamation-triangle"></i> Could not calculate route. Please check your locations.
+                    </div>
+                `;
             }
         });
     });

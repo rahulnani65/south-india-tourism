@@ -19,6 +19,8 @@ import google.generativeai as genai
 import logging
 from django.db import transaction
 import json
+from django.utils.timesince import timesince
+from django.utils.timezone import now
 
 logger = logging.getLogger(__name__)
 
@@ -164,14 +166,19 @@ def profile(request):
 @login_required
 def add_review(request, place_id):
     place = get_object_or_404(Place, id=place_id)
+    is_ajax = (
+        request.headers.get('X-Requested-With') == 'XMLHttpRequest'
+        or request.META.get('HTTP_X_REQUESTED_WITH') == 'XMLHttpRequest'
+    )
     if not place.state:
+        if is_ajax:
+            return JsonResponse({'success': False, 'error': 'Place has no associated state.'}, status=400)
         messages.error(request, "Cannot add review: Place has no associated state.")
-        return redirect('state_detail', state_slug='tamil-nadu')
-        
+        return redirect('state_detail', state_name='tamil-nadu')
+    
     if request.method == 'POST':
         rating = request.POST.get('rating')
         comment = request.POST.get('comment')
-        
         try:
             with transaction.atomic():
                 review = Review(
@@ -182,12 +189,28 @@ def add_review(request, place_id):
                     comment=comment
                 )
                 review.save()
-                messages.success(request, "Review added successfully!")
+            if is_ajax:
+                return JsonResponse({
+                    'success': True,
+                    'review': {
+                        'username': request.user.username,
+                        'rating': int(rating),
+                        'comment': comment,
+                        'created_at': review.created_at.strftime('%b %d, %Y'),
+                        'place_name': place.name,
+                        'place_id': place.id
+                    }
+                })
+            messages.success(request, "Review added successfully!")
+            return redirect('state_detail', state_name=place.state.name.lower().replace(' ', '-'))
         except Exception as e:
-            logger.error(f"Error creating review: {str(e)}")
+            if is_ajax:
+                return JsonResponse({'success': False, 'error': str(e)}, status=500)
             messages.error(request, "An error occurred while adding your review. Please try again.")
-            
-    return redirect('state_detail', state_slug=place.state.name.lower().replace(' ', '-'))
+            return redirect('state_detail', state_name=place.state.name.lower().replace(' ', '-'))
+    if is_ajax:
+        return JsonResponse({'success': False, 'error': 'Invalid request method.'}, status=400)
+    return redirect('state_detail', state_name=place.state.name.lower().replace(' ', '-'))
 
 @login_required
 def add_favorite(request, place_id):
@@ -295,6 +318,12 @@ def get_gemini_recommendations(request):
     user_place = request.GET.get('user_place', '')
     place_type = request.GET.get('place_type', 'tourist_attraction')
     budget = request.GET.get('budget', 'medium')
+    duration = request.GET.get('duration', 'medium')
+    itinerary = request.GET.get('itinerary', 'false')
+    travel_style = request.GET.get('travel_style', 'cultural')
+    trip_duration = request.GET.get('trip_duration', '3')
+    enhanced = request.GET.get('enhanced', 'false')
+    context = request.GET.get('context', 'south_india')
 
     if not all([latitude, longitude, user_place]):
         return JsonResponse({'error': 'Missing required parameters'}, status=400)
@@ -305,7 +334,7 @@ def get_gemini_recommendations(request):
     if not settings.GOOGLE_MAPS_API_KEY:
         return JsonResponse({'error': 'Google Maps API key not configured'}, status=500)
 
-    cache_key = f"gemini_recommendations_{latitude}_{longitude}_{user_place}_{place_type}_{budget}"
+    cache_key = f"gemini_recommendations_{latitude}_{longitude}_{user_place}_{place_type}_{budget}_{duration}_{itinerary}_{travel_style}_{trip_duration}_{enhanced}_{context}"
     cached_data = cache.get(cache_key)
 
     if cached_data:
@@ -328,26 +357,70 @@ def get_gemini_recommendations(request):
         ist = pytz.timezone('Asia/Kolkata')
         current_time = datetime.now(ist).strftime('%I:%M %p IST')
 
-        # Step 3: Construct the natural language prompt for Gemini
-        prompt = (
-            f"You are a travel guide for South India. The user is currently at '{user_place}' "
-            f"where it's {weather_condition} with a temperature of {temperature}°C "
-            f"at {current_time}. They are looking for {place_type.replace('_', ' ')}s "
-            f"with a {budget} budget. Suggest exactly 5 nearby places they can visit, considering:\n"
-            f"1. The current weather and time\n"
-            f"2. Their budget preference\n"
-            f"3. The type of place they're interested in\n"
-            f"4. The cultural and historical significance of the places\n"
-            f"5. Practical considerations like accessibility and crowd levels\n\n"
-            f"Provide the response **strictly** in the following format (one place per line):\n"
-            f"1. Place Name - Reason to visit\n"
-            f"2. Place Name - Reason to visit\n"
-            f"3. Place Name - Reason to visit\n"
-            f"4. Place Name - Reason to visit\n"
-            f"5. Place Name - Reason to visit\n"
-            f"Each reason must be concise (under 20 words) and explain why this place is suitable right now. "
-            f"Do not include any additional text, headings, or explanations outside this format."
-        )
+        # Step 3: Construct enhanced natural language prompt for Gemini
+        if itinerary == 'true':
+            # Enhanced prompt for itinerary generation with more diversity
+            prompt = (
+                f"You are an expert travel planner specializing in {context.replace('_', ' ').title()} tourism. "
+                f"The user is planning a {trip_duration}-day trip starting from '{user_place}' "
+                f"with a {travel_style} travel style and {budget} budget. "
+                f"Current weather: {weather_condition}, {temperature}°C, {humidity}% humidity at {current_time}.\n\n"
+                f"IMPORTANT: Provide a DIVERSE mix of places. Include different types of attractions:\n"
+                f"- Temples and religious sites\n"
+                f"- Natural attractions (beaches, hills, parks)\n"
+                f"- Historical monuments and forts\n"
+                f"- Museums and cultural centers\n"
+                f"- Local markets and shopping areas\n"
+                f"- Hidden gems and offbeat locations\n\n"
+                f"Based on the travel style '{travel_style}', suggest exactly 12-15 diverse places that would create an optimal itinerary. "
+                f"Consider:\n"
+                f"1. **Diversity**: Mix different types of attractions\n"
+                f"2. **{travel_style.title()} Focus**: Prioritize places that match this style\n"
+                f"3. **Weather Conditions**: Current {weather_condition} weather and {temperature}°C temperature\n"
+                f"4. **Budget Level**: {budget} budget considerations\n"
+                f"5. **Cultural Significance**: Historical and cultural importance\n"
+                f"6. **Practical Logistics**: Distance, accessibility, and timing\n"
+                f"7. **Local Expertise**: Include hidden gems and local favorites\n"
+                f"8. **Variety**: Ensure each day has different types of experiences\n\n"
+                f"Provide the response **strictly** in this format (one place per line):\n"
+                f"1. Place Name - Detailed reasoning (30-50 words explaining why this place is perfect for {travel_style} travelers, considering weather, budget, and cultural significance)\n"
+                f"2. Place Name - Detailed reasoning\n"
+                f"3. Place Name - Detailed reasoning\n"
+                f"... (continue for 12-15 diverse places)\n"
+                f"Each reasoning should be specific, contextual, and actionable for the traveler. "
+                f"Ensure you include a good mix of temples, beaches, hills, historical sites, and local experiences."
+            )
+        else:
+            # Enhanced prompt for general recommendations with more diversity
+            prompt = (
+                f"You are a travel guide specializing in {context.replace('_', ' ').title()} tourism. "
+                f"The user is currently at '{user_place}' where it's {weather_condition} with {temperature}°C "
+                f"at {current_time}. They want {place_type.replace('_', ' ')}s with {budget} budget for {duration} duration.\n\n"
+                f"IMPORTANT: Provide a DIVERSE mix of places. Include:\n"
+                f"- Popular tourist attractions\n"
+                f"- Hidden gems and local favorites\n"
+                f"- Different types of experiences\n"
+                f"- Places suitable for current weather\n\n"
+                f"Provide exactly 8-10 diverse nearby places considering:\n"
+                f"1. **Current Conditions**: {weather_condition} weather, {temperature}°C, {humidity}% humidity\n"
+                f"2. **Budget Level**: {budget} budget considerations\n"
+                f"3. **Duration**: {duration} visit duration\n"
+                f"4. **Cultural Context**: Rich cultural and historical significance\n"
+                f"5. **Local Expertise**: Include authentic local experiences\n"
+                f"6. **Practical Tips**: Accessibility, crowd levels, best timing\n"
+                f"7. **Variety**: Mix of different attraction types\n\n"
+                f"Provide the response **strictly** in this format (one place per line):\n"
+                f"1. Place Name - Comprehensive reasoning (25-40 words explaining why this place is ideal right now, considering weather, budget, duration, and cultural significance)\n"
+                f"2. Place Name - Comprehensive reasoning\n"
+                f"3. Place Name - Comprehensive reasoning\n"
+                f"4. Place Name - Comprehensive reasoning\n"
+                f"5. Place Name - Comprehensive reasoning\n"
+                f"6. Place Name - Comprehensive reasoning\n"
+                f"7. Place Name - Comprehensive reasoning\n"
+                f"8. Place Name - Comprehensive reasoning\n"
+                f"Each reasoning must be specific, contextual, and provide actionable insights for the traveler. "
+                f"Ensure diversity in the types of places recommended."
+            )
 
         try:
             # Step 4: Call Gemini API to get recommendations
@@ -401,9 +474,11 @@ def get_gemini_recommendations(request):
             for place in recommended_places:
                 try:
                     place_name = place['name']
+                    # Enhanced search query for better results
+                    search_query = f"{place_name} {user_place} {context.replace('_', ' ')}"
                     places_url = (
                         f"https://maps.googleapis.com/maps/api/place/textsearch/json?"
-                        f"query={place_name}+near+{user_place}&key={settings.GOOGLE_MAPS_API_KEY}"
+                        f"query={search_query}&key={settings.GOOGLE_MAPS_API_KEY}"
                     )
                     places_response = requests.get(places_url)
                     places_response.raise_for_status()
@@ -416,7 +491,10 @@ def get_gemini_recommendations(request):
                             'latitude': place_details['geometry']['location']['lat'],
                             'longitude': place_details['geometry']['location']['lng'],
                             'rating': place_details.get('rating', 0),
-                            'reasoning': place['reasoning']
+                            'reasoning': place['reasoning'],
+                            'formatted_address': place_details.get('formatted_address', ''),
+                            'place_id': place_details.get('place_id', ''),
+                            'types': place_details.get('types', [])
                         })
                     else:
                         logger.warning(f"Google Maps API returned status: {places_data.get('status')} for place: {place_name}")
@@ -426,7 +504,10 @@ def get_gemini_recommendations(request):
                             'latitude': None,
                             'longitude': None,
                             'rating': 0,
-                            'reasoning': place['reasoning']
+                            'reasoning': place['reasoning'],
+                            'formatted_address': '',
+                            'place_id': '',
+                            'types': []
                         })
                 except Exception as e:
                     logger.warning(f"Failed to get Google Maps data for {place['name']}: {str(e)}")
@@ -436,7 +517,10 @@ def get_gemini_recommendations(request):
                         'latitude': None,
                         'longitude': None,
                         'rating': 0,
-                        'reasoning': place['reasoning']
+                        'reasoning': place['reasoning'],
+                        'formatted_address': '',
+                        'place_id': '',
+                        'types': []
                     })
 
             if not final_recommendations:
@@ -446,13 +530,23 @@ def get_gemini_recommendations(request):
                     'raw_response': recommendations_text
                 }, status=500)
 
+            # Limit results based on request type
+            max_places = 15 if itinerary == 'true' else 10
             result = {
-                'gemini_recommended_places': final_recommendations[:5],
+                'gemini_recommended_places': final_recommendations[:max_places],
                 'weather_data': {
                     'temperature': temperature,
                     'weather': weather_condition,
                     'humidity': humidity,
-                    'description': weather_description
+                    'description': weather_description,
+                    'location': location_name
+                },
+                'context': {
+                    'travel_style': travel_style,
+                    'budget': budget,
+                    'duration': duration,
+                    'trip_duration': trip_duration,
+                    'user_place': user_place
                 }
             }
             cache.set(cache_key, result, timeout=3600)
@@ -474,24 +568,30 @@ def submit_inquiry(request, state_id):
     if request.method == 'POST':
         name = request.POST.get('name')
         email = request.POST.get('email')
+        phone = request.POST.get('phone')
+        travel_dates = request.POST.get('travel_dates')
+        travelers = request.POST.get('travelers')
         message = request.POST.get('message')
         # Validate input
         if not all([name, email, message]):
             messages.error(request, "All fields are required.")
-            return redirect('state_detail', state_slug=state.name.lower().replace(' ', '-'))
+            return redirect('state_detail', state_name=state.name.lower().replace(' ', '-'))
         # Save the inquiry
         inquiry = Inquiry(
             state=state,
             name=name,
             email=email,
+            phone=phone,
+            travel_dates=travel_dates,
+            travelers=travelers,
             message=message,
             user=request.user if request.user.is_authenticated else None
         )
         inquiry.save()
         messages.success(request, "Your inquiry has been submitted successfully!")
-        return redirect('state_detail', state_slug=state.name.lower().replace(' ', '-'))
+        return redirect('state_detail', state_name=state.name.lower().replace(' ', '-'))
     # If not a POST request, redirect back to the state page
-    return redirect('state_detail', state_slug=state.name.lower().replace(' ', '-'))
+    return redirect('state_detail', state_name=state.name.lower().replace(' ', '-'))
 
 def fetch_place_info(request):
     """
