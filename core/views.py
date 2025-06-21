@@ -58,6 +58,9 @@ def state_detail(request, state_slug):
         }
         places_with_weather.append(place_data)
     
+    # Check if the state is in user's favorites
+    is_favorite = request.user.is_authenticated and state.favorites.filter(id=request.user.id).exists()
+    
     context = {
         'state': state,
         'places_with_weather': places_with_weather,
@@ -65,7 +68,8 @@ def state_detail(request, state_slug):
         'reviews': reviews,
         'itineraries': itineraries,
         'transport_options': transport_options,
-        'GOOGLE_MAPS_API_KEY': settings.GOOGLE_MAPS_API_KEY
+        'GOOGLE_MAPS_API_KEY': settings.GOOGLE_MAPS_API_KEY,
+        'is_favorite': is_favorite
     }
     return render(request, template_name, context)
 
@@ -240,16 +244,16 @@ def add_state_favorite(request, state_id):
     messages.success(request, f"{state.name} added to favorites!")
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
         return JsonResponse({'success': True})
-    return redirect('state_detail', state_slug=state.name.lower().replace(' ', '-'))
+    return redirect('core:state_detail', state_slug=state.name.lower().replace(' ', '-'))
 
 @login_required
 def remove_state_favorite(request, state_id):
     state = get_object_or_404(State, id=state_id)
     state.favorites.remove(request.user)
-    messages.success(request, f"{state.name} removed from favorites!")
+    messages.success(request, f"{state.name} removed from favorites.")
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
         return JsonResponse({'success': True})
-    return redirect('state_detail', state_slug=state.name.lower().replace(' ', '-'))
+    return redirect('core:state_detail', state_slug=state.name.lower().replace(' ', '-'))
 
 @login_required
 def add_post_favorite(request, post_id):
@@ -315,7 +319,7 @@ def get_weather(request):
 def get_gemini_recommendations(request):
     latitude = request.GET.get('latitude')
     longitude = request.GET.get('longitude')
-    user_place = request.GET.get('user_place', '')
+    user_place = request.GET.get('user_place')
     place_type = request.GET.get('place_type', 'tourist_attraction')
     budget = request.GET.get('budget', 'medium')
     duration = request.GET.get('duration', 'medium')
@@ -324,23 +328,22 @@ def get_gemini_recommendations(request):
     trip_duration = request.GET.get('trip_duration', '3')
     enhanced = request.GET.get('enhanced', 'false')
     context = request.GET.get('context', 'south_india')
+    allowed_places_param = request.GET.get('allowed_places')
+    allowed_places = None
+    if allowed_places_param:
+        try:
+            allowed_places = set(json.loads(allowed_places_param))
+        except Exception as e:
+            logger.error(f"Failed to parse allowed_places: {e}")
+            allowed_places = None
 
     if not all([latitude, longitude, user_place]):
-        return JsonResponse({'error': 'Missing required parameters'}, status=400)
-
-    if not settings.GEMINI_API_KEY:
-        return JsonResponse({'error': 'Gemini API key not configured'}, status=500)
-
-    if not settings.GOOGLE_MAPS_API_KEY:
-        return JsonResponse({'error': 'Google Maps API key not configured'}, status=500)
-
-    cache_key = f"gemini_recommendations_{latitude}_{longitude}_{user_place}_{place_type}_{budget}_{duration}_{itinerary}_{travel_style}_{trip_duration}_{enhanced}_{context}"
-    cached_data = cache.get(cache_key)
-
-    if cached_data:
-        return JsonResponse(cached_data)
+        return JsonResponse({'error': 'Missing required parameters: latitude, longitude, and user_place are required.'}, status=400)
 
     try:
+        final_recommendations = []  # Ensure always defined for error handling
+        recommendations_text = ""  # Initialize to avoid scope issues
+        
         # Step 1: Fetch current weather
         weather_url = f"https://api.openweathermap.org/data/2.5/weather?lat={latitude}&lon={longitude}&appid={settings.OPENWEATHERMAP_API_KEY}&units=metric"
         weather_response = requests.get(weather_url)
@@ -422,98 +425,100 @@ def get_gemini_recommendations(request):
                 f"Ensure diversity in the types of places recommended."
             )
 
-        try:
-            # Step 4: Call Gemini API to get recommendations
-            model = genai.GenerativeModel('gemini-1.5-flash')
-            response = model.generate_content(prompt)
+        # Step 4: Call Gemini API to get recommendations
+        model = genai.GenerativeModel('gemini-1.5-flash')
+        response = model.generate_content(prompt)
+        
+        # Log the raw response for debugging
+        logger.info(f"Gemini API raw response: {response.text}")
+        
+        if not response or not response.text:
+            raise ValueError("Empty response from Gemini API")
             
-            # Log the raw response for debugging
-            logger.info(f"Gemini API raw response: {response.text}")
-            
-            if not response or not response.text:
-                raise ValueError("Empty response from Gemini API")
-                
-            recommendations_text = response.text
+        recommendations_text = response.text
 
-            # Parse the response with improved error handling
-            recommended_places = []
-            lines = recommendations_text.strip().split('\n')
+        # Parse the response with improved error handling
+        recommended_places = []
+        lines = recommendations_text.strip().split('\n')
+        
+        for line in lines:
+            line = line.strip()
+            if not line:
+                continue
             
-            for line in lines:
-                if not line.strip():
-                    continue
-                    
-                try:
-                    # Handle both numbered and unnumbered formats
-                    if '.' in line:
-                        place_name, explanation = line.split('.', 1)[1].split('-', 1)
-                    else:
-                        place_name, explanation = line.split('-', 1)
-                        
+            # Skip lines that are clearly notes
+            if line.lower().startswith('note:') or line.lower().startswith('important:'):
+                continue
+                
+            try:
+                # Remove numbering like "1. "
+                content = line
+                if '.' in line and line.split('.', 1)[0].strip().isdigit():
+                    content = line.split('.', 1)[1].strip()
+                
+                # Try to split by " - " which is more specific, then ":"
+                separator = None
+                if ' - ' in content:
+                    separator = ' - '
+                elif ': ' in content:
+                    separator = ': '
+                
+                if separator:
+                    place_name, explanation = content.split(separator, 1)
                     place_name = place_name.strip()
                     explanation = explanation.strip()
-                    
+
                     if place_name and explanation:
                         recommended_places.append({
                             "name": place_name,
                             "reasoning": explanation
                         })
-                except Exception as e:
-                    logger.warning(f"Failed to parse line: {line}. Error: {str(e)}")
-                    continue
+                else:
+                    logger.warning(f"Could not parse line, no valid separator found: {line}")
+                    
+            except Exception as e:
+                logger.warning(f"Failed to parse line: {line}. Error: {str(e)}")
+                continue
 
-            if not recommended_places:
-                logger.error(f"Failed to parse any recommendations from response: {recommendations_text}")
-                return JsonResponse({
-                    'error': 'Failed to parse recommendations from Gemini API response',
-                    'raw_response': recommendations_text
-                }, status=500)
+        if not recommended_places:
+            logger.error(f"Failed to parse any recommendations from response: {recommendations_text}")
+            return JsonResponse({
+                'error': 'Failed to parse recommendations from Gemini API response',
+                'raw_response': recommendations_text
+            }, status=500)
 
-            # Step 5: Cross-reference with Google Maps API
-            final_recommendations = []
-            for place in recommended_places:
-                try:
-                    place_name = place['name']
-                    # Enhanced search query for better results
-                    search_query = f"{place_name} {user_place} {context.replace('_', ' ')}"
-                    places_url = (
-                        f"https://maps.googleapis.com/maps/api/place/textsearch/json?"
-                        f"query={search_query}&key={settings.GOOGLE_MAPS_API_KEY}"
-                    )
-                    places_response = requests.get(places_url)
-                    places_response.raise_for_status()
-                    places_data = places_response.json()
+        # Step 5: Cross-reference with Google Maps API
+        final_recommendations = []
+        for place in recommended_places:
+            try:
+                place_name = place['name']
+                # Enhanced search query for better results, focusing on place name and state context
+                search_query = f"{place_name}, {context.replace('_', ' ')}"
+                places_url = (
+                    f"https://maps.googleapis.com/maps/api/place/textsearch/json?"
+                    f"query={search_query}&key={settings.GOOGLE_MAPS_API_KEY}"
+                )
+                places_response = requests.get(places_url)
+                places_response.raise_for_status()
+                places_data = places_response.json()
 
-                    if places_data['status'] == 'OK' and places_data['results']:
-                        place_details = places_data['results'][0]
-                        final_recommendations.append({
-                            'name': place_details.get('name', place_name),
-                            'latitude': place_details['geometry']['location']['lat'],
-                            'longitude': place_details['geometry']['location']['lng'],
-                            'rating': place_details.get('rating', 0),
-                            'reasoning': place['reasoning'],
-                            'formatted_address': place_details.get('formatted_address', ''),
-                            'place_id': place_details.get('place_id', ''),
-                            'types': place_details.get('types', [])
-                        })
-                    else:
-                        logger.warning(f"Google Maps API returned status: {places_data.get('status')} for place: {place_name}")
-                        # Add the place without coordinates if Google Maps fails
-                        final_recommendations.append({
-                            'name': place_name,
-                            'latitude': None,
-                            'longitude': None,
-                            'rating': 0,
-                            'reasoning': place['reasoning'],
-                            'formatted_address': '',
-                            'place_id': '',
-                            'types': []
-                        })
-                except Exception as e:
-                    logger.warning(f"Failed to get Google Maps data for {place['name']}: {str(e)}")
+                if places_data['status'] == 'OK' and places_data['results']:
+                    place_details = places_data['results'][0]
+                    final_recommendations.append({
+                        'name': place_details.get('name', place_name),
+                        'latitude': place_details['geometry']['location']['lat'],
+                        'longitude': place_details['geometry']['location']['lng'],
+                        'rating': place_details.get('rating', 0),
+                        'reasoning': place['reasoning'],
+                        'formatted_address': place_details.get('formatted_address', ''),
+                        'place_id': place_details.get('place_id', ''),
+                        'types': place_details.get('types', [])
+                    })
+                else:
+                    logger.warning(f"Google Maps API returned status: {places_data.get('status')} for place: {place_name}")
                     # Add the place without coordinates if Google Maps fails
                     final_recommendations.append({
-                        'name': place['name'],
+                        'name': place_name,
                         'latitude': None,
                         'longitude': None,
                         'rating': 0,
@@ -522,39 +527,63 @@ def get_gemini_recommendations(request):
                         'place_id': '',
                         'types': []
                     })
+            except Exception as e:
+                logger.warning(f"Failed to get Google Maps data for {place['name']}: {str(e)}")
+                # Add the place without coordinates if Google Maps fails
+                final_recommendations.append({
+                    'name': place['name'],
+                    'latitude': None,
+                    'longitude': None,
+                    'rating': 0,
+                    'reasoning': place['reasoning'],
+                    'formatted_address': '',
+                    'place_id': '',
+                    'types': []
+                })
 
-            if not final_recommendations:
-                logger.error("No valid places found in Google Maps")
-                return JsonResponse({
-                    'error': 'Failed to find places in Google Maps',
-                    'raw_response': recommendations_text
-                }, status=500)
+        # --- FILTER BY allowed_places if provided ---
+        if allowed_places:
+            allowed_places_normalized = set(n.strip().lower() for n in allowed_places)
+            filtered_recommendations = [p for p in final_recommendations if p['name'].strip().lower() in allowed_places_normalized]
+            if filtered_recommendations:
+                final_recommendations = filtered_recommendations
+            # else: fallback to all results (do not filter)
 
-            # Limit results based on request type
-            max_places = 15 if itinerary == 'true' else 10
-            result = {
-                'gemini_recommended_places': final_recommendations[:max_places],
-                'weather_data': {
-                    'temperature': temperature,
-                    'weather': weather_condition,
-                    'humidity': humidity,
-                    'description': weather_description,
-                    'location': location_name
-                },
-                'context': {
-                    'travel_style': travel_style,
-                    'budget': budget,
-                    'duration': duration,
-                    'trip_duration': trip_duration,
-                    'user_place': user_place
-                }
+        if not final_recommendations:
+            logger.error("No valid places found in Google Maps")
+            return JsonResponse({
+                'error': 'Failed to find places in Google Maps',
+                'raw_response': recommendations_text
+            }, status=500)
+
+        # Limit results based on request type
+        max_places = 15 if itinerary == 'true' else 10
+        # For itinerary, return as many as found (even if <12), but show a warning if very few
+       
+        result = {
+            'gemini_recommended_places': final_recommendations[:max_places],
+            'weather_data': {
+                'temperature': temperature,
+                'weather': weather_condition,
+                'humidity': humidity,
+                'description': weather_description,
+                'location': location_name
+            },
+            'context': {
+                'travel_style': travel_style,
+                'budget': budget,
+                'duration': duration,
+                'trip_duration': trip_duration,
+                'user_place': user_place
             }
-            cache.set(cache_key, result, timeout=3600)
-            return JsonResponse(result)
+        }
+        cache_key = f"gemini_recommendations_{latitude}_{longitude}_{user_place}_{place_type}_{budget}_{duration}_{itinerary}_{travel_style}_{trip_duration}_{enhanced}_{context}"
+        cache.set(cache_key, result, timeout=3600)
+        return JsonResponse(result)
 
-        except Exception as e:
-            logger.error(f"Error in Gemini API call: {str(e)}")
-            return JsonResponse({'error': f'Failed to get recommendations: {str(e)}'}, status=500)
+    except Exception as e:
+        logger.error(f"Error in Gemini API call: {str(e)}")
+        return JsonResponse({'error': f'Failed to get recommendations: {str(e)}'}, status=500)
 
     except requests.exceptions.RequestException as e:
         logger.error(f"API request error in get_gemini_recommendations: {str(e)}")

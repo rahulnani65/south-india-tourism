@@ -1499,8 +1499,8 @@
       <div class="collapse navbar-collapse" id="navbarNav">
         <ul class="navbar-nav ms-auto">
           <li class="nav-item"><a class="nav-link active" href="{% url 'core:home' %}">Home</a></li>
-          <li class="nav-item"><a class="nav-link" href="{% url 'core:home' %}#category">Adventures</a></li>
-          <li class="nav-item"><a class="nav-link" href="{% url 'core:home' %}#packages">Packages</a></li>
+          <li class="nav-item"><a class="nav-link" href="{% url 'core:home' %}#destinations">Destinations</a></li>
+          <!-- <li class="nav-item"><a class="nav-link" href="{% url 'core:home' %}#">Packages</a></li> -->
           <li class="nav-item"><a class="nav-link" href="{% url 'core:home' %}#contact">Contact</a></li>
           {% if user.is_authenticated %}
             <li class="nav-item"><a class="nav-link" href="{% url 'core:my_favorites' %}">My Favorites</a></li>
@@ -1573,6 +1573,27 @@
         <a href="#booking" class="btn btn-lg btn-primary animate__animated animate__fadeIn animate__delay-2s" style="font-size:1.2rem;pointer-events:auto;">Plan Your Trip</a>
       </div>
     </div> <!-- #tamilNaduHeroCarousel -->
+    <div class="hero-overlay">
+      {% if user.is_authenticated %}
+        <div class="favorite-container">
+          {% if is_favorite %}
+            <form action="{% url 'core:remove_state_favorite' state.id %}" method="post">
+              {% csrf_token %}
+              <button type="submit" class="btn favorite-btn">
+                <i class="fas fa-heart"></i> Remove from Favorites
+              </button>
+            </form>
+          {% else %}
+            <form action="{% url 'core:add_state_favorite' state.id %}" method="post">
+              {% csrf_token %}
+              <button type="submit" class="btn favorite-btn">
+                <i class="far fa-heart"></i> Add to Favorites
+              </button>
+            </form>
+          {% endif %}
+        </div>
+      {% endif %}
+    </div>
   </section>
 
   <!-- Secondary Navigation -->
@@ -1915,7 +1936,9 @@
       <div class="container">
         <div class="calendar-container mb-5">
           <div class="calendar-header">
-            <h2>Tamil Nadu Events & Festivals - <span id="calendarMonthYear"></span></h2>
+            <button id="calendarPrev" class="calendar-nav-btn" aria-label="Previous Month">&#8592;</button>
+            <span class="calendar-title">Tamil Nadu Events & Festivals - <span id="calendarMonthYear"></span></span>
+            <button id="calendarNext" class="calendar-nav-btn" aria-label="Next Month">&#8594;</button>
           </div>
           <div class="calendar-days" id="calendarDays">
             <div class="calendar-day">Sun</div><div class="calendar-day">Mon</div><div class="calendar-day">Tue</div>
@@ -1930,14 +1953,18 @@
       </div>
       <style>
         .calendar-container { max-width: 900px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
-        .calendar-header { text-align: center; padding: 10px; background: #007bff; color: white; border-radius: 5px 5px 0 0; }
+        .calendar-header { text-align: center; padding: 10px; background: #007bff; color: white; border-radius: 5px 5px 0 0; display: flex; align-items: center; justify-content: space-between; }
+        .calendar-title { flex: 1; font-size: 1.5rem; font-weight: 600; }
+        .calendar-nav-btn { background: none; border: none; color: white; font-size: 1.5rem; cursor: pointer; padding: 0 1rem; transition: color 0.2s; }
+        .calendar-nav-btn:hover { color: #ffd700; }
         .calendar-days { display: grid; grid-template-columns: repeat(7, 1fr); text-align: center; padding: 10px; }
         .calendar-day { padding: 10px; border: 1px solid #ddd; background: #f8f9fa; font-weight: 600; }
-        .calendar-grid { min-height: 120px; }
-        .calendar-cell { padding: 12px 0; border: 1px solid #eee; text-align: center; cursor: pointer; position: relative; background: #fff; transition: background 0.2s; }
+        .calendar-grid { min-height: 120px; transition: all 0.3s; }
+        .calendar-cell { padding: 12px 0; border: 1px solid #eee; text-align: center; cursor: pointer; position: relative; background: #fff; transition: background 0.2s; min-height: 40px; font-size: 1.1rem; }
         .calendar-cell.event-day { background: #e3f2fd; font-weight: bold; color: #007bff; border: 2px solid #007bff; }
         .calendar-cell.today { background: #ffe082; border: 2px solid #ffc107; }
         .calendar-cell:hover { background: #f1f8e9; }
+        .calendar-cell.selected { background: #007bff; color: white; border: 2px solid #0056b3; }
         .event-list { margin-top: 20px; }
         .event-item { padding: 16px; border-bottom: 1px solid #eee; background: #fff; border-radius: 8px; margin-bottom: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
         .event-item h4 { margin: 0 0 6px 0; color: #333; font-size: 1.2rem; }
@@ -1945,25 +1972,26 @@
         .event-item .event-date { font-weight: bold; color: #007bff; }
       </style>
       <script>
-        // Collect Django events into a JS array (all in English)
-        {% if state.events.all.count %}
+        // Tamil Nadu Events & Festivals (hardcoded for calendar)
         const events = [
-        {% for event in state.events.all %}{
-          date: new Date("{{ event.date|date:'Y-m-d' }}"),
-          title: '{{ event.name|default:'Event'|escapejs }}',
-          place: '{{ event.location|default:'-'|escapejs }}',
-          description: '{{ event.description|default:''|escapejs }}'
-        }{% if not forloop.last %},{% endif %}{% endfor %}
+          { date: new Date('2025-01-15'), title: 'Pongal Festival', place: 'Throughout Tamil Nadu', description: 'A harvest festival celebrating the sun god and agricultural prosperity.' },
+          { date: new Date('2025-04-20'), title: 'Madurai Meenakshi Temple Festival', place: 'Madurai', description: 'A grand celebration featuring cultural performances and temple rituals.' },
+          { date: new Date('2025-05-01'), title: 'Chithirai Festival', place: 'Madurai', description: 'A month-long festival celebrating the celestial wedding of Meenakshi and Sundareswarar.' },
+          { date: new Date('2025-08-15'), title: 'Aadi Perukku', place: 'Cauvery River Banks', description: 'A festival to honor water and the life-giving properties of the river.' },
+          { date: new Date('2025-10-24'), title: 'Navaratri & Dussehra', place: 'Throughout Tamil Nadu', description: 'Nine nights of music, dance, and worship, culminating in Dussehra.' },
+          { date: new Date('2025-11-01'), title: 'Karthigai Deepam', place: 'Thiruvannamalai', description: 'A festival of lights celebrated with the lighting of lamps in homes and temples.' },
+          { date: new Date('2025-12-25'), title: 'Margazhi Festival', place: 'Chennai', description: 'A month-long music and dance festival in Chennai.' }
         ];
-        {% else %}
-        const events = [];
-        {% endif %}
 
-        // Calendar rendering logic
+        // Calendar rendering logic with navigation
+        let currentMonth, currentYear, selectedDate = null;
+        const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+
         function renderCalendar(month, year) {
+          currentMonth = month;
+          currentYear = year;
           const calendarGrid = document.getElementById('calendarGrid');
           const monthYear = document.getElementById('calendarMonthYear');
-          const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
           monthYear.textContent = months[month] + ' ' + year;
           calendarGrid.innerHTML = '';
           const firstDay = new Date(year, month, 1).getDay();
@@ -1978,18 +2006,18 @@
             const cellDate = new Date(year, month, d);
             const isToday = cellDate.toDateString() === today.toDateString();
             const hasEvent = events.some(ev => ev.date.toDateString() === cellDate.toDateString());
-            calendarGrid.innerHTML += `<div class="calendar-cell${hasEvent ? ' event-day' : ''}${isToday ? ' today' : ''}" data-date="${cellDate.toISOString()}">${d}${hasEvent ? ' <span style=\"color:#007bff;font-size:1.1em;\">•</span>' : ''}</div>`;
+            const isSelected = selectedDate && cellDate.toDateString() === selectedDate.toDateString();
+            calendarGrid.innerHTML += `<div class="calendar-cell${hasEvent ? ' event-day' : ''}${isToday ? ' today' : ''}${isSelected ? ' selected' : ''}" data-date="${cellDate.toISOString()}">${d}${hasEvent ? ' <span style=\"color:#007bff;font-size:1.1em;\">•</span>' : ''}</div>`;
           }
         }
 
-        // Render event cards for selected date
-        function renderEvents(selectedDate = null) {
+        function renderEvents(selected = null) {
           const eventList = document.getElementById('eventList');
           let html = '<h3>Events & Festivals</h3>';
-          if (!selectedDate) {
+          if (!selected) {
             html += '<div id="eventPrompt" class="event-item"><p>Please select a date on the calendar to view events or festivals.</p></div>';
           } else {
-            const filteredEvents = events.filter(ev => ev.date.toDateString() === selectedDate.toDateString());
+            const filteredEvents = events.filter(ev => ev.date.toDateString() === selected.toDateString());
             if (filteredEvents.length === 0) {
               html += '<div class="event-item"><p>No events or festivals for this date.</p></div>';
             } else {
@@ -2005,27 +2033,46 @@
           eventList.innerHTML = html;
         }
 
-        // Calendar cell click handler
+        function prevMonth() {
+          if (currentMonth === 0) {
+            currentMonth = 11;
+            currentYear--;
+          } else {
+            currentMonth--;
+          }
+          selectedDate = null;
+          renderCalendar(currentMonth, currentYear);
+          renderEvents();
+        }
+
+        function nextMonth() {
+          if (currentMonth === 11) {
+            currentMonth = 0;
+            currentYear++;
+          } else {
+            currentMonth++;
+          }
+          selectedDate = null;
+          renderCalendar(currentMonth, currentYear);
+          renderEvents();
+        }
+
         document.addEventListener('DOMContentLoaded', function() {
           const now = new Date();
-          renderCalendar(now.getMonth(), now.getFullYear());
-          renderEvents(); // Show prompt by default
+          currentMonth = now.getMonth();
+          currentYear = now.getFullYear();
+          renderCalendar(currentMonth, currentYear);
+          renderEvents();
           document.getElementById('calendarGrid').addEventListener('click', function(e) {
             if (e.target.classList.contains('calendar-cell') && e.target.dataset.date) {
-              const date = new Date(e.target.dataset.date);
-              renderEvents(date);
+              selectedDate = new Date(e.target.dataset.date);
+              renderCalendar(currentMonth, currentYear);
+              renderEvents(selectedDate);
             }
           });
+          document.getElementById('calendarPrev').addEventListener('click', prevMonth);
+          document.getElementById('calendarNext').addEventListener('click', nextMonth);
         });
-
-        // --- Future Enhancements ---
-        // 1. Add month navigation (prev/next buttons)
-        // 2. Show event details in a popup/modal
-        // 3. Add filters for event type/category
-        // 4. Highlight today's date more prominently
-        // 5. Support multi-day events
-        // 6. Add search for events
-        // 7. Support for recurring events
       </script>
     </section>
 

@@ -313,3 +313,77 @@
     padding: 20px;
   }
 }
+
+/* Dropdown Menu Styles */
+.dropdown-menu {
+  border: none;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+  border-radius: 8px;
+}
+
+.dropdown-item {
+  padding: 10px 20px;
+  transition: background-color 0.3s ease;
+}
+
+.dropdown-item i {
+  margin-right: 10px;
+  color: #1a472a;
+}
+
+.dropdown-item:hover {
+  background-color: rgba(26, 71, 42, 0.1);
+}
+
+.dropdown-divider {
+  margin: 0.5rem 0;
+  border-color: rgba(26, 71, 42, 0.1);
+}
+
+/* Section Headings */
+.heritage-section h2,
+.cuisine-section h2,
+.culture-section h2,
+.wildlife-section h2,
+.seasonal-section h2 {
+  color: #1a472a;
+  margin-bottom: 50px;
+  position: relative;
+  padding-bottom: 15px;
+}
+
+.heritage-section h2:after,
+.cuisine-section h2:after,
+.culture-section h2:after,
+.wildlife-section h2:after,
+.seasonal-section h2:after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 60px;
+  height: 3px;
+  background-color: #1a472a;
+}
+
+/* Card Content Styles */
+.heritage-card h3,
+.cuisine-card h3,
+.culture-card h3,
+.wildlife-card h3,
+.seasonal-card h3 {
+  margin: 20px 0;
+  color: #1a472a;
+  font-size: 1.5rem;
+}
+
+.heritage-card p,
+.cuisine-card p,
+.culture-card p,
+.wildlife-card p,
+.seasonal-card p {
+  color: #666;
+  font-size: 1rem;
+  line-height: 1.6;
+}

@@ -1,0 +1,36 @@
+{% if user.is_authenticated %}
+  <form id="favoriteStateForm" action="{% if is_favorite %}{% url 'core:remove_state_favorite' state.id %}{% else %}{% url 'core:add_state_favorite' state.id %}{% endif %}" method="post" class="d-inline">
+    {% csrf_token %}
+    <button type="submit" class="btn favorite-btn" title="{% if is_favorite %}Remove from Favorites{% else %}Add to Favorites{% endif %}">
+      <i id="favoriteIcon" class="{% if is_favorite %}fas fa-heart{% else %}far fa-heart{% endif %}"></i>
+    </button>
+  </form>
+  <script>
+    document.getElementById('favoriteStateForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      const form = this;
+      fetch(form.action, {
+        method: 'POST',
+        headers: {
+          'X-CSRFToken': form.querySelector('[name=csrfmiddlewaretoken]').value,
+          'X-Requested-With': 'XMLHttpRequest'
+        },
+        credentials: 'same-origin',
+      }).then(res => res.json()).then(data => {
+        if (data.success) {
+          // Toggle icon and form action
+          const icon = document.getElementById('favoriteIcon');
+          if (form.action.includes('add-state-favorite')) {
+            icon.classList.remove('far'); icon.classList.add('fas');
+            form.action = form.action.replace('add-state-favorite', 'remove-state-favorite');
+            form.title = 'Remove from Favorites';
+          } else {
+            icon.classList.remove('fas'); icon.classList.add('far');
+            form.action = form.action.replace('remove-state-favorite', 'add-state-favorite');
+            form.title = 'Add to Favorites';
+          }
+        }
+      });
+    });
+  </script>
+{% endif %}

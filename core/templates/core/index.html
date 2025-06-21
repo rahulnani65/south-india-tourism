@@ -29,14 +29,19 @@
             <a class="nav-link active" href="{% url 'home' %}">Home</a>
           </li>
           <li class="nav-item">
+            <a class="nav-link" href="#features">
+              <i class="fas fa-compass"></i> Explore
+            </a>
+          </li>
+          <li class="nav-item">
             <a class="nav-link" href="#destinations">Destinations</a>
           </li>
           <li class="nav-item">
             <a class="nav-link" href="#experiences">Experiences</a>
           </li>
-          <li class="nav-item">
+          <!-- <li class="nav-item">
             <a class="nav-link" href="#packages">Packages</a>
-          </li>
+          </li> -->
           <li class="nav-item">
             <a class="nav-link" href="#contact">Contact</a>
           </li>
@@ -109,7 +114,7 @@
   </section>
 
   <!-- Features Section -->
-  <section class="features-section py-5">
+  <section class="features-section py-5" id="features">
     <div class="container">
       <h2 class="text-center mb-5" data-aos="fade-up">Explore Our Features</h2>
       <div class="row g-4">
@@ -137,15 +142,15 @@
           </div>
         </div>
 
-        <!-- Travel Packages -->
+        <!-- Cultural Experiences -->
         <div class="col-md-6 col-lg-4">
           <div class="feature-card">
             <div class="feature-icon">
-              <i class="fas fa-suitcase"></i>
+              <i class="fas fa-landmark"></i>
             </div>
-            <h3>Travel Packages</h3>
-            <p>Discover curated travel packages for the perfect South Indian experience</p>
-            <a href="#packages" class="feature-link">View Packages <i class="fas fa-arrow-right"></i></a>
+            <h3>Cultural Experiences</h3>
+            <p>Discover temples, festivals, art forms and local traditions</p>
+            <a href="#experiences" class="feature-link">Learn More <i class="fas fa-arrow-right"></i></a>
           </div>
         </div>
       </div>
@@ -176,6 +181,156 @@
             <i class="fas fa-hiking experience-icon"></i>
             <h3>Adventure Sports</h3>
             <p>Experience thrilling activities in scenic locations</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Heritage Sites Section -->
+  <section class="heritage-section" id="heritage-sites">
+    <div class="container">
+      <h2 class="text-center mb-5" data-aos="fade-up">Heritage Sites</h2>
+      <div class="row">
+        <div class="col-md-4" data-aos="fade-up">
+          <div class="heritage-card">
+            <i class="fas fa-gopuram heritage-icon"></i>
+            <h3>Ancient Temples</h3>
+            <p>Explore magnificent temples with intricate architecture and rich history</p>
+          </div>
+        </div>
+        <div class="col-md-4" data-aos="fade-up" data-aos-delay="100">
+          <div class="heritage-card">
+            <i class="fas fa-fort-awesome heritage-icon"></i>
+            <h3>Historic Forts</h3>
+            <p>Discover majestic forts that tell tales of South India's royal past</p>
+          </div>
+        </div>
+        <div class="col-md-4" data-aos="fade-up" data-aos-delay="200">
+          <div class="heritage-card">
+            <i class="fas fa-monument heritage-icon"></i>
+            <h3>UNESCO Sites</h3>
+            <p>Visit World Heritage Sites that showcase our cultural legacy</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Local Cuisine Section -->
+  <section class="cuisine-section" id="local-cuisine">
+    <div class="container">
+      <h2 class="text-center mb-5" data-aos="fade-up">Local Cuisine</h2>
+      <div class="row">
+        <div class="col-md-4" data-aos="fade-up">
+          <div class="cuisine-card">
+            <i class="fas fa-mortar-pestle cuisine-icon"></i>
+            <h3>Traditional Dishes</h3>
+            <p>Savor authentic South Indian delicacies and spice blends</p>
+          </div>
+        </div>
+        <div class="col-md-4" data-aos="fade-up" data-aos-delay="100">
+          <div class="cuisine-card">
+            <i class="fas fa-coffee cuisine-icon"></i>
+            <h3>Filter Coffee</h3>
+            <p>Experience the unique taste of South Indian filter coffee</p>
+          </div>
+        </div>
+        <div class="col-md-4" data-aos="fade-up" data-aos-delay="200">
+          <div class="cuisine-card">
+            <i class="fas fa-leaf cuisine-icon"></i>
+            <h3>Street Food</h3>
+            <p>Try popular street foods from different South Indian states</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Art & Culture Section -->
+  <section class="culture-section" id="art-culture">
+    <div class="container">
+      <h2 class="text-center mb-5" data-aos="fade-up">Art & Culture</h2>
+      <div class="row">
+        <div class="col-md-4" data-aos="fade-up">
+          <div class="culture-card">
+            <i class="fas fa-drum culture-icon"></i>
+            <h3>Classical Dance</h3>
+            <p>Watch mesmerizing performances of Bharatanatyam and other dance forms</p>
+          </div>
+        </div>
+        <div class="col-md-4" data-aos="fade-up" data-aos-delay="100">
+          <div class="culture-card">
+            <i class="fas fa-paint-brush culture-icon"></i>
+            <h3>Traditional Arts</h3>
+            <p>Discover unique art forms like Tanjore paintings and handicrafts</p>
+          </div>
+        </div>
+        <div class="col-md-4" data-aos="fade-up" data-aos-delay="200">
+          <div class="culture-card">
+            <i class="fas fa-music culture-icon"></i>
+            <h3>Carnatic Music</h3>
+            <p>Experience the soul-stirring classical music of South India</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Wildlife Section -->
+  <section class="wildlife-section" id="wildlife">
+    <div class="container">
+      <h2 class="text-center mb-5" data-aos="fade-up">Wildlife</h2>
+      <div class="row">
+        <div class="col-md-4" data-aos="fade-up">
+          <div class="wildlife-card">
+            <i class="fas fa-tree wildlife-icon"></i>
+            <h3>National Parks</h3>
+            <p>Explore diverse ecosystems and spot rare wildlife species</p>
+          </div>
+        </div>
+        <div class="col-md-4" data-aos="fade-up" data-aos-delay="100">
+          <div class="wildlife-card">
+            <i class="fas fa-feather wildlife-icon"></i>
+            <h3>Bird Sanctuaries</h3>
+            <p>Visit popular bird watching spots and migratory bird sanctuaries</p>
+          </div>
+        </div>
+        <div class="col-md-4" data-aos="fade-up" data-aos-delay="200">
+          <div class="wildlife-card">
+            <i class="fas fa-water wildlife-icon"></i>
+            <h3>Marine Life</h3>
+            <p>Discover the rich marine biodiversity of coastal regions</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Seasonal Activities Section -->
+  <section class="seasonal-section" id="seasonal-activities">
+    <div class="container">
+      <h2 class="text-center mb-5" data-aos="fade-up">Seasonal Activities</h2>
+      <div class="row">
+        <div class="col-md-4" data-aos="fade-up">
+          <div class="seasonal-card">
+            <i class="fas fa-umbrella-beach seasonal-icon"></i>
+            <h3>Beach Activities</h3>
+            <p>Enjoy water sports and beach activities during summer</p>
+          </div>
+        </div>
+        <div class="col-md-4" data-aos="fade-up" data-aos-delay="100">
+          <div class="seasonal-card">
+            <i class="fas fa-cloud-rain seasonal-icon"></i>
+            <h3>Monsoon Treks</h3>
+            <p>Experience the beauty of Western Ghats during monsoon</p>
+          </div>
+        </div>
+        <div class="col-md-4" data-aos="fade-up" data-aos-delay="200">
+          <div class="seasonal-card">
+            <i class="fas fa-snowflake seasonal-icon"></i>
+            <h3>Winter Festivals</h3>
+            <p>Participate in cultural festivals during the winter season</p>
           </div>
         </div>
       </div>
