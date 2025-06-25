@@ -21,17 +21,20 @@ from django.db import transaction
 import json
 from django.utils.timesince import timesince
 from django.utils.timezone import now
+from django.views.decorators.cache import cache_page
 
 logger = logging.getLogger(__name__)
 
 # Configure Gemini API
 genai.configure(api_key=settings.GEMINI_API_KEY)
 
+@cache_page(60 * 15)
 def home(request):
     states = State.objects.all()
     posts = Post.objects.all().order_by('-created_at')[:3]
     return render(request, 'core/index.html', {'states': states, 'posts': posts})
 
+@cache_page(60 * 15)
 def state_detail(request, state_slug):
     state = get_object_or_404(State, name__iexact=state_slug.replace('-', ' '))
     places = Place.objects.filter(state=state)
@@ -110,6 +113,7 @@ def get_weather_data(city):
         logger.error(f"Error fetching weather data: {e}")
     return None
 
+@cache_page(60 * 15)
 def post_detail(request, post_id):
     post = get_object_or_404(Post, id=post_id)
     is_favorited = request.user.is_authenticated and post.favorites.filter(id=request.user.id).exists()
@@ -149,7 +153,7 @@ def signup(request):
         form = UserCreationForm()
     return render(request, 'registration/signup.html', {'form': form})
 
-@login_required
+@cache_page(60 * 15)
 def profile(request):
     # Ensure the user has a UserProfile, create one if it doesn't exist
     try:
@@ -426,7 +430,7 @@ def get_gemini_recommendations(request):
             )
 
         # Step 4: Call Gemini API to get recommendations
-        model = genai.GenerativeModel('gemini-1.5-flash')
+        model = genai.GenerativeModel('gemini-1.5-pro')
         response = model.generate_content(prompt)
         
         # Log the raw response for debugging
@@ -487,35 +491,101 @@ def get_gemini_recommendations(request):
                 'raw_response': recommendations_text
             }, status=500)
 
-        # Step 5: Cross-reference with Google Maps API
+        # Step 5: Cross-reference with database first, then Google Maps API
         final_recommendations = []
         for place in recommended_places:
             try:
                 place_name = place['name']
+                
+                # First, try to find the place in our database
+                from .models import State, Place
+                try:
+                    # Get the state based on context
+                    state_name = context.replace('_', ' ').title()
+                    if context == 'tamil_nadu':
+                        state_name = 'Tamil Nadu'
+                    elif context == 'telangana':
+                        state_name = 'Telangana'
+                    elif context == 'andhra_pradesh':
+                        state_name = 'Andhra Pradesh'
+                    elif context == 'karnataka':
+                        state_name = 'Karnataka'
+                    elif context == 'kerala':
+                        state_name = 'Kerala'
+                    
+                    state = State.objects.filter(name__iexact=state_name).first()
+                    
+                    if state:
+                        # Search for the place in our database
+                        db_place = Place.objects.filter(
+                            state=state,
+                            name__icontains=place_name
+                        ).first()
+                        
+                        if db_place and db_place.latitude and db_place.longitude:
+                            # Use the database place with accurate coordinates
+                            final_recommendations.append({
+                                'name': db_place.name,
+                                'latitude': db_place.latitude,
+                                'longitude': db_place.longitude,
+                                'rating': db_place.average_rating or 0,
+                                'reasoning': place['reasoning'],
+                                'formatted_address': db_place.location or '',
+                                'place_id': str(db_place.id),
+                                'types': [db_place.category] if db_place.category else []
+                            })
+                            continue  # Skip Google Maps API call
+                except Exception as e:
+                    logger.warning(f"Database lookup failed for {place_name}: {str(e)}")
+                
+                # If not found in database, fall back to Google Maps API
                 # Enhanced search query for better results, focusing on place name and state context
                 search_query = f"{place_name}, {context.replace('_', ' ')}"
-                places_url = (
-                    f"https://maps.googleapis.com/maps/api/place/textsearch/json?"
-                    f"query={search_query}&key={settings.GOOGLE_MAPS_API_KEY}"
-                )
-                places_response = requests.get(places_url)
-                places_response.raise_for_status()
-                places_data = places_response.json()
+                
+                # Try multiple search strategies for better accuracy
+                search_queries = [
+                    f"{place_name}, {context.replace('_', ' ')}",
+                    f"{place_name} {context.replace('_', ' ')}",
+                    f"{place_name}, Tamil Nadu" if context == 'tamil_nadu' else f"{place_name}, {context.replace('_', ' ')}",
+                    place_name  # Fallback to just the place name
+                ]
+                
+                place_found = False
+                for search_query in search_queries:
+                    places_url = (
+                        f"https://maps.googleapis.com/maps/api/place/textsearch/json?"
+                        f"query={search_query}&key={settings.GOOGLE_MAPS_API_KEY}"
+                    )
+                    places_response = requests.get(places_url)
+                    places_response.raise_for_status()
+                    places_data = places_response.json()
 
-                if places_data['status'] == 'OK' and places_data['results']:
-                    place_details = places_data['results'][0]
-                    final_recommendations.append({
-                        'name': place_details.get('name', place_name),
-                        'latitude': place_details['geometry']['location']['lat'],
-                        'longitude': place_details['geometry']['location']['lng'],
-                        'rating': place_details.get('rating', 0),
-                        'reasoning': place['reasoning'],
-                        'formatted_address': place_details.get('formatted_address', ''),
-                        'place_id': place_details.get('place_id', ''),
-                        'types': place_details.get('types', [])
-                    })
-                else:
-                    logger.warning(f"Google Maps API returned status: {places_data.get('status')} for place: {place_name}")
+                    if places_data['status'] == 'OK' and places_data['results']:
+                        place_details = places_data['results'][0]
+                        
+                        # Additional validation: check if the result is actually in the right state/region
+                        formatted_address = place_details.get('formatted_address', '').lower()
+                        if (context == 'tamil_nadu' and 'tamil nadu' in formatted_address) or \
+                           (context == 'telangana' and 'telangana' in formatted_address) or \
+                           (context == 'andhra pradesh' in formatted_address) or \
+                           (context == 'karnataka' and 'karnataka' in formatted_address) or \
+                           (context == 'kerala' and 'kerala' in formatted_address):
+                            
+                            final_recommendations.append({
+                                'name': place_details.get('name', place_name),
+                                'latitude': place_details['geometry']['location']['lat'],
+                                'longitude': place_details['geometry']['location']['lng'],
+                                'rating': place_details.get('rating', 0),
+                                'reasoning': place['reasoning'],
+                                'formatted_address': place_details.get('formatted_address', ''),
+                                'place_id': place_details.get('place_id', ''),
+                                'types': place_details.get('types', [])
+                            })
+                            place_found = True
+                            break
+                
+                if not place_found:
+                    logger.warning(f"Google Maps API could not find accurate location for place: {place_name}")
                     # Add the place without coordinates if Google Maps fails
                     final_recommendations.append({
                         'name': place_name,
@@ -706,12 +776,14 @@ def nearby_places(request):
         logger.error(f"Error in nearby_places: {str(e)}")
         return JsonResponse({"error": str(e)}, status=500)
 
+@cache_page(60 * 15)
 def map_view(request):
     context = {
         'GOOGLE_MAPS_API_KEY': settings.GOOGLE_MAPS_API_KEY
     }
     return render(request, 'core/map_view.html', context)
 
+@cache_page(60 * 15)
 def test_api_view(request):
     """View function for testing API endpoints."""
     context = {

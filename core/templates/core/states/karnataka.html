@@ -1472,6 +1472,52 @@
         height: 150px;
       }
     }
+
+    .calendar-container { max-width: 900px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+    .calendar-header { text-align: center; padding: 10px; background: #1a472a; color: white; border-radius: 5px 5px 0 0; display: flex; align-items: center; justify-content: space-between; }
+    .calendar-title { flex: 1; font-size: 1.5rem; font-weight: 600; }
+    .calendar-nav-btn { background: none; border: none; color: white; font-size: 1.5rem; cursor: pointer; padding: 0 1rem; transition: color 0.2s; }
+    .calendar-nav-btn:hover { color: #ffd700; }
+    .calendar-days { display: grid; grid-template-columns: repeat(7, 1fr); text-align: center; font-weight: 600; color: #6c757d; padding: 10px 0; border-bottom: 1px solid #dee2e6; }
+    .calendar-grid { min-height: 240px; display: grid; grid-template-columns: repeat(7, 1fr); }
+    .calendar-cell {
+      cursor: pointer;
+      border-radius: 8px;
+      transition: background 0.2s, box-shadow 0.2s, color 0.2s;
+      padding: 8px 0;
+      margin: 2px;
+      text-align: center;
+      position: relative;
+      font-weight: 500;
+    }
+    .calendar-cell:hover, .calendar-cell:focus {
+      background: #e3f2fd;
+      color: #1a472a;
+      box-shadow: 0 2px 8px rgba(26,71,42,0.08);
+      z-index: 2;
+    }
+    .calendar-cell.selected {
+      background: linear-gradient(135deg, #1a472a, #2d5a3f);
+      color: #fff;
+      font-weight: 700;
+      box-shadow: 0 4px 16px rgba(26,71,42,0.15);
+    }
+    .calendar-cell.event-day:not(.selected) {
+      background: #fffbe6;
+      border: 1px solid #ffd700;
+    }
+    .calendar-cell.today {
+      border: 2px solid #1a472a;
+    }
+    .calendar-cell .event-dot {
+      display: inline-block;
+      width: 7px;
+      height: 7px;
+      background: #ffd700;
+      border-radius: 50%;
+      margin-left: 4px;
+      vertical-align: middle;
+    }
   </style>
   <!-- Add Font Awesome in the head section -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
@@ -1525,75 +1571,54 @@
   </nav>
 
   <!-- Hero Section -->
-  <section class="hero-section p-0" style="position:relative;">
+  <section class="hero-section p-0">
     <div id="karnatakaHeroCarousel" class="carousel slide carousel-fade" data-bs-ride="carousel" data-bs-interval="4000">
       <div class="carousel-inner">
         <div class="carousel-item active">
-          <img src="https://images.unsplash.com/photo-1609766857041-ed453de276a3?auto=format&fit=crop&w=1200&q=80" class="d-block w-100" alt="Hampi Stone Chariot">
-          <div class="carousel-caption">
-            <h2 class="display-5">Hampi Stone Chariot</h2>
+          <img src="https://images.unsplash.com/photo-1609766857041-ed453de276a3?auto=format&fit=crop&w=1920&q=80" class="d-block w-100 hero-img" alt="Hampi Stone Chariot">
+          <div class="carousel-caption d-none d-md-block bg-dark bg-opacity-50 rounded p-3">
+            <h2 class="fw-bold">Hampi Stone Chariot</h2>
             <p>Step back in time at the majestic UNESCO World Heritage Site.</p>
           </div>
         </div>
         <div class="carousel-item">
-          <img src="https://images.unsplash.com/photo-1590766938236-814a8999335f?auto=format&fit=crop&w=1200&q=80" class="d-block w-100" alt="Mysore Palace" style="height: 80vh; object-fit: cover;">
-          <div class="carousel-caption">
-            <h2 class="display-5">Mysore Palace</h2>
+          <img src="https://images.unsplash.com/photo-1590766938236-814a8999335f?auto=format&fit=crop&w=1920&q=80" class="d-block w-100 hero-img" alt="Mysore Palace">
+          <div class="carousel-caption d-none d-md-block bg-dark bg-opacity-50 rounded p-3">
+            <h2 class="fw-bold">Mysore Palace</h2>
             <p>Witness the grandeur of one of India's most magnificent royal palaces.</p>
           </div>
         </div>
         <div class="carousel-item">
-          <img src="https://images.unsplash.com/photo-1622327582215-63d415417852?auto=format&fit=crop&w=1200&q=80" class="d-block w-100" alt="Jog Falls" style="height: 80vh; object-fit: cover;">
-          <div class="carousel-caption">
-            <h2 class="display-5">Jog Falls</h2>
+          <img src="https://images.unsplash.com/photo-1622327582215-63d415417852?auto=format&fit=crop&w=1920&q=80" class="d-block w-100 hero-img" alt="Jog Falls">
+          <div class="carousel-caption d-none d-md-block bg-dark bg-opacity-50 rounded p-3">
+            <h2 class="fw-bold">Jog Falls</h2>
             <p>Be mesmerized by one of the highest plunge waterfalls in India.</p>
           </div>
         </div>
         <div class="carousel-item">
-          <img src="https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1200&q=80" class="d-block w-100" alt="Coorg Hills" style="height: 80vh; object-fit: cover;">
-          <div class="carousel-caption">
-            <h2 class="display-5">Coorg Hills</h2>
+          <img src="https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1920&q=80" class="d-block w-100 hero-img" alt="Coorg Hills">
+          <div class="carousel-caption d-none d-md-block bg-dark bg-opacity-50 rounded p-3">
+            <h2 class="fw-bold">Coorg Hills</h2>
             <p>Relax in the lush coffee estates and misty hills of Coorg.</p>
           </div>
         </div>
       </div>
       <button class="carousel-control-prev" type="button" data-bs-target="#karnatakaHeroCarousel" data-bs-slide="prev">
-        <span class="carousel-control-prev-icon" aria-hidden="true"></span>
-        <span class="visually-hidden">Previous</span>
+        <span class="carousel-control-prev-icon"></span>
       </button>
       <button class="carousel-control-next" type="button" data-bs-target="#karnatakaHeroCarousel" data-bs-slide="next">
-        <span class="carousel-control-next-icon" aria-hidden="true"></span>
-        <span class="visually-hidden">Next</span>
+        <span class="carousel-control-next-icon"></span>
       </button>
-      <!-- Overlay for call-to-action -->
-      <div style="position:absolute;top:0;left:0;width:100%;height:100%;background:linear-gradient(rgba(0,0,0,0.3),rgba(0,0,0,0.5));z-index:2;"></div>
-      <div class="hero-overlay text-center" style="position:absolute;top:0;left:0;width:100%;height:100%;z-index:3;display:flex;flex-direction:column;align-items:center;justify-content:center;pointer-events:none;">
-        <h1 class="hero-title text-white animate__animated animate__fadeIn mb-3" style="font-size:3rem;font-weight:700;text-shadow:0 2px 8px rgba(0,0,0,0.5);">Discover Karnataka</h1>
-        <p class="hero-subtitle text-white animate__animated animate__fadeIn animate__delay-1s mb-4" style="font-size:1.5rem;text-shadow:0 2px 8px rgba(0,0,0,0.4);">Experience the Land of Palaces, Temples & Coffee Estates</p>
-        <a href="#booking" class="btn btn-lg btn-primary animate__animated animate__fadeIn animate__delay-2s" style="font-size:1.2rem;pointer-events:auto;">Plan Your Trip</a>
+      <div style="position:absolute;inset:0;background:linear-gradient(rgba(0,0,0,0.3),rgba(0,0,0,0.6));z-index:2;"></div>
+      <div class="hero-overlay d-flex flex-column align-items-center justify-content-center text-center">
+        <h1 class="hero-title text-white animate__animated animate__fadeInDown mb-3" style="font-size:3.5rem;font-weight:700;text-shadow:0 3px 10px rgba(0,0,0,0.6);">Discover {{ state.name }}</h1>
+        <p class="hero-subtitle text-white animate__animated animate__fadeInUp animate__delay-1s mb-4" style="font-size:1.5rem;text-shadow:0 2px 8px rgba(0,0,0,0.5);">{{ state.tagline|default:"One State, Many Worlds" }}</p>
+        <div class="d-flex flex-column flex-md-row gap-3 animate__animated animate__fadeInUp animate__delay-2s align-items-center justify-content-center">
+            {% include 'core/partials/favorite_button.html' %}
+            <a href="#booking" class="btn btn-lg btn-primary ms-2">Plan Your Trip</a>
+        </div>
       </div>
     </div> <!-- #karnatakaHeroCarousel -->
-    <div class="hero-overlay">
-      {% if user.is_authenticated %}
-        <div class="favorite-container">
-          {% if is_favorite %}
-            <form action="{% url 'core:remove_state_favorite' state.id %}" method="post">
-              {% csrf_token %}
-              <button type="submit" class="btn favorite-btn">
-                <i class="fas fa-heart"></i> Remove from Favorites
-              </button>
-            </form>
-          {% else %}
-            <form action="{% url 'core:add_state_favorite' state.id %}" method="post">
-              {% csrf_token %}
-              <button type="submit" class="btn favorite-btn">
-                <i class="far fa-heart"></i> Add to Favorites
-              </button>
-            </form>
-          {% endif %}
-        </div>
-      {% endif %}
-    </div>
   </section>
 
   <!-- Secondary Navigation -->
@@ -1605,9 +1630,9 @@
         <li class="nav-item"><a class="nav-link" href="#interactive-map">Interactive Map</a></li>
         <li class="nav-item"><a class="nav-link" href="#cuisine">Cuisine</a></li>
         <li class="nav-item"><a class="nav-link" href="#events">Events</a></li>
-        <li class="nav-item"><a class="nav-link" href="#ugc">Traveler Stories</a></li>
+        <li class="nav-item"><a class="nav-link" href="#reviews">Traveler Reviews</a></li>
         <li class="nav-item"><a class="nav-link" href="#safety">Safety Tips</a></li>
-        <li class="nav-item"><a class="nav-link" href="#booking">Plan</a></li>
+        <li class="nav-item"><a class="nav-link" href="#booking">Plan / Inquiry</a></li>
       </ul>
     </div>
   </nav>

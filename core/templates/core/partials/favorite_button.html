@@ -1,14 +1,23 @@
 {% if user.is_authenticated %}
   <form id="favoriteStateForm" action="{% if is_favorite %}{% url 'core:remove_state_favorite' state.id %}{% else %}{% url 'core:add_state_favorite' state.id %}{% endif %}" method="post" class="d-inline">
     {% csrf_token %}
-    <button type="submit" class="btn favorite-btn" title="{% if is_favorite %}Remove from Favorites{% else %}Add to Favorites{% endif %}">
+    <button type="submit" class="btn btn-outline-light btn-sm mt-2" title="{% if is_favorite %}Remove from Favorites{% else %}Add to Favorites{% endif %}">
       <i id="favoriteIcon" class="{% if is_favorite %}fas fa-heart{% else %}far fa-heart{% endif %}"></i>
+      <span class="d-none d-md-inline">{% if is_favorite %}Remove from Favorites{% else %}Add to Favorites{% endif %}</span>
     </button>
   </form>
   <script>
+    console.log('Favorite button loaded for state:', '{{ state.name }}', 'ID:', {{ state.id }}, 'Is favorite:', {{ is_favorite|yesno:"true,false" }});
     document.getElementById('favoriteStateForm').addEventListener('submit', function(e) {
       e.preventDefault();
+      console.log('Favorite button clicked for state:', '{{ state.name }}');
       const form = this;
+      const button = form.querySelector('button');
+      const icon = document.getElementById('favoriteIcon');
+      const isFavorited = icon.classList.contains('fas');
+      button.disabled = true;
+      button.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Processing...';
+      console.log('Submitting to:', form.action);
       fetch(form.action, {
         method: 'POST',
         headers: {
@@ -16,21 +25,36 @@
           'X-Requested-With': 'XMLHttpRequest'
         },
         credentials: 'same-origin',
-      }).then(res => res.json()).then(data => {
+      }).then(res => {
+        console.log('Response status:', res.status);
+        return res.json();
+      }).then(data => {
+        console.log('Response data:', data);
         if (data.success) {
-          // Toggle icon and form action
-          const icon = document.getElementById('favoriteIcon');
-          if (form.action.includes('add-state-favorite')) {
-            icon.classList.remove('far'); icon.classList.add('fas');
-            form.action = form.action.replace('add-state-favorite', 'remove-state-favorite');
-            form.title = 'Remove from Favorites';
-          } else {
+          if (isFavorited) {
             icon.classList.remove('fas'); icon.classList.add('far');
-            form.action = form.action.replace('remove-state-favorite', 'add-state-favorite');
-            form.title = 'Add to Favorites';
+            button.className = 'btn btn-outline-light btn-sm mt-2';
+            button.title = 'Add to Favorites';
+            button.innerHTML = '<i id="favoriteIcon" class="far fa-heart"></i> <span class="d-none d-md-inline">Add to Favorites</span>';
+            form.action = form.action.replace('remove_state_favorite', 'add_state_favorite');
+          } else {
+            icon.classList.remove('far'); icon.classList.add('fas');
+            button.className = 'btn btn-danger btn-sm mt-2';
+            button.title = 'Remove from Favorites';
+            button.innerHTML = '<i id="favoriteIcon" class="fas fa-heart"></i> <span class="d-none d-md-inline">Remove from Favorites</span>';
+            form.action = form.action.replace('add_state_favorite', 'remove_state_favorite');
           }
         }
-      });
+      }).catch(error => {
+        console.error('Error:', error);
+      }).finally(() => { button.disabled = false; });
     });
   </script>
+{% else %}
+  <div class="d-inline">
+    <button class="btn btn-outline-light btn-sm mt-2" onclick="alert('Please log in to add favorites')" title="Login to add favorites">
+      <i class="far fa-heart"></i>
+      <span class="d-none d-md-inline">Login to Add Favorites</span>
+    </button>
+  </div>
 {% endif %}

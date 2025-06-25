@@ -11,6 +11,8 @@ document.addEventListener('DOMContentLoaded', function() {
   let modalMarker = null;
   let mainPlacesMap = null;
   let mainPlacesMarker = null;
+  let currentMonth, currentYear;
+  let selectedDate = null;
 
   // --- PRIMARY INITIALIZATION ---
   function initializePage() {
@@ -166,84 +168,92 @@ document.addEventListener('DOMContentLoaded', function() {
       { date: new Date('2025-11-12'), title: 'Deepavali', place: 'Throughout Andhra Pradesh', description: 'Festival of lights celebrated with fireworks and sweets.' }
     ];
 
-    let currentDate = new Date();
-    let selectedDate = null;
-    
-    const elements = {
-      grid: document.getElementById('calendarGrid'),
-      monthYear: document.getElementById('calendarMonthYear'),
-      eventList: document.getElementById('eventList'),
-      prevBtn: document.getElementById('calendarPrev'),
-      nextBtn: document.getElementById('calendarNext'),
-      prompt: document.getElementById('eventPrompt')
-    };
+    const now = new Date();
+    currentMonth = now.getMonth();
+    currentYear = now.getFullYear();
+    renderCalendar(currentMonth, currentYear);
+    renderEvents();
 
-    if (!elements.grid || !elements.monthYear || !elements.eventList) return;
-
-    function renderCalendar() {
-      const month = currentDate.getMonth();
-      const year = currentDate.getFullYear();
-      elements.monthYear.textContent = `${currentDate.toLocaleString('default', { month: 'long' })} ${year}`;
-      
-      elements.grid.innerHTML = '';
-      const firstDayOfMonth = new Date(year, month, 1).getDay();
-      const daysInMonth = new Date(year, month + 1, 0).getDate();
-      const today = new Date();
-
-      for (let i = 0; i < firstDayOfMonth; i++) {
-        elements.grid.insertAdjacentHTML('beforeend', '<div class="calendar-cell"></div>');
-      }
-
-      for (let d = 1; d <= daysInMonth; d++) {
-        const cellDate = new Date(year, month, d);
-        let classes = 'calendar-cell';
-        const hasEvent = events.some(ev => ev.date.toDateString() === cellDate.toDateString());
-        if (hasEvent) classes += ' event-day';
-        if (cellDate.toDateString() === today.toDateString()) classes += ' today';
-        if (selectedDate && cellDate.toDateString() === selectedDate.toDateString()) classes += ' selected';
-        
-        elements.grid.insertAdjacentHTML('beforeend', `<div class="${classes}" data-date="${cellDate.toISOString()}">${d}${hasEvent ? ' <span style="color:#007bff;">•</span>' : ''}</div>`);
-      }
-    }
-
-    function renderEvents(date) {
-        const filteredEvents = events.filter(ev => ev.date.toDateString() === date.toDateString());
-        
-        if (filteredEvents.length === 0) {
-            html = '<div class="event-item"><p>No scheduled events for this day.</p></div>';
-        } else {
-            html = filteredEvents.map(ev => `
-              <div class="event-item">
-                <h4>${ev.title} <span class="event-date">(${ev.date.toLocaleDateString()})</span></h4>
-                <p><strong>Location:</strong> ${ev.place}</p>
-                <p>${ev.description}</p>
-              </div>`
-            ).join('');
-        }
-        elements.eventList.innerHTML = html;
-    }
-
-    elements.grid.addEventListener('click', e => {
-      if (e.target.matches('.calendar-cell[data-date]')) {
+    document.getElementById('calendarGrid').addEventListener('click', function(e) {
+      if (e.target.classList.contains('calendar-cell') && e.target.dataset.date) {
         selectedDate = new Date(e.target.dataset.date);
-        renderCalendar();
+        renderCalendar(currentMonth, currentYear);
         renderEvents(selectedDate);
       }
     });
 
-    function changeMonth(offset) {
-      currentDate.setMonth(currentDate.getMonth() + offset);
-      selectedDate = null;
-      renderCalendar();
-      if(elements.prompt) elements.eventList.innerHTML = elements.prompt.outerHTML;
-    }
-
-    elements.prevBtn.addEventListener('click', () => changeMonth(-1));
-    elements.nextBtn.addEventListener('click', () => changeMonth(1));
-
-    renderCalendar();
+    document.getElementById('calendarPrev').addEventListener('click', prevMonth);
+    document.getElementById('calendarNext').addEventListener('click', nextMonth);
   }
-  
+
+  function renderCalendar(month, year) {
+    currentMonth = month;
+    currentYear = year;
+    const calendarGrid = document.getElementById('calendarGrid');
+    const monthYear = document.getElementById('calendarMonthYear');
+    monthYear.textContent = months[month] + ' ' + year;
+    calendarGrid.innerHTML = '';
+    const firstDay = new Date(year, month, 1).getDay();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const today = new Date();
+    for (let i = 0; i < firstDay; i++) {
+      calendarGrid.innerHTML += '<div class="calendar-cell"></div>';
+    }
+    for (let d = 1; d <= daysInMonth; d++) {
+      const cellDate = new Date(year, month, d);
+      const isToday = cellDate.toDateString() === today.toDateString();
+      const hasEvent = events.some(ev => ev.date.toDateString() === cellDate.toDateString());
+      const isSelected = selectedDate && cellDate.toDateString() === selectedDate.toDateString();
+      calendarGrid.innerHTML += `<div class="calendar-cell${hasEvent ? ' event-day' : ''}${isToday ? ' today' : ''}${isSelected ? ' selected' : ''}" data-date="${cellDate.toISOString()}">${d}${hasEvent ? ' <span style="color:#007bff;font-size:1.1em;">•</span>' : ''}</div>`;
+    }
+  }
+
+  function renderEvents(selected = null) {
+    const eventList = document.getElementById('eventList');
+    let html = '<h3>Events & Festivals</h3>';
+    if (!selected) {
+      html += '<div id="eventPrompt" class="event-item"><p>Please select a date on the calendar to view events or festivals.</p></div>';
+    } else {
+      const filteredEvents = events.filter(ev => ev.date.toDateString() === selected.toDateString());
+      if (filteredEvents.length === 0) {
+        html += '<div class="event-item"><p>No events or festivals for this date.</p></div>';
+      } else {
+        filteredEvents.forEach(ev => {
+          html += `<div class="event-item">
+            <h4>${ev.title} <span class="event-date">(${ev.date.toLocaleDateString('en-IN')})</span></h4>
+            <p><strong>Location:</strong> ${ev.place}</p>
+            <p>${ev.description}</p>
+          </div>`;
+        });
+      }
+    }
+    eventList.innerHTML = html;
+  }
+
+  function prevMonth() {
+    if (currentMonth === 0) {
+      currentMonth = 11;
+      currentYear--;
+    } else {
+      currentMonth--;
+    }
+    selectedDate = null;
+    renderCalendar(currentMonth, currentYear);
+    renderEvents();
+  }
+
+  function nextMonth() {
+    if (currentMonth === 11) {
+      currentMonth = 0;
+      currentYear++;
+    } else {
+      currentMonth++;
+    }
+    selectedDate = null;
+    renderCalendar(currentMonth, currentYear);
+    renderEvents();
+  }
+
   // --- AI RECOMMENDATIONS LOGIC ---
 
   // Exposed to window for onclick attribute in HTML
@@ -528,6 +538,7 @@ document.addEventListener('DOMContentLoaded', function() {
       </div>`;
     startLoadingAnimation();
 
+    // Defer heavy/async logic until after spinner is rendered
     setTimeout(() => {
       const places = (window.PLACES_WITH_WEATHER || []).map(p => ({
         id: p.id,
@@ -602,7 +613,7 @@ document.addEventListener('DOMContentLoaded', function() {
           document.getElementById('generatedItinerary').scrollIntoView({ behavior: 'smooth' });
         }, 100);
       });
-    }, 400);
+    }, 0);
   };
 
   function startLoadingAnimation() {

@@ -12,15 +12,13 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
   <link rel="stylesheet" href="{% static 'core/css/style.css' %}">
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&family=Poppins:wght@300;400;500&display=swap" rel="stylesheet">
-  <!-- Google Maps API -->
-  <script>
-    (g=>{var h,a,k,p="The Google Maps JavaScript API",c="google",l="importLibrary",q="__ib__",m=document,b=window;b=b[c]||(b[c]={});var d=b.maps||(b.maps={}),r=new Set,e=new URLSearchParams,u=()=>h||(h=new Promise(async(f,n)=>{await (a=m.createElement("script"));e.set("libraries",[...r]+"");for(k in g)e.set(k.replace(/[A-Z]/g,t=>"_"+t[0].toLowerCase()),g[k]);e.set("callback",c+".maps."+q);a.src=`https://maps.${c}apis.com/maps/api/js?`+e;d[q]=f;a.onerror=()=>h=n(Error(p+" could not load."));a.nonce=m.querySelector("script[nonce]")?.nonce||"";m.head.append(a)}));d[l]?console.warn(p+" only loads once. Ignoring:",g):d[l]=(f,...n)=>r.add(f)&&u().then(()=>d[l](f,...n))})({
-      key: "AIzaSyD3WSnlZlux7vVPP2LQ7fZvg8O43J01mK8",
-      v: "weekly",
-      libraries: "places"
-    });
-  </script>
+  <!-- Google Maps API (Best Practice Loader) -->
+  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyD3WSnlZlux7vVPP2LQ7fZvg8O43J01mK8&callback=initMaps&loading=async" async defer></script>
   <style>
+    .btn-loading {
+      opacity: 0.6;
+      pointer-events: none;
+    }
     .hero-section, #apHeroCarousel, .hero-section .carousel-inner, .hero-section .carousel-item, .hero-section img.d-block.w-100 { width: 100vw !important; height: 100vh !important; min-height: 100vh; margin: 0 !important; padding: 0 !important; border: none; box-sizing: border-box; }
     .hero-section { position: relative; overflow: hidden; background: #000; z-index: 1; }
     .hero-section .carousel-item img { object-fit: cover; width: 100vw; height: 100vh; min-height: 100vh; display: block; }
@@ -114,6 +112,44 @@
     .calendar-nav-btn:hover { color: #ffd700; }
     .calendar-days { display: grid; grid-template-columns: repeat(7, 1fr); text-align: center; font-weight: 600; color: #6c757d; padding: 10px 0; border-bottom: 1px solid #dee2e6; }
     .calendar-grid { min-height: 240px; display: grid; grid-template-columns: repeat(7, 1fr); }
+    .calendar-cell {
+      cursor: pointer;
+      border-radius: 8px;
+      transition: background 0.2s, box-shadow 0.2s, color 0.2s;
+      padding: 8px 0;
+      margin: 2px;
+      text-align: center;
+      position: relative;
+      font-weight: 500;
+    }
+    .calendar-cell:hover, .calendar-cell:focus {
+      background: #e3f2fd;
+      color: #1a472a;
+      box-shadow: 0 2px 8px rgba(26,71,42,0.08);
+      z-index: 2;
+    }
+    .calendar-cell.selected {
+      background: linear-gradient(135deg, #1a472a, #2d5a3f);
+      color: #fff;
+      font-weight: 700;
+      box-shadow: 0 4px 16px rgba(26,71,42,0.15);
+    }
+    .calendar-cell.event-day:not(.selected) {
+      background: #fffbe6;
+      border: 1px solid #ffd700;
+    }
+    .calendar-cell.today {
+      border: 2px solid #1a472a;
+    }
+    .calendar-cell .event-dot {
+      display: inline-block;
+      width: 7px;
+      height: 7px;
+      background: #ffd700;
+      border-radius: 50%;
+      margin-left: 4px;
+      vertical-align: middle;
+    }
   </style>
 </head>
 <body>
@@ -463,7 +499,7 @@
         const events = [
           { date: new Date('2025-01-14'), title: 'Makar Sankranti', place: 'Throughout Andhra Pradesh', description: 'Harvest festival celebrated with kite flying, rangoli, and traditional foods.' },
           { date: new Date('2025-03-22'), title: 'Ugadi', place: 'Throughout Andhra Pradesh', description: 'Telugu New Year celebrated with special dishes and rituals.' },
-          { date: new Date('2025-04-10'), title: 'Sri Rama Navami', place: 'Bhadrachalam', description: 'Celebration of Lord Rama's birth with processions and rituals.' },
+          { date: new Date('2025-04-10'), title: 'Sri Rama Navami', place: 'Bhadrachalam', description: 'Celebration of Lord Rama\'s birth with processions and rituals.' },
           { date: new Date('2025-08-28'), title: 'Krishna Pushkaralu', place: 'Vijayawada', description: 'River festival held once every 12 years on the banks of Krishna River.' },
           { date: new Date('2025-10-12'), title: 'Dasara', place: 'Vijayawada', description: 'Victory of good over evil, celebrated with processions and fairs.' },
           { date: new Date('2025-11-01'), title: 'Deepavali', place: 'Throughout Andhra Pradesh', description: 'Festival of lights celebrated with fireworks and sweets.' }
@@ -479,16 +515,21 @@
           calendarGrid.innerHTML = '';
           const firstDay = new Date(year, month, 1).getDay();
           const daysInMonth = new Date(year, month + 1, 0).getDate();
+          const today = new Date();
           for (let i = 0; i < firstDay; i++) {
             calendarGrid.innerHTML += '<div class="calendar-cell"></div>';
           }
-          const today = new Date();
           for (let d = 1; d <= daysInMonth; d++) {
             const cellDate = new Date(year, month, d);
             const isToday = cellDate.toDateString() === today.toDateString();
             const hasEvent = events.some(ev => ev.date.toDateString() === cellDate.toDateString());
             const isSelected = selectedDate && cellDate.toDateString() === selectedDate.toDateString();
-            calendarGrid.innerHTML += `<div class="calendar-cell${hasEvent ? ' event-day' : ''}${isToday ? ' today' : ''}${isSelected ? ' selected' : ''}" data-date="${cellDate.toISOString()}">${d}${hasEvent ? ' <span style=\"color:#007bff;font-size:1.1em;\">•</span>' : ''}</div>`;
+            let tooltip = '';
+            if (hasEvent) {
+              const eventTitles = events.filter(ev => ev.date.toDateString() === cellDate.toDateString()).map(ev => ev.title).join(', ');
+              tooltip = ` title="${eventTitles}"`;
+            }
+            calendarGrid.innerHTML += `<div class="calendar-cell${hasEvent ? ' event-day' : ''}${isToday ? ' today' : ''}${isSelected ? ' selected' : ''}" data-date="${cellDate.toISOString()}"${tooltip}>${d}${hasEvent ? ' <span class="event-dot"></span>' : ''}</div>`;
           }
         }
         function renderEvents(selected = null) {
@@ -540,6 +581,16 @@
           currentYear = now.getFullYear();
           renderCalendar(currentMonth, currentYear);
           renderEvents();
+          document.getElementById('calendarGrid').addEventListener('mouseover', function(e) {
+            if (e.target.classList.contains('calendar-cell') && e.target.dataset.date) {
+              e.target.classList.add('hovered');
+            }
+          });
+          document.getElementById('calendarGrid').addEventListener('mouseout', function(e) {
+            if (e.target.classList.contains('calendar-cell')) {
+              e.target.classList.remove('hovered');
+            }
+          });
           document.getElementById('calendarGrid').addEventListener('click', function(e) {
             if (e.target.classList.contains('calendar-cell') && e.target.dataset.date) {
               selectedDate = new Date(e.target.dataset.date);
@@ -869,8 +920,14 @@
   <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
   <script>
     // Global variables for map functionality
-    let mainPlacesMap;
-    let mainPlacesMarker;
+    let recommendationMap = null;
+    let currentMarker = null;
+    let mainPlacesMap = null;
+    let mainPlacesMarker = null;
+    let mainMap = null;
+    let mapMarkers = [];
+    let placesService = null;
+    let geocoder = null;
 
     // CSRF Token function
     function getCSRFToken() {
@@ -958,7 +1015,7 @@
       });
     });
 
-    // Enhanced fetchGeminiRecommendations function
+    // Enhanced fetchGeminiRecommendations function (updated for Telangana logic)
     function fetchGeminiRecommendations() {
         const placeSelect = document.getElementById("user-place");
         const selectedOption = placeSelect.options[placeSelect.selectedIndex];
@@ -1041,7 +1098,6 @@
                 places.forEach(place => {
                     const rating = place.rating || 'N/A';
                     const reasoning = place.reasoning || 'No description available';
-                    
                     html += `
                         <div class="col-md-6 mb-4">
                             <div class="card recommendation-card">
@@ -1063,7 +1119,7 @@
                                     <p class="reasoning">${reasoning}</p>
                                     <div class="recommendation-actions">
                                         <button class="btn btn-primary" 
-                                                onclick="showMainPlaceOnMap(${place.latitude}, ${place.longitude}, '${place.name.replace(/'/g, "\\'")}')">
+                                                onclick="showOnMap(${place.latitude }, ${place.longitude}, '${place.name.replace(/'/g, "\\'")}')">
                                             <i class="fas fa-map-marker-alt"></i> Show on Map
                                         </button>
                                         <button class="btn btn-outline-secondary" 
@@ -1083,6 +1139,160 @@
                 console.error('Error:', error);
                 geminiRecommendedPlacesDiv.innerHTML = `<div class="alert alert-danger m-3"><i class="fas fa-exclamation-triangle"></i> Error: ${error.message}</div>`;
             });
+    }
+
+    // Telangana-style map logic
+    function showOnMap(latitude, longitude, placeName) {
+      const mapModal = new bootstrap.Modal(document.getElementById('mapModal'));
+      mapModal.show();
+      if (!recommendationMap) {
+        recommendationMap = new google.maps.Map(document.getElementById('modalMapContainer'), {
+          center: { lat: parseFloat(latitude), lng: parseFloat(longitude) },
+          zoom: 15,
+          mapTypeControl: true,
+          streetViewControl: true,
+          fullscreenControl: true
+        });
+      } else {
+        recommendationMap.setCenter({ lat: parseFloat(latitude), lng: parseFloat(longitude) });
+      }
+      if (currentMarker) {
+        currentMarker.setMap(null);
+      }
+      currentMarker = new google.maps.Marker({
+        position: { lat: parseFloat(latitude), lng: parseFloat(longitude) },
+        map: recommendationMap,
+        title: placeName,
+        animation: google.maps.Animation.DROP
+      });
+      const infoWindow = new google.maps.InfoWindow({
+        content: `<div class="p-2"><h6>${placeName}</h6><p>Latitude: ${latitude}<br>Longitude: ${longitude}</p></div>`
+      });
+      currentMarker.addListener('click', () => {
+        infoWindow.open(recommendationMap, currentMarker);
+      });
+      infoWindow.open(recommendationMap, currentMarker);
+    }
+
+    function showMainPlaceOnMap(latitude, longitude, placeName) {
+      const mapModal = new bootstrap.Modal(document.getElementById('mainPlacesMapModal'));
+      mapModal.show();
+      if (!mainPlacesMap) {
+        mainPlacesMap = new google.maps.Map(document.getElementById('mainPlacesMap'), {
+          center: { lat: parseFloat(latitude), lng: parseFloat(longitude) },
+          zoom: 15,
+          mapTypeControl: true,
+          streetViewControl: true,
+          fullscreenControl: true
+        });
+      } else {
+        mainPlacesMap.setCenter({ lat: parseFloat(latitude), lng: parseFloat(longitude) });
+      }
+      if (mainPlacesMarker) {
+        mainPlacesMarker.setMap(null);
+      }
+      mainPlacesMarker = new google.maps.Marker({
+        position: { lat: parseFloat(latitude), lng: parseFloat(longitude) },
+        map: mainPlacesMap,
+        title: placeName,
+        animation: google.maps.Animation.DROP
+      });
+      const infoWindow = new google.maps.InfoWindow({
+        content: `<div class="p-2"><h6>${placeName}</h6><p>Latitude: ${latitude}<br>Longitude: ${longitude}</p></div>`
+      });
+      mainPlacesMarker.addListener('click', () => {
+        infoWindow.open(mainPlacesMap, mainPlacesMarker);
+      });
+      infoWindow.open(mainPlacesMap, mainPlacesMarker);
+    }
+
+    // Function to show a place on the main map (for place cards)
+    function showPlaceOnMap(latitude, longitude, placeName) {
+      const position = { lat: parseFloat(latitude), lng: parseFloat(longitude) };
+      
+      // Center map on the place
+      mainMap.setCenter(position);
+      mainMap.setZoom(15);
+
+      // Add a temporary marker
+      const marker = new google.maps.Marker({
+        position: position,
+        map: mainMap,
+        title: placeName,
+        animation: google.maps.Animation.DROP
+      });
+
+      // Add info window
+      const infoWindow = new google.maps.InfoWindow({
+        content: `<div class="p-2"><h6>${placeName}</h6></div>`
+      });
+
+      marker.addListener('click', () => {
+        infoWindow.open(mainMap, marker);
+      });
+
+      // Open info window by default
+      infoWindow.open(mainMap, marker);
+
+      // Remove marker after 5 seconds
+      setTimeout(() => {
+        marker.setMap(null);
+      }, 5000);
+    }
+
+    // Update itineraryDays rendering to use displayItinerary with Telangana-style show on map
+    function displayItinerary(itineraryDays, startingPoint) {
+      const container = document.getElementById('itineraryDays');
+      let html = itineraryDays.map(dayData => `
+        <div class="itinerary-day">
+          <h6><i class="fas fa-calendar-day"></i> Day ${dayData.day}</h6>
+          ${dayData.day === 1 ? `<p class="text-muted mb-3"><i class="fas fa-map-marker-alt"></i> Starting from: ${startingPoint}</p>` : ''}
+          ${dayData.places.map((place, index) => {
+            const time = getTimeSlot(index, dayData.places.length);
+            const aiInsight = dayData.aiInsights ? dayData.aiInsights[index] : null;
+            return `
+              <div class="itinerary-place">
+                <span class="place-time">${time}</span>
+                <div class="place-details">
+                  <strong>${place.name}</strong>
+                  <small class="text-muted d-block">${place.category}</small>
+                  ${aiInsight ? `
+                    <div class="ai-insight mt-2">
+                      <i class="fas fa-robot text-primary"></i>
+                      <small class="text-primary">AI Insight: ${aiInsight.reasoning}</small>
+                    </div>` : ''}
+                </div>
+                <div class="place-actions">
+                  <button class="btn btn-sm btn-outline-primary" onclick="showPlaceOnMap(${place.latitude || 0}, ${place.longitude || 0}, '${place.name.replace(/'/g, "\\'")}')">
+                    <i class="fas fa-map-marker-alt"></i>
+                  </button>
+                </div>
+              </div>
+            `;
+          }).join('')}
+          ${dayData.aiInsights && dayData.aiInsights.length > 0 ? `
+            <div class="day-summary mt-3 p-3 bg-light rounded">
+              <h6><i class="fas fa-lightbulb text-warning"></i> AI Travel Tips for Day ${dayData.day}</h6>
+              <ul class="mb-0">
+                ${dayData.aiInsights.map(insight => `<li><small>${insight.reasoning}</small></li>`).join('')}
+              </ul>
+            </div>` : ''}
+        </div>
+      `).join('');
+      container.innerHTML = html;
+      document.getElementById('generatedItinerary').classList.remove('d-none');
+    }
+
+    // Helper function to get time slots for itinerary places
+    function getTimeSlot(index, totalPlaces) {
+      const startHour = 9; // Start at 9 AM
+      const endHour = 18; // End at 6 PM
+      const availableHours = endHour - startHour;
+      const timePerPlace = availableHours / totalPlaces;
+      const currentHour = startHour + (index * timePerPlace);
+      const hour = Math.floor(currentHour);
+      const minute = Math.round((currentHour - hour) * 60);
+      return `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
     }
 
     // Function to add to favorites
@@ -1145,49 +1355,263 @@
         });
     }
 
-    // Function to show a place on the main places map
-    function showMainPlaceOnMap(latitude, longitude, placeName) {
-      // Show the modal
-      const mapModal = new bootstrap.Modal(document.getElementById('mainPlacesMapModal'));
-      mapModal.show();
+    // Map initialization and management
+    function initMainMap() {
+      mainMap = new google.maps.Map(document.getElementById('mainMap'), {
+        center: { lat: 15.9129, lng: 79.7400 }, // Andhra Pradesh coordinates
+        zoom: 10,
+        mapTypeControl: true,
+        streetViewControl: true,
+        fullscreenControl: true
+      });
+      placesService = new google.maps.places.PlacesService(mainMap);
+      geocoder = new google.maps.Geocoder();
+      
+      // Add markers for existing places
+      {% for place_data in places_with_weather %}
+        addPlaceMarker({{ place_data.latitude }}, {{ place_data.longitude }}, '{{ place_data.place.name|escapejs }}', '{{ place_data.place.description|escapejs }}');
+      {% endfor %}
+    }
 
-      // Initialize map if not already done
-      if (!mainPlacesMap) {
-        mainPlacesMap = new google.maps.Map(document.getElementById('mainPlacesMap'), {
-          center: { lat: parseFloat(latitude), lng: parseFloat(longitude) },
-          zoom: 15,
-          mapTypeControl: true,
-          streetViewControl: true,
-          fullscreenControl: true
-        });
-      } else {
-        mainPlacesMap.setCenter({ lat: parseFloat(latitude), lng: parseFloat(longitude) });
-      }
-
-      // Remove existing marker if any
-      if (mainPlacesMarker) {
-        mainPlacesMarker.setMap(null);
-      }
-
-      // Add new marker
-      mainPlacesMarker = new google.maps.Marker({
+    // Function to add a permanent marker
+    function addPlaceMarker(latitude, longitude, name, description) {
+      const marker = new google.maps.Marker({
         position: { lat: parseFloat(latitude), lng: parseFloat(longitude) },
-        map: mainPlacesMap,
-        title: placeName,
-        animation: google.maps.Animation.DROP
+        map: mainMap,
+        title: name
       });
 
-      // Add info window
       const infoWindow = new google.maps.InfoWindow({
-        content: `<div class="p-2"><h6>${placeName}</h6><p>Latitude: ${latitude}<br>Longitude: ${longitude}</p></div>`
+        content: `<div class="p-2"><h6>${name}</h6><p>${description}</p></div>`
       });
 
-      mainPlacesMarker.addListener('click', () => {
-        infoWindow.open(mainPlacesMap, mainPlacesMarker);
+      marker.addListener('click', () => {
+        infoWindow.open(mainMap, marker);
       });
 
-      // Open info window by default
-      infoWindow.open(mainPlacesMap, mainPlacesMarker);
+      mapMarkers.push(marker);
+    }
+
+    // Function to clear map markers
+    function clearMapMarkers() {
+      mapMarkers.forEach(marker => {
+        marker.setMap(null);
+      });
+      mapMarkers = [];
+    }
+
+    // Function to search nearby places
+    function searchNearbyPlaces() {
+      const searchLocation = document.getElementById('mapSearch').value;
+      const placeType = document.getElementById('mapPlaceType').value;
+
+      if (!searchLocation) {
+        alert('Please enter a location to search');
+        return;
+      }
+
+      // Geocode the search location
+      geocoder.geocode({ address: searchLocation }, (results, status) => {
+        if (status === 'OK') {
+          const location = results[0].geometry.location;
+          
+          // Center map on search location
+          mainMap.setCenter(location);
+          mainMap.setZoom(14);
+
+          // Search for nearby places
+          const request = {
+            location: location,
+            radius: '5000',
+            type: placeType
+          };
+
+          placesService.nearbySearch(request, (places, status) => {
+            if (status === google.maps.places.PlacesServiceStatus.OK) {
+              // Clear existing markers
+              clearMapMarkers();
+
+              // Add new markers
+              places.forEach(place => {
+                const marker = new google.maps.Marker({
+                  position: place.geometry.location,
+                  map: mainMap,
+                  title: place.name
+                });
+
+                const infoWindow = new google.maps.InfoWindow({
+                  content: `
+                    <div class="p-2">
+                      <h6>${place.name}</h6>
+                      <p>${place.vicinity || place.formatted_address}</p>
+                      ${place.rating ? `<p>Rating: ${place.rating} ⭐</p>` : ''}
+                    </div>
+                  `
+                });
+
+                marker.addListener('click', () => {
+                  infoWindow.open(mainMap, marker);
+                });
+
+                mapMarkers.push(marker);
+              });
+            } else {
+              alert('No places found nearby');
+            }
+          });
+        } else {
+          alert('Location not found');
+        }
+      });
+    }
+
+    // Add this function to clear recommendations
+    function clearRecommendations() {
+        const geminiRecommendedPlacesDiv = document.getElementById("gemini-recommended-places");
+        geminiRecommendedPlacesDiv.innerHTML = `
+            <div class="text-center py-5">
+                <div class="recommendation-placeholder">
+                    <i class="fas fa-compass fa-3x text-muted mb-3"></i>
+                    <h5 class="text-muted">Ready to Discover?</h5>
+                    <p class="text-muted">Select your preferences above and get personalized recommendations</p>
+                </div>
+            </div>
+        `;
+    }
+
+    // Itinerary management functions
+    function saveItinerary() {
+      const itineraryData = {
+        state: '{{ state.name }}',
+        generatedAt: new Date().toISOString(),
+        itinerary: document.getElementById('itineraryDays').innerHTML
+      };
+      localStorage.setItem('savedItinerary', JSON.stringify(itineraryData));
+      alert('Itinerary saved successfully!');
+    }
+
+    function exportItinerary() {
+      const itineraryContent = document.getElementById('itineraryDays').innerText;
+      const blob = new Blob([itineraryContent], { type: 'text/plain' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = '{{ state.name }}_itinerary.txt';
+      a.click();
+      window.URL.revokeObjectURL(url);
+    }
+
+    function resetItinerary() {
+      document.getElementById('itineraryForm').reset();
+      document.getElementById('generatedItinerary').classList.add('d-none');
+    }
+
+    // Review filtering function
+    function filterReviews() {
+      const ratingFilter = document.getElementById('reviewFilter').value;
+      const placeFilter = document.getElementById('placeFilter').value;
+      const reviewCards = document.querySelectorAll('.review-card');
+      
+      reviewCards.forEach(card => {
+        const rating = card.getAttribute('data-rating');
+        const place = card.getAttribute('data-place');
+        
+        let showCard = true;
+        
+        // Filter by rating
+        if (ratingFilter !== 'all') {
+          const cardRating = parseInt(rating);
+          const filterRating = parseInt(ratingFilter);
+          if (cardRating < filterRating) {
+            showCard = false;
+          }
+        }
+        
+        // Filter by place
+        if (placeFilter !== 'all' && place !== placeFilter) {
+          showCard = false;
+        }
+        
+        card.style.display = showCard ? 'block' : 'none';
+      });
+    }
+
+    // Client-side Category Filtering
+    function filterPlacesByCategory() {
+      const selectedCategory = document.getElementById('categoryFilter').value;
+      const placeCards = document.querySelectorAll('.place-card-wrapper');
+      
+      placeCards.forEach(card => {
+        const cardCategory = card.getAttribute('data-category').toLowerCase();
+        
+        // Enhanced category matching
+        let shouldShow = false;
+        
+        if (selectedCategory === 'all') {
+          shouldShow = true;
+        } else {
+          // Map filter categories to actual place categories
+          const categoryMap = {
+            'religious': ['religious', 'temple', 'church', 'mosque', 'gurudwara'],
+            'natural': ['natural', 'beach', 'hill', 'mountain', 'forest', 'park', 'lake', 'waterfall'],
+            'historical': ['historical', 'fort', 'palace', 'monument', 'museum', 'heritage'],
+            'cultural': ['cultural', 'art', 'theater', 'gallery', 'festival'],
+            'adventure': ['adventure', 'trek', 'climbing', 'rafting', 'wildlife', 'safari'],
+            'entertainment': ['entertainment', 'amusement', 'shopping', 'restaurant', 'cafe']
+          };
+          
+          const matchingCategories = categoryMap[selectedCategory] || [selectedCategory];
+          shouldShow = matchingCategories.some(cat => cardCategory.includes(cat));
+        }
+        
+        if (shouldShow) {
+          card.style.display = 'block';
+          card.classList.add('animate__animated', 'animate__fadeIn');
+        } else {
+          card.style.display = 'none';
+        }
+      });
+      
+      // Show message if no places found
+      const visibleCards = document.querySelectorAll('.place-card-wrapper[style*="display: block"]');
+      const noPlacesMessage = document.getElementById('no-places-message');
+      
+      if (visibleCards.length === 0) {
+        if (!noPlacesMessage) {
+          const messageDiv = document.createElement('div');
+          messageDiv.id = 'no-places-message';
+          messageDiv.className = 'col-12 text-center mt-4';
+          messageDiv.innerHTML = `
+            <div class="alert alert-info">
+              <i class="fas fa-info-circle"></i> No places found for the selected category. Try selecting "All Categories" to see all available places.
+            </div>
+          `;
+          document.getElementById('places-list').appendChild(messageDiv);
+        }
+      } else {
+        if (noPlacesMessage) {
+          noPlacesMessage.remove();
+        }
+      }
+      
+      // Update the count display
+      updatePlaceCount(visibleCards.length);
+    }
+    
+    // Function to update place count
+    function updatePlaceCount(count) {
+      const totalPlaces = document.querySelectorAll('.place-card-wrapper').length;
+      const countDisplay = document.getElementById('place-count');
+      
+      if (!countDisplay) {
+        const countDiv = document.createElement('div');
+        countDiv.id = 'place-count';
+        countDiv.className = 'text-center mb-3';
+        countDiv.innerHTML = `<small class="text-muted">Showing ${count} of ${totalPlaces} places</small>`;
+        document.getElementById('categoryFilter').parentNode.appendChild(countDiv);
+      } else {
+        countDisplay.innerHTML = `<small class="text-muted">Showing ${count} of ${totalPlaces} places</small>`;
+      }
     }
   </script>
 
@@ -1229,66 +1653,6 @@
   <!-- Favorite Button Handling -->
   <script>
     document.addEventListener('DOMContentLoaded', function() {
-      // Handle state favorite button
-      const stateFavoriteForm = document.querySelector('form[action*="state_favorite"]');
-      if (stateFavoriteForm) {
-        stateFavoriteForm.addEventListener('submit', function(e) {
-          e.preventDefault();
-          const button = this.querySelector('button');
-          const isFavorited = button.classList.contains('btn-danger');
-          
-          // Show loading state
-          button.disabled = true;
-          button.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Processing...';
-          
-          // Submit the form
-          fetch(this.action, {
-            method: 'POST',
-            body: new FormData(this),
-            headers: {
-              'X-CSRFToken': this.querySelector('[name=csrfmiddlewaretoken]').value,
-              'X-Requested-With': 'XMLHttpRequest'
-            }
-          })
-          .then(response => {
-            if (!response.ok) {
-              throw new Error('Network response was not ok');
-            }
-            return response.json();
-          })
-          .then(data => {
-            if (data.success) {
-              // Update button state
-              if (isFavorited) {
-                button.className = 'btn btn-outline-light btn-sm mt-2';
-                button.innerHTML = '<i class="far fa-heart"></i> Add to Favorites';
-              } else {
-                button.className = 'btn btn-danger btn-sm mt-2';
-                button.innerHTML = '<i class="fas fa-heart"></i> Remove from Favorites';
-              }
-              // Update the form action for the next click
-              const newAction = isFavorited ? 
-                this.action.replace('remove_state_favorite', 'add_state_favorite') :
-                this.action.replace('add_state_favorite', 'remove_state_favorite');
-              this.action = newAction;
-            }
-          })
-          .catch(error => {
-            console.error('Error:', error);
-            // Reset button state on error
-            button.disabled = false;
-            if (isFavorited) {
-              button.innerHTML = '<i class="fas fa-heart"></i> Remove from Favorites';
-            } else {
-              button.innerHTML = '<i class="far fa-heart"></i> Add to Favorites';
-            }
-          })
-          .finally(() => {
-            button.disabled = false;
-          });
-        });
-      }
-
       // Handle place favorite buttons
       const placeFavoriteForms = document.querySelectorAll('form[action*="favorite"]');
       placeFavoriteForms.forEach(form => {
@@ -1353,5 +1717,109 @@
 
   <!-- State-specific JavaScript -->
   <script src="{% static 'core/js/andhra_pradesh.js' %}"></script>
+
+  <!-- Initialize functionality when DOM is loaded -->
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      filterPlacesByCategory();
+      
+      // Initialize star rating functionality
+      const stars = document.querySelectorAll('.star-rating');
+      stars.forEach(star => {
+        star.addEventListener('click', function() {
+          const rating = parseInt(this.dataset.rating);
+          selectedRating = rating;
+          
+          // Update star display
+          stars.forEach((s, index) => {
+            if (index < rating) {
+              s.classList.add('active');
+            } else {
+              s.classList.remove('active');
+            }
+          });
+        });
+        
+        star.addEventListener('mouseenter', function() {
+          const rating = parseInt(this.dataset.rating);
+          stars.forEach((s, index) => {
+            if (index < rating) {
+              s.style.color = '#ffd700';
+            }
+          });
+        });
+        
+        star.addEventListener('mouseleave', function() {
+          stars.forEach((s, index) => {
+            if (index < selectedRating) {
+              s.style.color = '#ffd700';
+            } else {
+              s.style.color = '#dee2e6';
+            }
+          });
+        });
+      });
+      
+      // Add review form submission
+      const addReviewForm = document.getElementById('addReviewForm');
+      if (addReviewForm) {
+        addReviewForm.addEventListener('submit', function(e) {
+          e.preventDefault();
+          
+          const placeId = document.getElementById('reviewPlace').value;
+          const comment = document.getElementById('reviewComment').value;
+          
+          if (!placeId || !comment || selectedRating === 0) {
+            alert('Please fill in all fields and select a rating');
+            return;
+          }
+          
+          // Submit review via AJAX
+          submitReview(placeId, selectedRating, comment);
+        });
+      }
+    });
+
+    // Review system variables
+    let selectedRating = 0;
+
+    // Function to submit review
+    function submitReview(placeId, rating, comment) {
+      const csrfToken = getCSRFToken();
+      if (!csrfToken) {
+        alert('CSRF token not found. Please refresh the page and try again.');
+        return;
+      }
+      fetch('{% url "core:add_review" 0 %}'.replace('0', placeId), {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'X-CSRFToken': csrfToken,
+          'X-Requested-With': 'XMLHttpRequest'
+        },
+        body: `rating=${rating}&comment=${encodeURIComponent(comment)}`
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          alert('Review submitted successfully!');
+          document.getElementById('addReviewForm').reset();
+          selectedRating = 0;
+          stars.forEach(star => {
+            star.classList.remove('active');
+            star.style.color = '#dee2e6';
+          });
+        } else {
+          alert('Error submitting review: ' + data.error);
+        }
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        alert('Error submitting review');
+      });
+    }
+
+    // Function to add to favorites
+  </script>
 </body>
 </html>
