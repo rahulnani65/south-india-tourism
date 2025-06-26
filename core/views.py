@@ -63,7 +63,7 @@ def state_detail(request, state_slug):
         places_with_weather.append(place_data)
     
     # Check if the state is in user's favorites
-    is_favorite = request.user.is_authenticated and state.favorites.filter(id=request.user.id).exists()
+    is_state_favorite = request.user.is_authenticated and state.favorites.filter(id=request.user.id).exists()
     
     context = {
         'state': state,
@@ -73,7 +73,7 @@ def state_detail(request, state_slug):
         'itineraries': itineraries,
         'transport_options': transport_options,
         'GOOGLE_MAPS_API_KEY': settings.GOOGLE_MAPS_API_KEY,
-        'is_favorite': is_favorite
+        'is_state_favorite': is_state_favorite
     }
     return render(request, template_name, context)
 
@@ -154,7 +154,7 @@ def signup(request):
         form = UserCreationForm()
     return render(request, 'registration/signup.html', {'form': form})
 
-@cache_page(60 * 15)
+@login_required
 def profile(request):
     # Ensure the user has a UserProfile, create one if it doesn't exist
     try:

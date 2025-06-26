@@ -1613,9 +1613,9 @@
       <div class="hero-overlay d-flex flex-column align-items-center justify-content-center text-center">
         <h1 class="hero-title text-white animate__animated animate__fadeInDown mb-3" style="font-size:3.5rem;font-weight:700;text-shadow:0 3px 10px rgba(0,0,0,0.6);">Discover {{ state.name }}</h1>
         <p class="hero-subtitle text-white animate__animated animate__fadeInUp animate__delay-1s mb-4" style="font-size:1.5rem;text-shadow:0 2px 8px rgba(0,0,0,0.5);">{{ state.tagline|default:"One State, Many Worlds" }}</p>
+        {% include 'core/partials/state_favorite_button.html' with state=state is_favorite=is_state_favorite %}
         <div class="d-flex flex-column flex-md-row gap-3 animate__animated animate__fadeInUp animate__delay-2s align-items-center justify-content-center">
-            {% include 'core/partials/favorite_button.html' %}
-            <a href="#booking" class="btn btn-lg btn-primary ms-2">Plan Your Trip</a>
+          <a href="#booking" class="btn btn-lg btn-primary ms-2">Plan Your Trip</a>
         </div>
       </div>
     </div> <!-- #karnatakaHeroCarousel -->

@@ -319,7 +319,7 @@ document.addEventListener('DOMContentLoaded', function() {
                   <button class="btn btn-primary flex-fill" onclick="showOnMap('${place.latitude}', '${place.longitude}', '${escapedName}')">
                     <i class="fas fa-map-marker-alt"></i> View on Map
                   </button>
-                  <button class="btn btn-outline-secondary flex-fill" onclick="addToFavorites('${escapedName}', ${place.latitude}, ${place.longitude}, event)">
+                  <button class="btn btn-outline-secondary flex-fill" onclick="addToFavorites('${escapedName}', ${place.latitude}, ${place.longitude}, this)">
                     <i class="far fa-heart"></i> Save
                   </button>
                 </div>
@@ -339,7 +339,6 @@ document.addEventListener('DOMContentLoaded', function() {
         alert('CSRF token not found. Please refresh the page and try again.');
         return;
       }
-      // Always POST directly to the correct endpoint for AI-recommended favorites
       fetch('/add-recommended-favorite/', {
         method: 'POST',
         headers: {
@@ -358,9 +357,9 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         if (data.success) {
           btn.classList.remove('btn-outline-secondary');
-          btn.classList.add('btn-danger');
-          btn.innerHTML = '<i class="fas fa-heart-broken"></i> Remove';
-          btn.onclick = function() { removeFromFavorites(name, latitude, longitude, btn); };
+          btn.classList.add('btn-success');
+          btn.disabled = true;
+          btn.innerHTML = '<i class="fas fa-heart"></i> Added to Favorites';
           window.FAVORITE_PLACE_NAMES = (window.FAVORITE_PLACE_NAMES || []);
           if (!window.FAVORITE_PLACE_NAMES.includes(name)) window.FAVORITE_PLACE_NAMES.push(name);
           showToast('Added to favorites!', 'success');

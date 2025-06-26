@@ -1,0 +1,68 @@
+<style>
+.favorite-btn.favorited-transparent {
+  opacity: 0.5;
+  pointer-events: none;
+  background: transparent !important;
+  color: #e74c3c !important;
+  border: none;
+  box-shadow: none;
+  transition: opacity 0.3s;
+}
+</style>
+{% if user.is_authenticated %}
+  <div class="favorite-container">
+    {% if is_favorite %}
+      <button class="favorite-btn favorited-transparent" disabled title="Added to Favorites">
+        <i class="fas fa-heart"></i>
+      </button>
+    {% else %}
+      <form id="stateFavoriteForm-{{ state.id }}" action="{% url 'core:add_state_favorite' state.id %}" method="post" class="d-inline">
+        {% csrf_token %}
+        <button type="submit" class="favorite-btn" title="Add to Favorites">
+          <i class="far fa-heart"></i>
+        </button>
+      </form>
+    {% endif %}
+  </div>
+{% else %}
+  <div class="favorite-container">
+    <button class="favorite-btn" disabled title="Login to add favorites">
+      <i class="far fa-heart"></i>
+    </button>
+  </div>
+{% endif %}
+<script id="state-fav-btn-script-{{ state.id }}">
+(function() {
+  var form = document.getElementById('stateFavoriteForm-{{ state.id }}');
+  if (!form) return;
+  form.addEventListener('submit', function(e) {
+    e.preventDefault();
+    var button = form.querySelector('button');
+    button.disabled = true;
+    button.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>';
+    fetch(form.action, {
+      method: 'POST',
+      headers: {
+        'X-CSRFToken': form.querySelector('[name=csrfmiddlewaretoken]').value,
+        'X-Requested-With': 'XMLHttpRequest'
+      },
+      credentials: 'same-origin',
+    }).then(res => res.json()).then(data => {
+      if (data.success) {
+        button.classList.add('favorited-transparent');
+        button.innerHTML = '<i class="fas fa-heart"></i>';
+        button.title = 'Added to Favorites';
+        button.disabled = true;
+        if (window.showToast) window.showToast('State added to favorites!', 'success');
+      } else {
+        button.disabled = false;
+        button.innerHTML = '<i class="far fa-heart"></i>';
+        if (window.showToast) window.showToast('Error adding to favorites', 'danger');
+      }
+    }).catch(function() {
+      button.disabled = false;
+      button.innerHTML = '<i class="far fa-heart"></i>';
+    });
+  });
+})();
+</script> 

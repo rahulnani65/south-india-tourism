@@ -450,11 +450,15 @@
   if (typeof window.addToFavorites !== 'function') {
     window.addToFavorites = function(name, latitude, longitude, event) {
       event.preventDefault();
+      const btn = event.target.closest('button');
+      if (!btn || btn.disabled) return;
       const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || (window.getCSRFToken && window.getCSRFToken());
       if (!csrfToken) {
         alert('CSRF token not found. Please refresh the page and try again.');
         return;
       }
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Saving...';
       fetch('/add-recommended-favorite/', {
         method: 'POST',
         headers: {
@@ -467,12 +471,28 @@
       .then(res => res.json())
       .then(data => {
         if (data.success) {
-          alert('Added to favorites!');
+          btn.innerHTML = '<i class="fas fa-heart"></i> Added to Favorites';
+          btn.classList.add('favorited');
+          btn.disabled = true;
+          // Optionally show a toast/alert
+          const alertDiv = document.createElement('div');
+          alertDiv.className = 'alert alert-success alert-dismissible fade show position-fixed';
+          alertDiv.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+          alertDiv.innerHTML = `
+            <i class="fas fa-check-circle"></i> ${name} added to favorites!
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+          `;
+          document.body.appendChild(alertDiv);
+          setTimeout(() => { if (alertDiv.parentNode) alertDiv.remove(); }, 3000);
         } else {
+          btn.innerHTML = '<i class="far fa-heart"></i> Save to Favorites';
+          btn.disabled = false;
           alert('Error adding to favorites: ' + (data.error || 'Unknown error'));
         }
       })
       .catch(error => {
+        btn.innerHTML = '<i class="far fa-heart"></i> Save to Favorites';
+        btn.disabled = false;
         alert('Error adding to favorites: ' + error.message);
       });
     };
@@ -773,37 +793,32 @@
   // --- FAVORITES MANAGEMENT ---
 
   window.addToFavorites = function(name, latitude, longitude, event) {
-    const csrfToken = getCSRFToken();
+    event.preventDefault();
+    const btn = event.target.closest('button');
+    if (!btn || btn.disabled) return;
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || (window.getCSRFToken && window.getCSRFToken());
     if (!csrfToken) {
       alert('CSRF token not found. Please refresh the page and try again.');
       return;
     }
-    
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Saving...';
     fetch('/add-recommended-favorite/', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'X-CSRFToken': csrfToken
+        'X-CSRFToken': csrfToken,
+        'X-Requested-With': 'XMLHttpRequest'
       },
-      body: JSON.stringify({
-        name: name,
-        latitude: latitude,
-        longitude: longitude
-      })
+      body: JSON.stringify({ name, latitude, longitude })
     })
-    .then(response => {
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      return response.json();
-    })
+    .then(res => res.json())
     .then(data => {
       if (data.success) {
-        const button = event.target;
-        button.innerHTML = '<i class="fas fa-heart"></i> Added to Favorites';
-        button.classList.add('favorited');
-        button.disabled = true;
-        
+        btn.innerHTML = '<i class="fas fa-heart"></i> Added to Favorites';
+        btn.classList.add('favorited');
+        btn.disabled = true;
+        // Optionally show a toast/alert
         const alertDiv = document.createElement('div');
         alertDiv.className = 'alert alert-success alert-dismissible fade show position-fixed';
         alertDiv.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
@@ -812,18 +827,16 @@
           <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         `;
         document.body.appendChild(alertDiv);
-        
-        setTimeout(() => {
-          if (alertDiv.parentNode) {
-            alertDiv.remove();
-          }
-        }, 3000);
+        setTimeout(() => { if (alertDiv.parentNode) alertDiv.remove(); }, 3000);
       } else {
+        btn.innerHTML = '<i class="far fa-heart"></i> Save to Favorites';
+        btn.disabled = false;
         alert('Error adding to favorites: ' + (data.error || 'Unknown error'));
       }
     })
     .catch(error => {
-      console.error('Error:', error);
+      btn.innerHTML = '<i class="far fa-heart"></i> Save to Favorites';
+      btn.disabled = false;
       alert('Error adding to favorites: ' + error.message);
     });
   };
