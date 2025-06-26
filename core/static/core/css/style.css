@@ -1158,3 +1158,20 @@ input[type="submit"] {
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }
+
+.added-fav-btn {
+  background: linear-gradient(90deg, #28a745 0%, #218838 100%);
+  color: #fff;
+  border: none;
+  box-shadow: 0 2px 8px rgba(40,167,69,0.15);
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  transition: background 0.2s, box-shadow 0.2s;
+}
+.added-fav-btn i {
+  margin-right: 6px;
+  color: #fff;
+}
+.added-fav-btn:disabled {
+  opacity: 1;
+}

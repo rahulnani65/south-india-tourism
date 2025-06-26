@@ -293,13 +293,30 @@ document.addEventListener('DOMContentLoaded', function() {
     function renderRecommendations(data) {
       const recommendationsDiv = document.getElementById("gemini-recommended-places");
       const places = data.gemini_recommended_places;
-  
+      const weatherData = data.weather_data;
+      let html = '';
+      if (weatherData) {
+        html += `
+          <div class="recommendation-weather m-3">
+            <div class="card">
+              <div class="card-body">
+                <h5 class="card-title"><i class="fas fa-cloud-sun"></i> Current Weather in the area</h5>
+                <div class="row">
+                  <div class="col-md-3"><p class="mb-0"><strong>Temperature:</strong> ${weatherData.temperature}°C</p></div>
+                  <div class="col-md-3"><p class="mb-0"><strong>Weather:</strong> ${weatherData.weather}</p></div>
+                  <div class="col-md-3"><p class="mb-0"><strong>Humidity:</strong> ${weatherData.humidity}%</p></div>
+                  <div class="col-md-3"><p class="mb-0"><strong>Description:</strong> ${weatherData.description}</p></div>
+                </div>
+              </div>
+            </div>
+          </div>`;
+      }
+      html += '<div class="row p-3">';
       if (!places || places.length === 0) {
           recommendationsDiv.innerHTML = `<div class="alert alert-info m-3">No recommendations found. Please try different filters.</div>`;
           return;
       }
   
-      let html = '<div class="row p-3">';
       places.forEach(place => {
         const escapedName = place.name.replace(/'/g, "\\'").replace(/"/g, '"');
         html += `
@@ -309,9 +326,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 <h5 class="card-title">${place.name}</h5>
                 <span class="recommendation-badge mb-2"><i class="fas fa-star"></i> Rating: ${place.rating || 'N/A'}</span>
                 <p class="reasoning"><em>"${place.reasoning}"</em></p>
-                <div class="mt-auto pt-2">
-                  <button class="btn btn-primary w-100" onclick="showPlaceOnMap('${place.latitude}', '${place.longitude}', '${escapedName}')">
-                    <i class="fas fa-map-marker-alt"></i> View on Map
+                <div class="mt-auto pt-2 d-flex gap-2">
+                  <button class="btn btn-primary flex-fill" onclick="showPlaceOnMap('${place.latitude}', '${place.longitude}', '${escapedName}')">
+                    <i class="fas fa-map-marker-alt"></i> Show on Map
+                  </button>
+                  <button class="btn btn-outline-secondary flex-fill" onclick="addToFavorites('${escapedName}', ${place.latitude}, ${place.longitude}, event)">
+                    <i class="far fa-heart"></i> Save to Favorites
                   </button>
                 </div>
               </div>
@@ -729,6 +749,45 @@ document.addEventListener('DOMContentLoaded', function() {
       const daysDiv = document.getElementById('itineraryDays');
       if (daysDiv) daysDiv.innerHTML = '';
       if (itineraryDiv) itineraryDiv.classList.add('d-none');
+    };
+  
+    // --- FAVORITES SYSTEM FOR STATIC CARDS ---
+    window.toggleFavorite = function(placeId, btn, isFavorite) {
+      const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || getCSRFToken();
+      if (!csrfToken) {
+        alert('CSRF token not found. Please refresh the page and try again.');
+        return;
+      }
+      const url = isFavorite ? `/remove-favorite/${placeId}/` : `/add-favorite/${placeId}/`;
+      fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': csrfToken
+        },
+        body: JSON.stringify({})
+      })
+      .then(response => response.json ? response.json() : response)
+      .then(data => {
+        if (data.success || data.status === 'ok') {
+          if (isFavorite) {
+            btn.classList.remove('btn-danger');
+            btn.classList.add('btn-outline-secondary');
+            btn.innerHTML = '<i class="far fa-heart"></i> Save to Favorites';
+            btn.onclick = function() { toggleFavorite(placeId, btn, false); };
+          } else {
+            btn.classList.remove('btn-outline-secondary');
+            btn.classList.add('btn-danger');
+            btn.innerHTML = '<i class="fas fa-heart-broken"></i> Remove from Favorites';
+            btn.onclick = function() { toggleFavorite(placeId, btn, true); };
+          }
+        } else {
+          alert('Error updating favorite: ' + (data.error || 'Unknown error'));
+        }
+      })
+      .catch(error => {
+        alert('Error updating favorite: ' + error.message);
+      });
     };
   
     // --- RUN INITIALIZATION ---

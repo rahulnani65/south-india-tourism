@@ -29,7 +29,7 @@ from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 from django.contrib.auth.models import User
 from django.shortcuts import render
-from .models import State, Place, Hotel, Cuisine, Restaurant, Event, Itinerary, UserProfile, Review, TelegramUser
+from .models import State, Place, Hotel, Cuisine, Restaurant, Event, Itinerary, UserProfile, Review, TelegramUser, Favorite
 
 # Unregister the default UserAdmin
 admin.site.unregister(User)
@@ -117,7 +117,7 @@ class StateAdmin(admin.ModelAdmin):
         }
 
 # Register other models
-admin.site.register(Place)
+# admin.site.register(Place)  # Removed to avoid AlreadyRegistered error
 admin.site.register(Hotel)
 admin.site.register(Cuisine)
 admin.site.register(Restaurant)
@@ -126,3 +126,17 @@ admin.site.register(Itinerary)
 admin.site.register(UserProfile)
 admin.site.register(Review)
 admin.site.register(TelegramUser)
+
+# Register the Favorite model for admin management
+admin.site.register(Favorite)
+
+# Enhanced Place admin to show favorites info
+@admin.register(Place)
+class PlaceAdmin(admin.ModelAdmin):
+    list_display = ('name', 'state', 'category', 'favorite_count')
+    list_filter = ('state', 'category', 'favorited_by')
+    search_fields = ('name',)
+
+    def favorite_count(self, obj):
+        return obj.favorited_by.count()
+    favorite_count.short_description = 'Number of Favorites'

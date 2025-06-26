@@ -1409,12 +1409,7 @@
                       <i class="fas fa-map-marker-alt"></i> Show on Map
                     </button>
                   {% if user.is_authenticated %}
-                      <form method="post" action="{% url 'core:add_favorite' place_data.place.id %}" class="d-inline">
-                        {% csrf_token %}
-                        <button type="submit" class="btn btn-outline-secondary btn-sm">
-                          <i class="far fa-heart"></i>
-                        </button>
-                      </form>
+                    {% include 'core/partials/favorite_button.html' with place=place_data.place is_favorite=place_data.is_favorite %}
                   {% endif %}
                   </div>
                 </div>
@@ -2330,10 +2325,14 @@
                                                 onclick="showOnMap(${place.latitude}, ${place.longitude}, '${place.name.replace(/'/g, "\\'")}')">
                                             <i class="fas fa-map-marker-alt"></i> Show on Map
                                         </button>
-                                        <button class="btn btn-outline-secondary" 
-                                                onclick="addToFavorites('${place.name.replace(/'/g, "\\'")}', ${place.latitude}, ${place.longitude}, event)">
-                                            <i class="far fa-heart"></i> Save
-                                        </button>
+                                        <form class="favorite-recommend-form d-inline" method="post" action="/add-recommended-favorite/">
+                                            <input type="hidden" name="name" value="${place.name.replace(/"/g, '&quot;')}">
+                                            <input type="hidden" name="latitude" value="${place.latitude}">
+                                            <input type="hidden" name="longitude" value="${place.longitude}">
+                                            <button type="submit" class="btn btn-outline-secondary btn-sm">
+                                                <i class="far fa-heart"></i> Save
+                                            </button>
+                                        </form>
                                     </div>
                                 </div>
                             </div>

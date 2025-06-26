@@ -411,16 +411,21 @@
 
     let html = '<div class="row">';
     places.forEach(place => {
-      const escapedName = place.name.replace(/'/g, "\\'");
+      const escapedName = place.name.replace(/'/g, "\\'").replace(/"/g, '\"');
       html += `
         <div class="col-md-6 col-lg-4 mb-4">
           <div class="card h-100 recommendation-card">
-            <div class="card-body">
+            <div class="card-body d-flex flex-column">
               <h5 class="card-title">${place.name}</h5>
               <p class="card-text">${place.reasoning || 'Recommended based on your preferences'}</p>
-              ${place.latitude && place.longitude ? `<button class="btn btn-primary" onclick="showPlaceOnMap('${place.latitude}', '${place.longitude}', '${escapedName}')">
-                <i class="fas fa-map-marker-alt"></i> Show on Map
-              </button>` : ''}
+              <div class="mt-auto pt-2 d-flex gap-2">
+                ${place.latitude && place.longitude ? `<button class="btn btn-primary flex-fill" onclick="showPlaceOnMap('${place.latitude}', '${place.longitude}', '${escapedName}')">
+                  <i class="fas fa-map-marker-alt"></i> Show on Map
+                </button>` : ''}
+                <button class="btn btn-outline-secondary flex-fill" onclick="addToFavorites('${escapedName}', ${place.latitude || 'null'}, ${place.longitude || 'null'}, event)">
+                  <i class="far fa-heart"></i> Save to Favorites
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -441,39 +446,65 @@
     recommendationsDiv.innerHTML = html;
   }
 
-  window.clearRecommendations = function() {
-    const recommendationsDiv = document.getElementById("gemini-recommended-places");
-    if (recommendationsDiv) {
-      recommendationsDiv.innerHTML = `
-        <div class="text-center py-5">
-          <div class="recommendation-placeholder">
-            <i class="fas fa-compass fa-3x text-muted mb-3"></i>
-            <h5 class="text-muted">Ready to Discover?</h5>
-            <p class="text-muted">Select your preferences above and get personalized recommendations</p>
-          </div>
-        </div>
-      `;
-    }
-  };
+  // Add global addToFavorites if not present
+  if (typeof window.addToFavorites !== 'function') {
+    window.addToFavorites = function(name, latitude, longitude, event) {
+      event.preventDefault();
+      const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || (window.getCSRFToken && window.getCSRFToken());
+      if (!csrfToken) {
+        alert('CSRF token not found. Please refresh the page and try again.');
+        return;
+      }
+      fetch('/add-recommended-favorite/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': csrfToken,
+          'X-Requested-With': 'XMLHttpRequest'
+        },
+        body: JSON.stringify({ name, latitude, longitude })
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          alert('Added to favorites!');
+        } else {
+          alert('Error adding to favorites: ' + (data.error || 'Unknown error'));
+        }
+      })
+      .catch(error => {
+        alert('Error adding to favorites: ' + error.message);
+      });
+    };
+  }
 
   // --- ITINERARY BUILDER LOGIC ---
+  function startLoadingAnimation() {
+    const steps = document.querySelectorAll('.loading-step');
+    const progressFill = document.querySelector('.progress-fill');
+    let currentStep = 0;
+    
+    function nextStep() {
+      if (steps[currentStep]) steps[currentStep].classList.remove('active');
+      currentStep++;
+      if (steps[currentStep]) steps[currentStep].classList.add('active');
+      if (progressFill) progressFill.style.width = ((currentStep + 1) / steps.length * 100) + '%';
+      if (currentStep < steps.length - 1) {
+        setTimeout(nextStep, 400);
+      }
+    }
+    setTimeout(nextStep, 400);
+  }
+
   window.generateItinerary = function() {
     const duration = parseInt(document.getElementById('tripDuration').value);
     const style = document.getElementById('travelStyle').value;
     const startingPoint = document.getElementById('startingPoint').value;
-    const genBtn = document.querySelector('button[onclick="generateItinerary()"]');
-    
     if (!startingPoint) {
       alert('Please enter a starting point');
       return;
     }
-    
-    // Disable button and show loading
-    if (genBtn) {
-      genBtn.disabled = true;
-      genBtn.classList.add('btn-loading');
-    }
-    
+    // Show enhanced loading state
     const container = document.getElementById('itineraryDays');
     container.innerHTML = `
       <div class="itinerary-loading-container">
@@ -509,98 +540,44 @@
           </div>
         </div>
       </div>`;
-    
     startLoadingAnimation();
-
-    setTimeout(() => {
-      const places = (window.PLACES_WITH_WEATHER || []).map(p => ({
-        id: p.id,
-        name: p.name,
-        category: p.category,
-        description: p.description,
-        location: p.location,
-        latitude: p.latitude,
-        longitude: p.longitude
-      }));
-      
-      // Find starting point coordinates
-      const startingPlace = places.find(p =>
-        p.name.toLowerCase().includes(startingPoint.toLowerCase()) ||
-        startingPoint.toLowerCase().includes(p.name.toLowerCase())
-      );
-      const latitude = startingPlace ? startingPlace.latitude : 13.0827; // Default to Chennai
-      const longitude = startingPlace ? startingPlace.longitude : 80.2707;
-      
-      // Build Gemini AI URL
-      const geminiUrl = (window.GEMINI_RECOMMENDATIONS_URL || '/state/get-gemini-recommendations/') +
-        `?latitude=${latitude}&longitude=${longitude}` +
-        `&user_place=${encodeURIComponent(startingPoint)}` +
-        `&place_type=tourist_attraction&budget=${style}&duration=${duration}` +
-        `&itinerary=true&travel_style=${style}&trip_duration=${duration}&context=tamil_nadu`;
-      
-      fetch(geminiUrl, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Requested-With': 'XMLHttpRequest'
-        }
-      })
-      .then(response => {
-        if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
-        return response.json();
-      })
-      .then(data => {
-        const aiPlaces = data.gemini_recommended_places || [];
-        const itineraryDays = createSmartItinerary(duration, style, startingPoint, places, aiPlaces);
-        displayItinerary(itineraryDays, startingPoint);
-        const generatedItineraryDiv = document.getElementById('generatedItinerary');
-        if (generatedItineraryDiv) generatedItineraryDiv.classList.remove('d-none');
-        
-        // Re-enable button
-        if (genBtn) {
-          genBtn.disabled = false;
-          genBtn.classList.remove('btn-loading');
-        }
-        
-        // Smooth scroll to results
-        setTimeout(() => {
-          document.getElementById('generatedItinerary').scrollIntoView({ behavior: 'smooth' });
-        }, 100);
-      })
-      .catch(error => {
-        console.warn('AI recommendation failed, falling back to smart itinerary:', error);
-        const itineraryDays = createSmartItinerary(duration, style, startingPoint, places, []);
-        displayItinerary(itineraryDays, startingPoint);
-        const generatedItineraryDiv = document.getElementById('generatedItinerary');
-        if (generatedItineraryDiv) generatedItineraryDiv.classList.remove('d-none');
-        
-        if (genBtn) {
-          genBtn.disabled = false;
-          genBtn.classList.remove('btn-loading');
-        }
-        
-        setTimeout(() => {
-          document.getElementById('generatedItinerary').scrollIntoView({ behavior: 'smooth' });
-        }, 100);
-      });
-    }, 400);
+    // Get places data from Django template
+    const places = (window.PLACES_WITH_WEATHER || []);
+    // Determine starting coordinates
+    const startingPlace = places.find(p => 
+      p.name.toLowerCase().includes(startingPoint.toLowerCase()) || 
+      startingPoint.toLowerCase().includes(p.name.toLowerCase())
+    );
+    const latitude = startingPlace ? startingPlace.latitude : 13.0827; // Default to Chennai
+    const longitude = startingPlace ? startingPlace.longitude : 80.2707;
+    generateAIItinerary(duration, style, startingPoint, places, latitude, longitude);
   };
 
-  function startLoadingAnimation() {
-    const steps = document.querySelectorAll('.loading-step');
-    const progressFill = document.querySelector('.progress-fill');
-    let currentStep = 0;
-    
-    function nextStep() {
-      if (steps[currentStep]) steps[currentStep].classList.remove('active');
-      currentStep++;
-      if (steps[currentStep]) steps[currentStep].classList.add('active');
-      if (progressFill) progressFill.style.width = ((currentStep + 1) / steps.length * 100) + '%';
-      if (currentStep < steps.length - 1) {
-        setTimeout(nextStep, 400);
+  function generateAIItinerary(duration, style, startingPoint, places, latitude, longitude) {
+    const url = `${window.GEMINI_RECOMMENDATIONS_URL}?latitude=${latitude}&longitude=${longitude}&user_place=${encodeURIComponent(startingPoint)}&place_type=tourist_attraction&budget=${style}&duration=${duration}&itinerary=true&travel_style=${style}&trip_duration=${duration}`;
+    fetch(url, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Requested-With': 'XMLHttpRequest'
       }
-    }
-    setTimeout(nextStep, 400);
+    })
+    .then(response => {
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
+      return response.json();
+    })
+    .then(data => {
+      const aiPlaces = data.gemini_recommended_places || [];
+      const itineraryDays = createSmartItinerary(duration, style, startingPoint, places, aiPlaces);
+      displayItinerary(itineraryDays, startingPoint);
+    })
+    .catch(error => {
+      console.warn('AI recommendation failed, falling back to smart itinerary:', error);
+      const itineraryDays = createSmartItinerary(duration, style, startingPoint, places, []);
+      displayItinerary(itineraryDays, startingPoint);
+    });
   }
 
   function createSmartItinerary(duration, style, startingPoint, places, aiPlaces) {
@@ -609,7 +586,6 @@
       ...place,
       reasoning: place.reasoning || 'Recommended based on your preferences'
     }]));
-    
     let allPlaces = [...places];
     if (aiPlaces && aiPlaces.length > 0) {
       const aiPlaceNames = new Set(aiPlaces.map(p => p.name.toLowerCase()));
@@ -617,38 +593,52 @@
       const otherPlaces = places.filter(p => !aiPlaceNames.has(p.name.toLowerCase()));
       allPlaces = [...aiMatchedPlaces, ...otherPlaces];
     }
-    
     let filteredPlaces = filterPlacesByStyle(allPlaces, style);
-    
+    const categories = ['temple', 'beach', 'hill', 'museum', 'park', 'fort', 'palace', 'garden', 'market', 'resort'];
+    const categoryPlaces = {};
+    categories.forEach(category => {
+      categoryPlaces[category] = allPlaces.filter(p => 
+        p.name.toLowerCase().includes(category) || 
+        p.category.toLowerCase().includes(category)
+      );
+    });
+    if (filteredPlaces.length < duration * 3) {
+      const additionalPlaces = [];
+      categories.forEach(category => {
+        if (categoryPlaces[category].length > 0) {
+          const categorySample = categoryPlaces[category].slice(0, 2);
+          additionalPlaces.push(...categorySample);
+        }
+      });
+      const uniqueAdditional = additionalPlaces.filter(p => 
+        !filteredPlaces.some(fp => fp.id === p.id)
+      );
+      filteredPlaces = [...filteredPlaces, ...uniqueAdditional];
+    }
+    filteredPlaces = shuffleArray(filteredPlaces);
     for (let day = 1; day <= duration; day++) {
       const dayPlaces = getDiversePlacesForDay(filteredPlaces, day, duration);
+      if (dayPlaces.length > 0) {
+        itineraryDays.push({
+          day,
+          places: dayPlaces,
+          aiInsights: dayPlaces.map(place => aiPlaceMap.get(place.name.toLowerCase()) || null).filter(Boolean)
+        });
+      }
+    }
+    while (itineraryDays.length < duration) {
+      const remainingPlaces = filteredPlaces.filter(p => 
+        !itineraryDays.some(day => day.places.find(dp => dp.id === p.id))
+      );
+      if (remainingPlaces.length === 0) break;
+      const dayPlaces = shuffleArray(remainingPlaces).slice(0, 2);
       itineraryDays.push({
-        day: day,
+        day: itineraryDays.length + 1,
         places: dayPlaces,
-        startingPoint: day === 1 ? startingPoint : null
+        aiInsights: []
       });
     }
-    
     return itineraryDays;
-  }
-
-  function filterPlacesByStyle(places, style) {
-    const styleFilters = {
-      'cultural': ['temple', 'museum', 'historical', 'cultural'],
-      'adventure': ['adventure', 'trek', 'hiking', 'waterfall'],
-      'relaxation': ['beach', 'hill', 'garden', 'park'],
-      'family': ['park', 'museum', 'beach', 'garden'],
-      'budget': ['temple', 'park', 'beach', 'garden'],
-      'luxury': ['resort', 'spa', 'palace', 'heritage']
-    };
-    
-    const keywords = styleFilters[style] || ['temple', 'beach', 'hill', 'museum'];
-    return places.filter(place => 
-      keywords.some(keyword => 
-        place.name.toLowerCase().includes(keyword) || 
-        place.category.toLowerCase().includes(keyword)
-      )
-    );
   }
 
   function shuffleArray(array) {
@@ -658,6 +648,33 @@
       [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
     }
     return shuffled;
+  }
+
+  function filterPlacesByStyle(places, style) {
+    return places.filter(p => {
+      const name = p.name.toLowerCase();
+      const category = p.category.toLowerCase();
+      switch (style) {
+        case 'adventure':
+          return ['adventure', 'park', 'hill', 'wildlife', 'forest', 'waterfall', 'trek', 'climbing'].some(c => 
+            category.includes(c) || name.includes(c)
+          );
+        case 'cultural':
+          return ['temple', 'museum', 'cultural', 'historical', 'fort', 'palace', 'heritage', 'monument'].some(c => 
+            category.includes(c) || name.includes(c)
+          );
+        case 'relaxation':
+          return ['beach', 'hill', 'garden', 'lake', 'resort', 'spa', 'wellness', 'meditation'].some(c => 
+            category.includes(c) || name.includes(c)
+          );
+        case 'luxury':
+          return ['resort', 'spa', 'hotel', 'palace', 'heritage', 'premium', 'exclusive'].some(c => 
+            category.includes(c) || name.includes(c)
+          );
+        default:
+          return true;
+      }
+    });
   }
 
   function getDiversePlacesForDay(filteredPlaces, day, duration) {
@@ -691,38 +708,51 @@
 
   function displayItinerary(itineraryDays, startingPoint) {
     const container = document.getElementById('itineraryDays');
-    let html = '';
-    
-    itineraryDays.forEach(day => {
-      html += `
-        <div class="itinerary-day mb-4">
-          <h4 class="day-title">
-            <i class="fas fa-calendar-day"></i> Day ${day.day}
-            ${day.startingPoint ? `<span class="starting-point">Starting from: ${day.startingPoint}</span>` : ''}
-          </h4>
-          <div class="day-places">
-      `;
-      
-      day.places.forEach(place => {
-        const escapedName = place.name.replace(/'/g, "\\'");
-        html += `
-          <div class="place-item">
-            <h5>${place.name}</h5>
-            <p>${place.description}</p>
-            ${place.latitude && place.longitude ? `<button class="btn btn-outline-primary btn-sm ms-2" onclick="showPlaceOnMap('${place.latitude}', '${place.longitude}', '${escapedName}')">
-              <i class="fas fa-map-marker-alt"></i> Show on Map
-            </button>` : ''}
-          </div>
-        `;
-      });
-      
-      html += `
-          </div>
-        </div>
-      `;
-    });
-    
+    let html = itineraryDays.map(dayData => `
+      <div class="itinerary-day">
+        <h6><i class="fas fa-calendar-day"></i> Day ${dayData.day}</h6>
+        ${dayData.day === 1 ? `<p class="text-muted mb-3"><i class="fas fa-map-marker-alt"></i> Starting from: ${startingPoint}</p>` : ''}
+        ${dayData.places.map((place, index) => {
+          const time = getTimeSlot(index, dayData.places.length);
+          const aiInsight = dayData.aiInsights[index];
+          return `
+            <div class="itinerary-place">
+              <span class="place-time">${time}</span>
+              <div class="place-details">
+                <strong>${place.name}</strong>
+                <small class="text-muted d-block">${place.category}</small>
+                ${aiInsight ? `
+                  <div class="ai-insight mt-2">
+                    <i class="fas fa-robot text-primary"></i>
+                    <small class="text-primary">AI Insight: ${aiInsight.reasoning}</small>
+                  </div>` : ''}
+              </div>
+              <div class="place-actions">
+                <button class="btn btn-sm btn-outline-primary" onclick="showPlaceOnMap(${place.latitude || 0}, ${place.longitude || 0}, '${place.name.replace(/'/g, "\\'")}')">
+                  <i class="fas fa-map-marker-alt"></i>
+                </button>
+              </div>
+            </div>
+          `;
+        }).join('')}
+        ${dayData.aiInsights.length > 0 ? `
+          <div class="day-summary mt-3 p-3 bg-light rounded">
+            <h6><i class="fas fa-lightbulb text-warning"></i> AI Travel Tips for Day ${dayData.day}</h6>
+            <ul class="mb-0">
+              ${dayData.aiInsights.map(insight => `<li><small>${insight.reasoning}</small></li>`).join('')}
+            </ul>
+          </div>` : ''}
+      </div>
+    `).join('');
     container.innerHTML = html;
+    document.getElementById('generatedItinerary').classList.remove('d-none');
+  }
+
+  function getTimeSlot(index, totalPlaces) {
+    const startHour = 9; // 9 AM start
+    const timePerPlace = Math.floor(8 / totalPlaces); // 8 hours available
+    const hour = startHour + (index * timePerPlace);
+    return `${hour}:00 - ${hour + timePerPlace}:00`;
   }
 
   // --- AI-Powered Recommendations Deduplication Example ---
@@ -815,4 +845,40 @@
     }
     return cookieValue;
   }
-})(); 
+
+  // --- ITINERARY ACTION BUTTONS ---
+  window.saveItinerary = function() {
+    const itineraryHtml = document.getElementById('itineraryDays').innerHTML;
+    if (!itineraryHtml.trim()) {
+      alert('No itinerary to save!');
+      return;
+    }
+    // Save to localStorage (or send to backend if needed)
+    localStorage.setItem('savedTamilNaduItinerary', itineraryHtml);
+    alert('Itinerary saved! You can access it later from this browser.');
+  };
+
+  window.exportItinerary = function() {
+    const itineraryDiv = document.getElementById('itineraryDays');
+    if (!itineraryDiv || !itineraryDiv.innerText.trim()) {
+      alert('No itinerary to export!');
+      return;
+    }
+    // Simple text export as fallback
+    const text = itineraryDiv.innerText;
+    const blob = new Blob([text], { type: 'text/plain' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = 'TamilNadu_Itinerary.txt';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  window.resetItinerary = function() {
+    if (confirm('Are you sure you want to reset your itinerary?')) {
+      document.getElementById('itineraryDays').innerHTML = '';
+      document.getElementById('generatedItinerary').classList.add('d-none');
+    }
+  };
+})();

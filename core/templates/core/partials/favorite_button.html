@@ -1,60 +1,146 @@
-{% if user.is_authenticated %}
-  <form id="favoriteStateForm" action="{% if is_favorite %}{% url 'core:remove_state_favorite' state.id %}{% else %}{% url 'core:add_state_favorite' state.id %}{% endif %}" method="post" class="d-inline">
-    {% csrf_token %}
-    <button type="submit" class="btn btn-outline-light btn-sm mt-2" title="{% if is_favorite %}Remove from Favorites{% else %}Add to Favorites{% endif %}">
-      <i id="favoriteIcon" class="{% if is_favorite %}fas fa-heart{% else %}far fa-heart{% endif %}"></i>
-      <span class="d-none d-md-inline">{% if is_favorite %}Remove from Favorites{% else %}Add to Favorites{% endif %}</span>
-    </button>
-  </form>
-  <script>
-    console.log('Favorite button loaded for state:', '{{ state.name }}', 'ID:', {{ state.id }}, 'Is favorite:', {{ is_favorite|yesno:"true,false" }});
-    document.getElementById('favoriteStateForm').addEventListener('submit', function(e) {
-      e.preventDefault();
-      console.log('Favorite button clicked for state:', '{{ state.name }}');
-      const form = this;
-      const button = form.querySelector('button');
-      const icon = document.getElementById('favoriteIcon');
-      const isFavorited = icon.classList.contains('fas');
-      button.disabled = true;
-      button.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Processing...';
-      console.log('Submitting to:', form.action);
-      fetch(form.action, {
-        method: 'POST',
-        headers: {
-          'X-CSRFToken': form.querySelector('[name=csrfmiddlewaretoken]').value,
-          'X-Requested-With': 'XMLHttpRequest'
-        },
-        credentials: 'same-origin',
-      }).then(res => {
-        console.log('Response status:', res.status);
-        return res.json();
-      }).then(data => {
-        console.log('Response data:', data);
-        if (data.success) {
-          if (isFavorited) {
-            icon.classList.remove('fas'); icon.classList.add('far');
-            button.className = 'btn btn-outline-light btn-sm mt-2';
-            button.title = 'Add to Favorites';
-            button.innerHTML = '<i id="favoriteIcon" class="far fa-heart"></i> <span class="d-none d-md-inline">Add to Favorites</span>';
-            form.action = form.action.replace('remove_state_favorite', 'add_state_favorite');
-          } else {
-            icon.classList.remove('far'); icon.classList.add('fas');
-            button.className = 'btn btn-danger btn-sm mt-2';
-            button.title = 'Remove from Favorites';
-            button.innerHTML = '<i id="favoriteIcon" class="fas fa-heart"></i> <span class="d-none d-md-inline">Remove from Favorites</span>';
-            form.action = form.action.replace('add_state_favorite', 'remove_state_favorite');
-          }
-        }
-      }).catch(error => {
-        console.error('Error:', error);
-      }).finally(() => { button.disabled = false; });
-    });
-  </script>
+{% if place and place.id %}
+  {% if user.is_authenticated %}
+    {% if remove_mode %}
+      <form id="favoritePlaceForm-{{ place.id }}" action="{% url 'core:remove_favorite' place.id %}" method="post" class="d-inline">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-danger btn-sm" title="Remove from Favorites">
+          <i id="favoriteIcon-{{ place.id }}" class="fas fa-heart-broken"></i>
+        </button>
+      </form>
+      <script>
+        (function() {
+          var form = document.getElementById('favoritePlaceForm-{{ place.id }}');
+          if (!form) return;
+          form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            var button = form.querySelector('button');
+            var icon = document.getElementById('favoriteIcon-{{ place.id }}');
+            button.disabled = true;
+            button.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>';
+            fetch(form.action, {
+              method: 'POST',
+              headers: {
+                'X-CSRFToken': form.querySelector('[name=csrfmiddlewaretoken]').value,
+                'X-Requested-With': 'XMLHttpRequest'
+              },
+              credentials: 'same-origin',
+            }).then(res => res.json()).then(data => {
+              if (data.success) {
+                // Instead of just updating the button, reload the page for full sync
+                window.location.reload();
+              }
+            }).catch(function() {
+              form.submit(); // fallback
+            });
+          });
+        })();
+      </script>
+    {% else %}
+      {% if not is_favorite %}
+        <form id="favoritePlaceForm-{{ place.id }}" action="{% url 'core:add_favorite' place.id %}" method="post" class="d-inline">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-outline-secondary btn-sm" title="Add to Favorites">
+            <i id="favoriteIcon-{{ place.id }}" class="far fa-heart"></i>
+          </button>
+        </form>
+        <script>
+          (function() {
+            var form = document.getElementById('favoritePlaceForm-{{ place.id }}');
+            if (!form) return;
+            form.addEventListener('submit', function(e) {
+              e.preventDefault();
+              var button = form.querySelector('button');
+              var icon = document.getElementById('favoriteIcon-{{ place.id }}');
+              button.disabled = true;
+              button.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>';
+              fetch(form.action, {
+                method: 'POST',
+                headers: {
+                  'X-CSRFToken': form.querySelector('[name=csrfmiddlewaretoken]').value,
+                  'X-Requested-With': 'XMLHttpRequest'
+                },
+                credentials: 'same-origin',
+              }).then(res => res.json()).then(data => {
+                if (data.success) {
+                  icon.className = 'fas fa-heart-broken';
+                  button.className = 'btn btn-danger btn-sm';
+                  button.title = 'Added to Favorites';
+                  button.disabled = true;
+                  button.innerHTML = '<i class="fas fa-heart-broken"></i>';
+                }
+              }).catch(function() {
+                form.submit(); // fallback
+              });
+            });
+          })();
+        </script>
+      {% else %}
+        <button class="btn btn-success btn-sm added-fav-btn" disabled title="Already in Favorites">
+          <i class="fas fa-heart"></i> Added to Favorites
+        </button>
+      {% endif %}
+    {% endif %}
+  {% else %}
+    <div class="d-inline">
+      <button class="btn btn-outline-secondary btn-sm" onclick="alert('Please log in to add favorites')" title="Login to add favorites">
+        <i class="far fa-heart"></i>
+      </button>
+    </div>
+  {% endif %}
+{% elif is_recommendation %}
+  {% if user.is_authenticated %}
+    <form id="favoriteRecommendedForm-{{ place.name|slugify }}" action="{% url 'core:add_recommended_favorite' %}" method="post" class="d-inline">
+      {% csrf_token %}
+      <button type="submit" class="btn btn-outline-secondary btn-sm" title="Add to Favorites">
+        <i id="favoriteIcon-recommend-{{ place.name|slugify }}" class="far fa-heart"></i>
+      </button>
+    </form>
+    <script>
+      (function() {
+        var form = document.getElementById('favoriteRecommendedForm-{{ place.name|slugify }}');
+        if (!form) return;
+        form.addEventListener('submit', function(e) {
+          e.preventDefault();
+          var button = form.querySelector('button');
+          var icon = document.getElementById('favoriteIcon-recommend-{{ place.name|slugify }}');
+          button.disabled = true;
+          button.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>';
+          fetch(form.action, {
+            method: 'POST',
+            headers: {
+              'X-CSRFToken': form.querySelector('[name=csrfmiddlewaretoken]').value,
+              'X-Requested-With': 'XMLHttpRequest',
+              'Content-Type': 'application/json'
+            },
+            credentials: 'same-origin',
+            body: JSON.stringify({
+              name: '{{ place.name|escapejs }}',
+              latitude: '{{ place.latitude|default_if_none:"" }}',
+              longitude: '{{ place.longitude|default_if_none:"" }}'
+            })
+          }).then(res => res.json()).then(data => {
+            if (data.success) {
+              icon.className = 'fas fa-heart-broken';
+              button.className = 'btn btn-danger btn-sm';
+              button.title = 'Added to Favorites';
+              button.disabled = true;
+              button.innerHTML = '<i class="fas fa-heart-broken"></i>';
+            }
+          }).catch(function() {
+            form.submit(); // fallback
+          });
+        });
+      })();
+    </script>
+  {% else %}
+    <div class="d-inline">
+      <button class="btn btn-outline-secondary btn-sm" onclick="alert('Please log in to add favorites')" title="Login to add favorites">
+        <i class="far fa-heart"></i>
+      </button>
+    </div>
+  {% endif %}
 {% else %}
-  <div class="d-inline">
-    <button class="btn btn-outline-light btn-sm mt-2" onclick="alert('Please log in to add favorites')" title="Login to add favorites">
-      <i class="far fa-heart"></i>
-      <span class="d-none d-md-inline">Login to Add Favorites</span>
-    </button>
-  </div>
+  <button class="btn btn-outline-secondary btn-sm" disabled title="Cannot favorite this place">
+    <i class="far fa-heart"></i>
+  </button>
 {% endif %}

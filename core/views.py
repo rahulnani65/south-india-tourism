@@ -34,7 +34,7 @@ def home(request):
     posts = Post.objects.all().order_by('-created_at')[:3]
     return render(request, 'core/index.html', {'states': states, 'posts': posts})
 
-@cache_page(60 * 15)
+#@cache_page(60 * 15)
 def state_detail(request, state_slug):
     state = get_object_or_404(State, name__iexact=state_slug.replace('-', ' '))
     places = Place.objects.filter(state=state)
@@ -57,7 +57,8 @@ def state_detail(request, state_slug):
             'place': place,
             'weather': get_weather_data(place.location) if place.location else None,
             'latitude': place.latitude,
-            'longitude': place.longitude
+            'longitude': place.longitude,
+            'is_favorite': request.user.is_authenticated and place.favorited_by.filter(id=request.user.id).exists()
         }
         places_with_weather.append(place_data)
     
@@ -223,22 +224,29 @@ def add_review(request, place_id):
 @login_required
 def add_favorite(request, place_id):
     place = get_object_or_404(Place, id=place_id)
-    Favorite.objects.get_or_create(user=request.user, place=place)
+    # Add to both the ManyToMany field and the Favorite model
     place.favorited_by.add(request.user)
+    Favorite.objects.get_or_create(user=request.user, place=place)
     messages.success(request, f"{place.name} added to favorites!")
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
         return JsonResponse({'success': True})
-    return redirect('state_detail', state_slug=place.state.name.lower().replace(' ', '-'))
+    return redirect('core:state_detail', state_slug=place.state.name.lower().replace(' ', '-'))
 
 @login_required
 def remove_favorite(request, place_id):
     if request.method == 'POST':
         try:
             place = get_object_or_404(Place, id=place_id)
+            # Remove from both the ManyToMany field and the Favorite model
             place.favorited_by.remove(request.user)
+            Favorite.objects.filter(user=request.user, place=place).delete()
             messages.success(request, f'Removed {place.name} from your favorites')
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({'success': True})
         except Exception as e:
             messages.error(request, f'Error removing from favorites: {str(e)}')
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({'success': False, 'error': str(e)})
     return redirect('core:my_favorites')
 
 @login_required

@@ -1384,7 +1384,9 @@
                     🎪 {{ place_data.place.category|title }}
                   {% endif %}
                 </div>
-                {% if place_data.place.image %}
+                {% if place_data.place.image_url %}
+                  <img src="{{ place_data.place.image_url }}" class="card-img-top" alt="{{ place_data.place.name }}">
+                {% elif place_data.place.image %}
                   <img src="{{ place_data.place.image.url }}" class="card-img-top" alt="{{ place_data.place.name }}">
                 {% else %}
                   <div class="default-place-img"></div>
@@ -1409,12 +1411,7 @@
                       <i class="fas fa-map-marker-alt"></i> Show on Map
                     </button>
                   {% if user.is_authenticated %}
-                      <form method="post" action="{% url 'core:add_favorite' place_data.place.id %}" class="d-inline">
-                        {% csrf_token %}
-                        <button type="submit" class="btn btn-outline-secondary btn-sm">
-                          <i class="far fa-heart"></i>
-                        </button>
-                      </form>
+                    {% include 'core/partials/favorite_button.html' with place=place_data.place is_favorite=place_data.is_favorite %}
                   {% endif %}
                   </div>
                 </div>

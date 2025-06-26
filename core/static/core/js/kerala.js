@@ -298,13 +298,14 @@ document.addEventListener('DOMContentLoaded', function() {
       let html = '<div class="row p-3">';
       places.forEach(place => {
         const escapedName = place.name.replace(/'/g, "\\'").replace(/"/g, '"');
-        const isFavorite = favoriteNames.includes(place.name);
+        const rating = place.rating || 'N/A';
+        const reasoning = place.reasoning || 'No description available';
         html += `
           <div class="col-md-6 mb-4">
             <div class="card recommendation-card h-100 shadow-sm border-0">
               <div class="card-body d-flex flex-column">
                 <h5 class="card-title mb-2">${place.name}</h5>
-                <span class="recommendation-badge mb-2"><i class="fas fa-star"></i> Rating: ${place.rating || 'N/A'}</span>
+                <span class="recommendation-badge mb-2"><i class="fas fa-star"></i> Rating: ${rating}</span>
                 <div class="recommendation-weather mb-2 p-2 rounded bg-light">
                   <div><i class="fas fa-thermometer-half text-primary"></i> <b>Temperature:</b> ${weather.temperature ?? 'N/A'}°C</div>
                   <div><i class="fas fa-tint text-info"></i> <b>Humidity:</b> ${weather.humidity ?? 'N/A'}%</div>
@@ -313,13 +314,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 <div class="location-info mb-2 text-muted small">
                   <i class="fas fa-map-marker-alt"></i> ${place.latitude?.toFixed(4) ?? 'N/A'}, ${place.longitude?.toFixed(4) ?? 'N/A'}
                 </div>
-                <p class="reasoning mb-2"><em>"${place.reasoning}"</em></p>
+                <p class="reasoning mb-2"><em>"${reasoning}"</em></p>
                 <div class="mt-auto pt-2 d-flex gap-2">
                   <button class="btn btn-primary flex-fill" onclick="showOnMap('${place.latitude}', '${place.longitude}', '${escapedName}')">
                     <i class="fas fa-map-marker-alt"></i> View on Map
                   </button>
-                  <button class="btn ${isFavorite ? 'btn-danger' : 'btn-outline-secondary'} flex-fill" onclick="${isFavorite ? `removeFromFavorites('${escapedName}', ${place.latitude}, ${place.longitude}, this)` : `addToFavorites('${escapedName}', ${place.latitude}, ${place.longitude}, this)`}">
-                    <i class="${isFavorite ? 'fas fa-heart-broken' : 'far fa-heart'}"></i> ${isFavorite ? 'Remove' : 'Save'}
+                  <button class="btn btn-outline-secondary flex-fill" onclick="addToFavorites('${escapedName}', ${place.latitude}, ${place.longitude}, event)">
+                    <i class="far fa-heart"></i> Save
                   </button>
                 </div>
               </div>
@@ -338,7 +339,8 @@ document.addEventListener('DOMContentLoaded', function() {
         alert('CSRF token not found. Please refresh the page and try again.');
         return;
       }
-      fetch(window.ADD_REVIEW_URL.replace('add_review', 'add_recommended_favorite'), {
+      // Always POST directly to the correct endpoint for AI-recommended favorites
+      fetch('/add-recommended-favorite/', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

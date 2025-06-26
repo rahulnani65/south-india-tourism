@@ -72,12 +72,7 @@
                                     <a href="{% url 'core:state_detail' place_data.place.state.name|lower|slugify %}" class="btn btn-primary">
                                         <i class="fas fa-map-marked-alt"></i> Visit State
                                     </a>
-                                    <form method="post" action="{% url 'core:remove_favorite' place_data.place.id %}" class="d-inline">
-                                        {% csrf_token %}
-                                        <button type="submit" class="btn btn-outline-danger">
-                                            <i class="fas fa-heart"></i> Remove
-                                        </button>
-                                    </form>
+                                    {% include 'core/partials/favorite_button.html' with place=place_data.place remove_mode=True %}
                                 </div>
                             </div>
                         </div>

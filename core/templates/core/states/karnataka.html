@@ -1855,12 +1855,7 @@
                       <i class="fas fa-map-marker-alt"></i> Show on Map
                     </button>
                     {% if user.is_authenticated %}
-                      <form method="post" action="{% url 'core:add_favorite' place_data.place.id %}" class="d-inline">
-                        {% csrf_token %}
-                        <button type="submit" class="btn btn-outline-secondary btn-sm">
-                          <i class="far fa-heart"></i>
-                        </button>
-                      </form>
+                      {% include 'core/partials/favorite_button.html' with place=place_data.place is_favorite=place_data.is_favorite %}
                     {% endif %}
                   </div>
                 </div>
