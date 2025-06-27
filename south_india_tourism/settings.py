@@ -14,6 +14,7 @@ from pathlib import Path
 import os
 from dotenv import load_dotenv
 import logging
+import dj_database_url
 
 # Load environment variables from .env file
 load_dotenv()
@@ -32,7 +33,11 @@ SECRET_KEY = 'django-insecure--z)%y%1cy3&24xjuh6bbr(mg*h4m-%8g%95ad@-1^1ttsl(ufr
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
-ALLOWED_HOSTS = ['southindiatourism.up.railway.app'] 
+
+# Update ALLOWED_HOSTS after deployment (set temporarily)
+ALLOWED_HOSTS = ['*']
+# DEBUG = False
+# ALLOWED_HOSTS = ['southindiatourism.up.railway.app'] 
 
 
 # Application definition
@@ -91,15 +96,21 @@ WSGI_APPLICATION = 'south_india_tourism.wsgi.application'
 #     }
 # }
 
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.postgresql',
+#         'NAME': 'south_india_tourism',
+#         'USER': 'southindiauser',
+#         'PASSWORD': '1234',
+#         'HOST': 'localhost',
+#         'PORT': '5432',
+#     }
+# }
+
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'south_india_tourism',
-        'USER': 'southindiauser',
-        'PASSWORD': '1234',
-        'HOST': 'localhost',
-        'PORT': '5432',
-    }
+    'default': dj_database_url.config(
+        default=os.environ.get('DATABASE_URL')
+    )
 }
 
 
