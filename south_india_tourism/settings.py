@@ -31,9 +31,8 @@ logger = logging.getLogger(__name__)
 SECRET_KEY = 'django-insecure--z)%y%1cy3&24xjuh6bbr(mg*h4m-%8g%95ad@-1^1ttsl(ufr'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
-
-ALLOWED_HOSTS = []
+DEBUG = False
+ALLOWED_HOSTS = ['southindiatourism.up.railway.app'] 
 
 
 # Application definition

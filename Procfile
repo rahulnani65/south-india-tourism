@@ -1,0 +1,1 @@
+web: gunicorn south_india_tourism.wsgi --log-file - 

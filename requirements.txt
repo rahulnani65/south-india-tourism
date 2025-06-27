@@ -2,4 +2,9 @@ Django>=5.2.0
 requests>=2.31.0
 python-dotenv>=1.0.0
 google-generativeai>=0.3.0
-# composio-openai>=0.1.0 pytz==2025.2
+gunicorn>=21.0.0
+whitenoise>=6.0.0
+psycopg2-binary>=2.9.0
+Pillow>=10.0.0
+pytz>=2023.3
+# composio-openai>=0.1.0
