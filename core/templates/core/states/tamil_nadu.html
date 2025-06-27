@@ -13,6 +13,9 @@
   <link rel="stylesheet" href="{% static 'core/css/style.css' %}">
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600&family=Poppins:wght@300;500&display=swap" rel="stylesheet">
   
+  <!-- Enhanced Scripts -->
+  <script src="{% static 'core/js/enhanced-scripts.js' %}"></script>
+  
   <!-- Google Maps API -->
   <script>
     (g=>{var h,a,k,p="The Google Maps JavaScript API",c="google",l="importLibrary",q="__ib__",m=document,b=window;b=b[c]||(b[c]={});var d=b.maps||(b.maps={}),r=new Set,e=new URLSearchParams,u=()=>h||(h=new Promise(async(f,n)=>{await (a=m.createElement("script"));e.set("libraries",[...r]+"");for(k in g)e.set(k.replace(/[A-Z]/g,t=>"_"+t[0].toLowerCase()),g[k]);e.set("callback",c+".maps."+q);a.src=`https://maps.${c}apis.com/maps/api/js?`+e;d[q]=f;a.onerror=()=>h=n(Error(p+" could not load."));a.nonce=m.querySelector("script[nonce]")?.nonce||"";m.head.append(a)}));d[l]?console.warn(p+" only loads once. Ignoring:",g):d[l]=(f,...n)=>r.add(f)&&u().then(()=>d[l](f,...n))})({
@@ -1162,7 +1165,18 @@
         <p class="hero-subtitle text-white animate__animated animate__fadeInUp animate__delay-1s mb-4" style="font-size:1.5rem;text-shadow:0 2px 8px rgba(0,0,0,0.5);">{{ state.tagline|default:"The Land of Temples" }}</p>
         {% include 'core/partials/state_favorite_button.html' with state=state is_favorite=is_state_favorite %}
         <div class="d-flex flex-column flex-md-row gap-3 animate__animated animate__fadeInUp animate__delay-2s align-items-center justify-content-center">
-          <a href="#booking" class="btn btn-lg btn-primary ms-2">Plan Your Trip</a>
+          <div class="hero-cta-container">
+            <div class="floating-icon">
+              <i class="fas fa-temple-hindu fa-2x text-warning"></i>
+            </div>
+            <div class="hero-cta-text">
+              <span class="cta-main">Experience Tamil Nadu</span>
+              <span class="cta-sub">Land of temples, culture & heritage</span>
+            </div>
+            <div class="scroll-indicator">
+              <i class="fas fa-chevron-down fa-lg text-white"></i>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -2616,6 +2630,73 @@
   <script src="{% static 'core/js/tamil_nadu.js' %}"></script>
   <script>
     window.GEMINI_RECOMMENDATIONS_URL = "{% url 'core:get_gemini_recommendations' %}";
+  </script>
+  <script>
+    window.resetItinerary = function() {
+      const itineraryDiv = document.getElementById('generatedItinerary');
+      const daysDiv = document.getElementById('itineraryDays');
+      if (daysDiv) daysDiv.innerHTML = '';
+      if (itineraryDiv) itineraryDiv.classList.add('d-none');
+    };
+
+    // Smooth scrolling for anchor links
+    document.addEventListener('DOMContentLoaded', function() {
+      // Direct handler for Plan Your Trip button
+      const planTripBtn = document.querySelector('a[href="#booking"]');
+      if (planTripBtn) {
+        planTripBtn.addEventListener('click', function(e) {
+          e.preventDefault();
+          const target = document.getElementById('booking');
+          if (target) {
+            target.scrollIntoView({
+              behavior: 'smooth',
+              block: 'start'
+            });
+          }
+        });
+      }
+
+      document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener('click', function (e) {
+          e.preventDefault();
+          const target = document.querySelector(this.getAttribute('href'));
+          if (target) {
+            target.scrollIntoView({
+              behavior: 'smooth',
+              block: 'start'
+            });
+          }
+        });
+      });
+
+      // Smooth scrolling for secondary navigation
+      document.querySelectorAll('.secondary-nav .nav-link').forEach(link => {
+        link.addEventListener('click', (e) => {
+          e.preventDefault();
+          const targetId = link.getAttribute('href').substring(1);
+          const targetSection = document.getElementById(targetId);
+          
+          if (targetSection) {
+            targetSection.scrollIntoView({
+              behavior: 'smooth'
+            });
+          }
+        });
+      });
+    });
+  </script>
+  <!-- Function to handle Plan Your Trip button click -->
+  <script>
+    function scrollToBooking(event) {
+      event.preventDefault();
+      const target = document.getElementById('booking');
+      if (target) {
+        target.scrollIntoView({
+          behavior: 'smooth',
+          block: 'start'
+        });
+      }
+    }
   </script>
 </body>
 </html>

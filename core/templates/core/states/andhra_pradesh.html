@@ -220,7 +220,18 @@
         <p class="hero-subtitle text-white animate__animated animate__fadeInUp animate__delay-1s mb-4" style="font-size:1.5rem;text-shadow:0 2px 8px rgba(0,0,0,0.5);">{{ state.tagline|default:"The Land of Heritage" }}</p>
         {% include 'core/partials/state_favorite_button.html' with state=state is_favorite=is_state_favorite %}
         <div class="d-flex flex-column flex-md-row gap-3 animate__animated animate__fadeInUp animate__delay-2s align-items-center justify-content-center">
-          <a href="#booking" class="btn btn-lg btn-primary ms-2">Plan Your Trip</a>
+          <div class="hero-cta-container">
+            <div class="floating-icon">
+              <i class="fas fa-gem fa-2x text-primary"></i>
+            </div>
+            <div class="hero-cta-text">
+              <span class="cta-main">Discover Andhra Pradesh</span>
+              <span class="cta-sub">The Kohinoor of India</span>
+            </div>
+            <div class="scroll-indicator">
+              <i class="fas fa-chevron-down fa-lg text-white"></i>
+            </div>
+          </div>
         </div>
       </div>
     </div>

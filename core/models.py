@@ -87,12 +87,40 @@ class Itinerary(models.Model):
 
 class UserProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
-    preferred_categories = models.JSONField(default=list)
-    budget_preference = models.CharField(max_length=50, blank=True)
+    bio = models.TextField(blank=True, max_length=500)
+    profile_picture = models.URLField(blank=True, null=True)
+    phone_number = models.CharField(max_length=15, blank=True)
+    location = models.CharField(max_length=100, blank=True)
     travel_style = models.CharField(max_length=50, blank=True)
+    favorite_state = models.ForeignKey(State, on_delete=models.SET_NULL, null=True, blank=True)
+    total_places_visited = models.IntegerField(default=0)
+    total_reviews = models.IntegerField(default=0)
+    total_favorites = models.IntegerField(default=0)
+    travel_bucket_list = models.JSONField(default=list)
+    achievements = models.JSONField(default=list)
+    ai_personality_analysis = models.JSONField(default=dict)
 
     def __str__(self):
         return f"{self.user.username}'s Profile"
+    
+    def update_stats(self):
+        """Update user statistics"""
+        self.total_places_visited = Favorite.objects.filter(user=self.user).count()
+        self.total_reviews = self.user.review_set.count()
+        self.total_favorites = Favorite.objects.filter(user=self.user).count() + self.user.favorite_states.count()
+        self.save()
+    
+    def get_travel_level(self):
+        """Get user's travel level based on activity"""
+        total_activity = self.total_places_visited + self.total_reviews + self.total_favorites
+        if total_activity >= 50:
+            return "Travel Expert"
+        elif total_activity >= 25:
+            return "Travel Enthusiast"
+        elif total_activity >= 10:
+            return "Travel Explorer"
+        else:
+            return "Travel Beginner"
 
 class Review(models.Model):
     place = models.ForeignKey(Place, on_delete=models.CASCADE, related_name='reviews')
@@ -116,7 +144,7 @@ class TelegramUser(models.Model):
 class Contact(models.Model):
     name = models.CharField(max_length=100)
     email = models.EmailField()
-    phone = models.CharField(max_length=20)  # Added phone field as used in views
+    phone = models.CharField(max_length=20, blank=True, null=True)  # Made optional
     subject = models.CharField(max_length=200)
     message = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)

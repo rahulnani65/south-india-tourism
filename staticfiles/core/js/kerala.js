@@ -1,5 +1,5 @@
-// static/core/js/telangana.js
-// This file contains all the client-side JavaScript logic for the enhanced Telangana state page.
+// static/core/js/kerala.js
+// This file contains all the client-side JavaScript logic for the enhanced Kerala state page.
 
 document.addEventListener('DOMContentLoaded', function() {
     'use strict';
@@ -16,7 +16,6 @@ document.addEventListener('DOMContentLoaded', function() {
       initializeNavbarScroll();
       initializeBackToTopButton();
       initializeCategoryFilter();
-      initializeMapModal();
       initializeCalendar();
       // Functions called from HTML via onclick don't need to be in an initializer
     }
@@ -118,16 +117,16 @@ document.addEventListener('DOMContentLoaded', function() {
         console.error("Map modal or coordinates not available.");
         return;
       }
-      
       mapModalInstance.show();
-      
       const position = { lat: parseFloat(lat), lng: parseFloat(lng) };
       const modalTitle = document.getElementById('mapModalLabel');
       if(modalTitle) modalTitle.textContent = name;
-  
-      if (!modalMap) {
+      // Always re-create the map and marker for each place
+      setTimeout(() => {
         const mapContainer = document.getElementById('modalMapContainer');
-        if(mapContainer) {
+        if (mapContainer) {
+          // Remove any previous map instance by clearing the container
+          mapContainer.innerHTML = '';
           modalMap = new google.maps.Map(mapContainer, {
             zoom: 15,
             center: position,
@@ -135,31 +134,28 @@ document.addEventListener('DOMContentLoaded', function() {
             streetViewControl: true,
             fullscreenControl: true,
           });
+          modalMarker = new google.maps.Marker({
+            position: position,
+            map: modalMap,
+            title: name,
+            animation: google.maps.Animation.DROP,
+          });
+          google.maps.event.trigger(modalMap, 'resize');
+          modalMap.setCenter(position);
         }
-      } else {
-        modalMap.setCenter(position);
-      }
-  
-      if (modalMarker) {
-        modalMarker.setMap(null); // Clear previous marker
-      }
-  
-      modalMarker = new google.maps.Marker({
-        position: position,
-        map: modalMap,
-        title: name,
-        animation: google.maps.Animation.DROP,
-      });
+      }, 300); // Wait for modal animation
     };
   
     // --- EVENTS CALENDAR LOGIC ---
   
     function initializeCalendar() {
       const events = [
-        { date: new Date('2025-02-15'), title: 'Medaram Jatara', place: 'Medaram', description: 'One of the largest tribal gatherings in the world, celebrating tribal deities.' },
-        { date: new Date('2025-03-29'), title: 'Ugadi', place: 'Throughout Telangana', description: 'The Telugu New Year, celebrated with special dishes like Ugadi Pachadi.' },
-        { date: new Date('2025-07-07'), title: 'Bonalu', place: 'Hyderabad & Secunderabad', description: 'A vibrant festival dedicated to the Goddess Mahakali, with processions and offerings.' },
-        { date: new Date('2025-09-25'), title: 'Bathukamma', place: 'Throughout Telangana', description: 'A unique floral festival where women create beautiful flower stacks and celebrate womanhood.' }
+        { date: new Date('2025-01-14'), title: 'Makaravilakku', place: 'Sabarimala', description: 'Sacred festival at Sabarimala temple with divine light appearance.' },
+        { date: new Date('2025-04-14'), title: 'Vishu', place: 'Throughout Kerala', description: 'Kerala New Year celebrated with Vishu Kani and traditional feast.' },
+        { date: new Date('2025-08-15'), title: 'Onam', place: 'Throughout Kerala', description: 'Harvest festival celebrating King Mahabali with boat races and feasts.' },
+        { date: new Date('2025-09-17'), title: 'Thrissur Pooram', place: 'Thrissur', description: 'Grand temple festival with spectacular elephant processions.' },
+        { date: new Date('2025-10-24'), title: 'Navaratri', place: 'Throughout Kerala', description: 'Nine nights of devotion with traditional music and dance.' },
+        { date: new Date('2025-11-12'), title: 'Diwali', place: 'Throughout Kerala', description: 'Festival of lights celebrated with fireworks and sweets.' }
       ];
   
       let currentDate = new Date();
@@ -247,23 +243,19 @@ document.addEventListener('DOMContentLoaded', function() {
     window.fetchGeminiRecommendations = function() {
       const placeSelect = document.getElementById("user-place");
       const recommendationsDiv = document.getElementById("gemini-recommended-places");
-      
       if (!placeSelect || !recommendationsDiv) return;
-  
       const selectedOption = placeSelect.options[placeSelect.selectedIndex];
       const latitude = selectedOption.getAttribute('data-lat');
       const longitude = selectedOption.getAttribute('data-lng');
       const placeType = document.getElementById("gemini-place-type").value;
       const budget = document.getElementById("budget").value;
       const duration = document.getElementById("duration").value;
-  
       if (!latitude || !longitude) {
         alert("Please select your current location to get personalized recommendations.");
         return;
       }
-  
       recommendationsDiv.innerHTML = `<div class="recommendation-loading"><div class="spinner-border text-success" role="status"></div><h5 class="mt-3">Analyzing your preferences...</h5></div>`;
-  
+      // Remove the allowed_places restriction to allow broader recommendations
       const params = new URLSearchParams({
           latitude,
           longitude,
@@ -272,9 +264,8 @@ document.addEventListener('DOMContentLoaded', function() {
           budget,
           duration,
           enhanced: 'true',
-          context: 'telangana' // CRITICAL: This provides context to the AI
+          context: 'kerala' // CRITICAL: This provides context to the AI
       });
-  
       fetch(`${geminiApiUrl}?${params.toString()}`)
         .then(response => {
             if (!response.ok) throw new Error(`Network response was not ok: ${response.statusText}`);
@@ -292,46 +283,44 @@ document.addEventListener('DOMContentLoaded', function() {
   
     function renderRecommendations(data) {
       const recommendationsDiv = document.getElementById("gemini-recommended-places");
-      const places = data.gemini_recommended_places;
-      const weatherData = data.weather_data;
-      let html = '';
-      if (weatherData) {
-        html += `
-          <div class="recommendation-weather m-3">
-            <div class="card">
-              <div class="card-body">
-                <h5 class="card-title"><i class="fas fa-cloud-sun"></i> Current Weather in the area</h5>
-                <div class="row">
-                  <div class="col-md-3"><p class="mb-0"><strong>Temperature:</strong> ${weatherData.temperature}°C</p></div>
-                  <div class="col-md-3"><p class="mb-0"><strong>Weather:</strong> ${weatherData.weather}</p></div>
-                  <div class="col-md-3"><p class="mb-0"><strong>Humidity:</strong> ${weatherData.humidity}%</p></div>
-                  <div class="col-md-3"><p class="mb-0"><strong>Description:</strong> ${weatherData.description}</p></div>
-                </div>
-              </div>
-            </div>
-          </div>`;
+      if (data.error) {
+        recommendationsDiv.innerHTML = `<div class="alert alert-info m-3">${data.error}</div>`;
+        return;
       }
-      html += '<div class="row p-3">';
+      const places = data.gemini_recommended_places;
+      const weather = data.weather_data || {};
       if (!places || places.length === 0) {
           recommendationsDiv.innerHTML = `<div class="alert alert-info m-3">No recommendations found. Please try different filters.</div>`;
           return;
       }
-  
+      // Track favorites in-memory for this session (for demo; ideally, fetch from backend)
+      let favoriteNames = window.FAVORITE_PLACE_NAMES || [];
+      let html = '<div class="row p-3">';
       places.forEach(place => {
         const escapedName = place.name.replace(/'/g, "\\'").replace(/"/g, '"');
+        const rating = place.rating || 'N/A';
+        const reasoning = place.reasoning || 'No description available';
         html += `
           <div class="col-md-6 mb-4">
-            <div class="card recommendation-card h-100">
+            <div class="card recommendation-card h-100 shadow-sm border-0">
               <div class="card-body d-flex flex-column">
-                <h5 class="card-title">${place.name}</h5>
-                <span class="recommendation-badge mb-2"><i class="fas fa-star"></i> Rating: ${place.rating || 'N/A'}</span>
-                <p class="reasoning"><em>"${place.reasoning}"</em></p>
+                <h5 class="card-title mb-2">${place.name}</h5>
+                <span class="recommendation-badge mb-2"><i class="fas fa-star"></i> Rating: ${rating}</span>
+                <div class="recommendation-weather mb-2 p-2 rounded bg-light">
+                  <div><i class="fas fa-thermometer-half text-primary"></i> <b>Temperature:</b> ${weather.temperature ?? 'N/A'}°C</div>
+                  <div><i class="fas fa-tint text-info"></i> <b>Humidity:</b> ${weather.humidity ?? 'N/A'}%</div>
+                  <div><i class="fas fa-cloud text-secondary"></i> <b>Condition:</b> ${weather.description ?? 'N/A'}</div>
+                </div>
+                <div class="location-info mb-2 text-muted small">
+                  <i class="fas fa-map-marker-alt"></i> ${place.latitude?.toFixed(4) ?? 'N/A'}, ${place.longitude?.toFixed(4) ?? 'N/A'}
+                </div>
+                <p class="reasoning mb-2"><em>"${reasoning}"</em></p>
                 <div class="mt-auto pt-2 d-flex gap-2">
-                  <button class="btn btn-primary flex-fill" onclick="showPlaceOnMap('${place.latitude}', '${place.longitude}', '${escapedName}')">
-                    <i class="fas fa-map-marker-alt"></i> Show on Map
+                  <button class="btn btn-primary flex-fill" onclick="showOnMap('${place.latitude}', '${place.longitude}', '${escapedName}')">
+                    <i class="fas fa-map-marker-alt"></i> View on Map
                   </button>
-                  <button class="btn btn-outline-secondary flex-fill" onclick="addToFavorites('${escapedName}', ${place.latitude}, ${place.longitude}, event)">
-                    <i class="far fa-heart"></i> Save to Favorites
+                  <button class="btn btn-outline-secondary flex-fill" onclick="addToFavorites('${escapedName}', ${place.latitude}, ${place.longitude}, this)">
+                    <i class="far fa-heart"></i> Save
                   </button>
                 </div>
               </div>
@@ -343,13 +332,70 @@ document.addEventListener('DOMContentLoaded', function() {
       recommendationsDiv.innerHTML = html;
     }
   
-    // Exposed to window for onclick attribute in HTML
-    window.clearRecommendations = function() {
-      const recommendationsDiv = document.getElementById("gemini-recommended-places");
-      if(recommendationsDiv) {
-          recommendationsDiv.innerHTML = `<div class="recommendation-placeholder text-center"><i class="fas fa-compass fa-3x text-muted mb-3"></i><h5>Ready to Discover?</h5><p>Select your preferences above and get personalized recommendations.</p></div>`;
+    // Add to Favorites logic for AI-recommended places
+    window.addToFavorites = function(name, latitude, longitude, btn) {
+      const csrfToken = getCSRFToken();
+      if (!csrfToken) {
+        alert('CSRF token not found. Please refresh the page and try again.');
+        return;
       }
+      fetch('/add-recommended-favorite/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': csrfToken
+        },
+        body: JSON.stringify({ name, latitude, longitude })
+      })
+      .then(async response => {
+        const contentType = response.headers.get('content-type');
+        let data = null;
+        if (contentType && contentType.includes('application/json')) {
+          data = await response.json();
+        } else {
+          throw new Error('Unexpected server response. Please log in and try again.');
+        }
+        if (data.success) {
+          btn.classList.remove('btn-outline-secondary');
+          btn.classList.add('btn-success');
+          btn.disabled = true;
+          btn.innerHTML = '<i class="fas fa-heart"></i> Added to Favorites';
+          window.FAVORITE_PLACE_NAMES = (window.FAVORITE_PLACE_NAMES || []);
+          if (!window.FAVORITE_PLACE_NAMES.includes(name)) window.FAVORITE_PLACE_NAMES.push(name);
+          showToast('Added to favorites!', 'success');
+        } else {
+          showToast('Error adding to favorites: ' + (data.error || 'Unknown error'), 'danger');
+        }
+      })
+      .catch(error => {
+        showToast('Error adding to favorites: ' + error.message, 'danger');
+      });
     };
+    window.removeFromFavorites = function(name, latitude, longitude, btn) {
+      btn.classList.remove('btn-danger');
+      btn.classList.add('btn-outline-secondary');
+      btn.innerHTML = '<i class="far fa-heart"></i> Save';
+      btn.onclick = function() { addToFavorites(name, latitude, longitude, btn); };
+      window.FAVORITE_PLACE_NAMES = (window.FAVORITE_PLACE_NAMES || []).filter(n => n !== name);
+      showToast('Removed from favorites.', 'info');
+    };
+    // Toast feedback
+    function showToast(message, type) {
+      let toast = document.getElementById('gemini-toast');
+      if (!toast) {
+        toast = document.createElement('div');
+        toast.id = 'gemini-toast';
+        toast.className = 'toast align-items-center text-bg-' + type + ' border-0 position-fixed top-0 end-0 m-4';
+        toast.style.zIndex = 2000;
+        toast.innerHTML = `<div class="d-flex"><div class="toast-body">${message}</div><button type="button" class="btn-close btn-close-white me-2 m-auto" onclick="this.parentElement.parentElement.remove()"></button></div>`;
+        document.body.appendChild(toast);
+      } else {
+        toast.querySelector('.toast-body').textContent = message;
+        toast.className = 'toast align-items-center text-bg-' + type + ' border-0 position-fixed top-0 end-0 m-4';
+      }
+      toast.style.display = 'block';
+      setTimeout(() => { if (toast) toast.style.display = 'none'; }, 3000);
+    }
   
     // --- Review System ---
     let selectedRating = 0;
@@ -468,6 +514,7 @@ document.addEventListener('DOMContentLoaded', function() {
         alert('Please enter a starting point');
         return;
       }
+      // Disable button and show loading
       if (genBtn) {
         genBtn.disabled = true;
         genBtn.classList.add('btn-loading');
@@ -519,17 +566,19 @@ document.addEventListener('DOMContentLoaded', function() {
           latitude: p.latitude,
           longitude: p.longitude
         }));
+        // Find starting point coordinates
         const startingPlace = places.find(p =>
           p.name.toLowerCase().includes(startingPoint.toLowerCase()) ||
           startingPoint.toLowerCase().includes(p.name.toLowerCase())
         );
-        const latitude = startingPlace ? startingPlace.latitude : 17.3850;
-        const longitude = startingPlace ? startingPlace.longitude : 78.4867;
+        const latitude = startingPlace ? startingPlace.latitude : 9.9312; // Default to Kochi
+        const longitude = startingPlace ? startingPlace.longitude : 76.2673;
+        // Build Gemini AI URL
         const geminiUrl = (window.GEMINI_RECOMMENDATIONS_URL || '/state/get-gemini-recommendations/') +
           `?latitude=${latitude}&longitude=${longitude}` +
           `&user_place=${encodeURIComponent(startingPoint)}` +
           `&place_type=tourist_attraction&budget=${style}&duration=${duration}` +
-          `&itinerary=true&travel_style=${style}&trip_duration=${duration}&context=telangana`;
+          `&itinerary=true&travel_style=${style}&trip_duration=${duration}&context=kerala`;
         fetch(geminiUrl, {
           method: 'GET',
           headers: {
@@ -543,34 +592,22 @@ document.addEventListener('DOMContentLoaded', function() {
         })
         .then(data => {
           const aiPlaces = data.gemini_recommended_places || [];
-          const container = document.getElementById('itineraryDays');
-          container.innerHTML = `
-            <div class="alert alert-success mb-4">
-              <i class="fas fa-check-circle"></i>
-              Your ${duration}-day ${style} itinerary is ready!
-            </div>
-          `;
           const itineraryDays = createSmartItinerary(duration, style, startingPoint, places, aiPlaces);
           displayItinerary(itineraryDays, startingPoint);
           const generatedItineraryDiv = document.getElementById('generatedItinerary');
           if (generatedItineraryDiv) generatedItineraryDiv.classList.remove('d-none');
+          // Re-enable button
           if (genBtn) {
             genBtn.disabled = false;
             genBtn.classList.remove('btn-loading');
           }
+          // Smooth scroll to results
           setTimeout(() => {
             document.getElementById('generatedItinerary').scrollIntoView({ behavior: 'smooth' });
           }, 100);
         })
         .catch(error => {
-          console.warn('AI recommendation failed, falling back to local places:', error);
-          const container = document.getElementById('itineraryDays');
-          container.innerHTML = `
-            <div class="alert alert-info mb-4">
-              <i class="fas fa-info-circle"></i>
-              Using our local database to create your ${duration}-day ${style} itinerary.
-            </div>
-          `;
+          console.warn('AI recommendation failed, falling back to smart itinerary:', error);
           const itineraryDays = createSmartItinerary(duration, style, startingPoint, places, []);
           displayItinerary(itineraryDays, startingPoint);
           const generatedItineraryDiv = document.getElementById('generatedItinerary');
@@ -604,35 +641,42 @@ document.addEventListener('DOMContentLoaded', function() {
   
     function createSmartItinerary(duration, style, startingPoint, places, aiPlaces) {
       const itineraryDays = [];
-      
       const aiPlaceMap = new Map((aiPlaces || []).map(place => [place.name.toLowerCase(), {
         ...place,
         reasoning: place.reasoning || 'Recommended based on your preferences'
       }]));
-      
-      const combinedPlaces = new Map();
-      places.forEach(p => combinedPlaces.set(p.name.toLowerCase(), p));
-      aiPlaces.forEach(p => {
-          combinedPlaces.set(p.name.toLowerCase(), {
-              ...p,
-              latitude: p.latitude || null,
-              longitude: p.longitude || null,
-          });
-      });
-      const allPlaces = Array.from(combinedPlaces.values());
-
-      let availablePlaces = filterPlacesByStyle(allPlaces, style);
-
-      if (availablePlaces.length < duration) {
-          availablePlaces = allPlaces;
+      let allPlaces = [...places];
+      if (aiPlaces && aiPlaces.length > 0) {
+        const aiPlaceNames = new Set(aiPlaces.map(p => p.name.toLowerCase()));
+        const aiMatchedPlaces = places.filter(p => aiPlaceNames.has(p.name.toLowerCase()));
+        const otherPlaces = places.filter(p => !aiPlaceNames.has(p.name.toLowerCase()));
+        allPlaces = [...aiMatchedPlaces, ...otherPlaces];
       }
-    
-      let shuffledPlaces = shuffleArray(availablePlaces);
-      const placesPerDay = Math.ceil(shuffledPlaces.length / duration);
-    
+      let filteredPlaces = filterPlacesByStyle(allPlaces, style);
+      const categories = ['temple', 'beach', 'hill', 'museum', 'park', 'fort', 'palace', 'garden', 'market', 'resort'];
+      const categoryPlaces = {};
+      categories.forEach(category => {
+        categoryPlaces[category] = allPlaces.filter(p =>
+          p.name.toLowerCase().includes(category) ||
+          (p.category && p.category.toLowerCase().includes(category))
+        );
+      });
+      if (filteredPlaces.length < duration * 3) {
+        const additionalPlaces = [];
+        categories.forEach(category => {
+          if (categoryPlaces[category].length > 0) {
+            const categorySample = categoryPlaces[category].slice(0, 2);
+            additionalPlaces.push(...categorySample);
+          }
+        });
+        const uniqueAdditional = additionalPlaces.filter(p =>
+          !filteredPlaces.some(fp => fp.id === p.id)
+        );
+        filteredPlaces = [...filteredPlaces, ...uniqueAdditional];
+      }
+      filteredPlaces = shuffleArray(filteredPlaces);
       for (let day = 1; day <= duration; day++) {
-        const dayPlaces = shuffledPlaces.splice(0, placesPerDay);
-        
+        const dayPlaces = getDiversePlacesForDay(filteredPlaces, day, duration);
         if (dayPlaces.length > 0) {
           itineraryDays.push({
             day,
@@ -641,34 +685,45 @@ document.addEventListener('DOMContentLoaded', function() {
           });
         }
       }
-      
+      while (itineraryDays.length < duration) {
+        const remainingPlaces = filteredPlaces.filter(p =>
+          !itineraryDays.some(day => day.places.find(dp => dp.id === p.id))
+        );
+        if (remainingPlaces.length === 0) break;
+        const dayPlaces = shuffleArray(remainingPlaces).slice(0, 2);
+        itineraryDays.push({
+          day: itineraryDays.length + 1,
+          places: dayPlaces,
+          aiInsights: []
+        });
+      }
       return itineraryDays;
     }
   
     function filterPlacesByStyle(places, style) {
       return places.filter(p => {
-          const name = p.name.toLowerCase();
-          const category = (p.category || '').toLowerCase();
-          switch (style) {
-              case 'adventure':
-                  return ['adventure', 'park', 'hill', 'wildlife', 'forest', 'waterfall', 'trek', 'climbing'].some(c =>
-                      category.includes(c) || name.includes(c)
-                  );
-              case 'cultural':
-                  return ['temple', 'museum', 'cultural', 'historical', 'fort', 'palace', 'heritage', 'monument'].some(c =>
-                      category.includes(c) || name.includes(c)
-                  );
-              case 'relaxation':
-                  return ['beach', 'hill', 'garden', 'lake', 'resort', 'spa', 'wellness', 'meditation'].some(c =>
-                      category.includes(c) || name.includes(c)
-                  );
-              case 'luxury':
-                  return ['resort', 'spa', 'hotel', 'palace', 'heritage', 'premium', 'exclusive'].some(c =>
-                      category.includes(c) || name.includes(c)
-                  );
-              default:
-                  return true;
-          }
+        const name = p.name.toLowerCase();
+        const category = (p.category || '').toLowerCase();
+        switch (style) {
+          case 'adventure':
+            return ['adventure', 'park', 'hill', 'wildlife', 'forest', 'waterfall', 'trek', 'climbing'].some(c =>
+              category.includes(c) || name.includes(c)
+            );
+          case 'cultural':
+            return ['temple', 'museum', 'cultural', 'historical', 'fort', 'palace', 'heritage', 'monument'].some(c =>
+              category.includes(c) || name.includes(c)
+            );
+          case 'relaxation':
+            return ['beach', 'hill', 'garden', 'lake', 'resort', 'spa', 'wellness', 'meditation'].some(c =>
+              category.includes(c) || name.includes(c)
+            );
+          case 'luxury':
+            return ['resort', 'spa', 'hotel', 'palace', 'heritage', 'premium', 'exclusive'].some(c =>
+              category.includes(c) || name.includes(c)
+            );
+          default:
+            return true;
+        }
       });
     }
   
@@ -681,40 +736,40 @@ document.addEventListener('DOMContentLoaded', function() {
       return shuffled;
     }
   
+    function getDiversePlacesForDay(filteredPlaces, day, duration) {
+      const perDay = Math.ceil(filteredPlaces.length / duration);
+      const start = (day - 1) * perDay;
+      return filteredPlaces.slice(start, start + perDay);
+    }
+  
     function displayItinerary(itineraryDays, startingPoint) {
       const container = document.getElementById('itineraryDays');
-      if (!container) return;
-
-      const itineraryHtml = itineraryDays.map(dayData => `
-          <div class="itinerary-day">
-              <h6><i class="fas fa-calendar-day"></i> Day ${dayData.day}</h6>
-              ${dayData.day === 1 ? `<p class="text-muted mb-3"><i class="fas fa-map-marker-alt"></i> Starting from: ${startingPoint}</p>` : ''}
-              ${dayData.places.map((place, index) => {
-                  const aiInsight = dayData.aiInsights[index];
-                  const mapButton = (place.latitude && place.longitude)
-                      ? `<button class="btn btn-outline-primary btn-sm ms-2" onclick="showPlaceOnMap('${place.latitude}', '${place.longitude}', '${place.name.replace(/'/g, "\\'")}')">
-                             <i class="fas fa-map-marker-alt"></i> Show on Map
-                         </button>`
-                      : '';
-                  return `
-                      <div class="itinerary-place">
-                          <div class="place-details">
-                              <strong>${place.name}</strong>
-                              <small class="text-muted d-block">${place.category || 'Recommended Place'}</small>
-                              ${aiInsight ? `
-                                  <div class="ai-insight mt-2">
-                                      <i class="fas fa-robot text-primary"></i>
-                                      <small class="text-primary">AI Insight: ${aiInsight.reasoning}</small>
-                                  </div>` : ''}
-                          </div>
-                          ${mapButton}
-                      </div>
-                  `;
-              }).join('')}
-          </div>
+      let html = itineraryDays.map(dayData => `
+        <div class="itinerary-day">
+          <h6><i class="fas fa-calendar-day"></i> Day ${dayData.day}</h6>
+          ${dayData.day === 1 ? `<p class="text-muted mb-3"><i class="fas fa-map-marker-alt"></i> Starting from: ${startingPoint}</p>` : ''}
+          ${dayData.places.map((place, index) => {
+            const aiInsight = dayData.aiInsights[index];
+            return `
+              <div class="itinerary-place">
+                <div class="place-details">
+                  <strong>${place.name}</strong>
+                  <small class="text-muted d-block">${place.category}</small>
+                  ${aiInsight ? `
+                    <div class="ai-insight mt-2">
+                      <i class="fas fa-robot text-primary"></i>
+                      <small class="text-primary">AI Insight: ${aiInsight.reasoning}</small>
+                    </div>` : ''}
+                </div>
+                <button class="btn btn-outline-primary btn-sm ms-2" onclick="showOnMap('${place.latitude}', '${place.longitude}', '${place.name.replace(/'/g, "\\'")}')">
+                  <i class="fas fa-map-marker-alt"></i> Show on Map
+                </button>
+              </div>
+            `;
+          }).join('')}
+        </div>
       `).join('');
-
-      container.innerHTML += itineraryHtml;
+      container.innerHTML = html;
     }
   
     // --- ITINERARY BUTTONS ---
@@ -749,45 +804,6 @@ document.addEventListener('DOMContentLoaded', function() {
       const daysDiv = document.getElementById('itineraryDays');
       if (daysDiv) daysDiv.innerHTML = '';
       if (itineraryDiv) itineraryDiv.classList.add('d-none');
-    };
-  
-    // --- FAVORITES SYSTEM FOR STATIC CARDS ---
-    window.toggleFavorite = function(placeId, btn, isFavorite) {
-      const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || getCSRFToken();
-      if (!csrfToken) {
-        alert('CSRF token not found. Please refresh the page and try again.');
-        return;
-      }
-      const url = isFavorite ? `/remove-favorite/${placeId}/` : `/add-favorite/${placeId}/`;
-      fetch(url, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-CSRFToken': csrfToken
-        },
-        body: JSON.stringify({})
-      })
-      .then(response => response.json ? response.json() : response)
-      .then(data => {
-        if (data.success || data.status === 'ok') {
-          if (isFavorite) {
-            btn.classList.remove('btn-danger');
-            btn.classList.add('btn-outline-secondary');
-            btn.innerHTML = '<i class="far fa-heart"></i> Save to Favorites';
-            btn.onclick = function() { toggleFavorite(placeId, btn, false); };
-          } else {
-            btn.classList.remove('btn-outline-secondary');
-            btn.classList.add('btn-danger');
-            btn.innerHTML = '<i class="fas fa-heart-broken"></i> Remove from Favorites';
-            btn.onclick = function() { toggleFavorite(placeId, btn, true); };
-          }
-        } else {
-          alert('Error updating favorite: ' + (data.error || 'Unknown error'));
-        }
-      })
-      .catch(error => {
-        alert('Error updating favorite: ' + error.message);
-      });
     };
   
     // --- RUN INITIALIZATION ---
