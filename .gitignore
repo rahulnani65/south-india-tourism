@@ -1,1 +1,13 @@
-env/
+# Python
+__pycache__/
+*.pyc
+
+# Django
+db.sqlite3
+
+# Database Dumps
+*.sql
+*.dump
+
+# Environment
+.env
