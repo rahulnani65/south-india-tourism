@@ -34,6 +34,8 @@ class Place(models.Model):
     safety_tip = models.TextField(blank=True)
     average_rating = models.FloatField(default=0.0)
     visit_count = models.IntegerField(default=0)
+    is_featured = models.BooleanField(default=False)
+
     favorited_by = models.ManyToManyField(User, related_name='favorite_places', blank=True)
     image_url = models.URLField(blank=True, null=True)
 
