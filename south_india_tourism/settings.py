@@ -251,6 +251,7 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'core.middleware.NoCacheMiddleware',  # Custom middleware for cache control
+    'core.middleware.LoginRequiredMiddleware',  # Custom middleware for login requirements
 ]
 
 ROOT_URLCONF = 'south_india_tourism.urls'

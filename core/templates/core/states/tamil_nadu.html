@@ -1327,10 +1327,12 @@
                 <div class="category-badge">
                   {{ place_data.place.category|title }}
                 </div>
-                {% if place_data.place.image %}
+                {% if place_data.place.image_url %}
+                  <img src="{{ place_data.place.image_url }}" class="card-img-top" alt="{{ place_data.place.name }}">
+                {% elif place_data.place.image %}
                   <img src="{{ place_data.place.image.url }}" class="card-img-top" alt="{{ place_data.place.name }}">
                 {% else %}
-                  <div class="default-place-img"></div>
+                  <img src="https://via.placeholder.com/400x200?text=No+Image" class="card-img-top" alt="No image available">
                 {% endif %}
                 <div class="card-body">
                   <h5 class="card-title">{{ place_data.place.name }}</h5>

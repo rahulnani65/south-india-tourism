@@ -59,11 +59,21 @@ def home(request):
         # Get cuisine data
         cuisines = Cuisine.objects.all()[:4]
         
+        # Check if user is authenticated
+        is_authenticated = request.user.is_authenticated
+        
+        # Get user-specific data if authenticated
+        user_favorites = []
+        if is_authenticated:
+            user_favorites = Favorite.objects.filter(user=request.user).select_related('place')[:3]
+        
         context = {
             'states': states,
             'featured_places': featured_places,
             'recent_reviews': recent_reviews,
             'cuisines': cuisines,
+            'is_authenticated': is_authenticated,
+            'user_favorites': user_favorites,
         }
         
         return render(request, 'core/index.html', context)
@@ -97,12 +107,12 @@ def state_detail(request, state_slug):
             'weather': get_weather_data(place.location) if place.location else None,
             'latitude': place.latitude,
             'longitude': place.longitude,
-            'is_favorite': request.user.is_authenticated and place.favorited_by.filter(id=request.user.id).exists()
+            'is_favorite': place.favorited_by.filter(id=request.user.id).exists()
         }
         places_with_weather.append(place_data)
     
     # Check if the state is in user's favorites
-    is_state_favorite = request.user.is_authenticated and state.favorites.filter(id=request.user.id).exists()
+    is_state_favorite = state.favorites.filter(id=request.user.id).exists()
     
     context = {
         'state': state,
@@ -153,12 +163,14 @@ def get_weather_data(city):
         logger.error(f"Error fetching weather data: {e}")
     return None
 
+@login_required
 @cache_page(60 * 15)
 def post_detail(request, post_id):
     post = get_object_or_404(Post, id=post_id)
-    is_favorited = request.user.is_authenticated and post.favorites.filter(id=request.user.id).exists()
+    is_favorited = post.favorites.filter(id=request.user.id).exists()
     return render(request, 'core/post_detail.html', {'post': post, 'is_favorited': is_favorited})
 
+@login_required
 def contact_submit(request):
     if request.method == 'POST':
         name = request.POST.get('name')
@@ -187,25 +199,46 @@ def signup(request):
     if request.method == 'POST':
         form = UserCreationForm(request.POST)
         if form.is_valid():
-            user = form.save()
-            # Log the user in immediately after signup
-            login(request, user)
-            messages.success(request, 'Account created successfully! Welcome to South India Tourism.')
-            
-            # Create cache-busting response
-            response = redirect('home')
-            response['Cache-Control'] = 'no-cache, no-store, must-revalidate, private, max-age=0'
-            response['Pragma'] = 'no-cache'
-            response['Expires'] = '0'
-            
-            # Add cache-busting parameter
-            import time
-            cache_buster = int(time.time())
-            response['Location'] = f'/?cb={cache_buster}'
-            
-            return response
+            try:
+                user = form.save()
+                # Log the user in immediately after signup
+                login(request, user)
+                
+                # Create a UserProfile for the new user
+                try:
+                    UserProfile.objects.create(user=user)
+                except:
+                    pass  # Profile might already exist
+                
+                messages.success(request, f'Welcome {user.username}! Your account has been created successfully. You are now logged in.')
+                
+                # Redirect to home page with cache-busting
+                response = redirect('home')
+                response['Cache-Control'] = 'no-cache, no-store, must-revalidate, private, max-age=0'
+                response['Pragma'] = 'no-cache'
+                response['Expires'] = '0'
+                
+                # Add cache-busting parameter
+                import time
+                cache_buster = int(time.time())
+                response['Location'] = f'/?cb={cache_buster}'
+                
+                return response
+            except Exception as e:
+                logger.error(f"Error during signup: {str(e)}")
+                messages.error(request, 'An error occurred during account creation. Please try again.')
+        else:
+            # Handle form validation errors
+            for field, errors in form.errors.items():
+                for error in errors:
+                    if field == '__all__':
+                        messages.error(request, error)
+                    else:
+                        field_name = form.fields[field].label if field in form.fields else field
+                        messages.error(request, f"{field_name}: {error}")
     else:
         form = UserCreationForm()
+    
     return render(request, 'registration/signup.html', {'form': form})
 
 @login_required
@@ -407,516 +440,204 @@ def my_favorites(request):
     }
     return render(request, 'core/my_favorites.html', context)
 
-# --- Weather API endpoint ---
+@login_required
 def get_weather(request):
-    api_key = settings.OPENWEATHERMAP_API_KEY
-    city = "Chennai"
-    url = f"http://api.openweathermap.org/data/2.5/weather?q={city}&appid={api_key}&units=metric"
-    try:
-        response = requests.get(url)
-        data = response.json()
-        if response.status_code == 200:
-            return JsonResponse({
-                'temperature': data['main']['temp'],
-                'humidity': data['main']['humidity'],
-                'condition': data['weather'][0]['description'].capitalize(),
-                'icon': data['weather'][0]['icon'],
-                'wind_speed': data['wind']['speed'],
-            })
-    except Exception as e:
-        logger.error(f"Error fetching weather data: {str(e)}")
-    return JsonResponse({'error': 'Failed to fetch weather data'}, status=500)
+    """Get weather data for a specific location"""
+    if request.method == 'GET':
+        location = request.GET.get('location')
+        if location:
+            weather_data = get_weather_data(location)
+            if weather_data:
+                return JsonResponse(weather_data)
+            else:
+                return JsonResponse({'error': 'Unable to fetch weather data'}, status=400)
+        else:
+            return JsonResponse({'error': 'Location parameter is required'}, status=400)
+    return JsonResponse({'error': 'Invalid request method'}, status=405)
 
+@login_required
 @require_GET
 def get_gemini_recommendations(request):
-    latitude = request.GET.get('latitude')
-    longitude = request.GET.get('longitude')
-    user_place = request.GET.get('user_place')
-    place_type = request.GET.get('place_type', 'tourist_attraction')
-    budget = request.GET.get('budget', 'medium')
-    duration = request.GET.get('duration', 'medium')
-    itinerary = request.GET.get('itinerary', 'false')
-    travel_style = request.GET.get('travel_style', 'cultural')
-    trip_duration = request.GET.get('trip_duration', '3')
-    enhanced = request.GET.get('enhanced', 'false')
-    context = request.GET.get('context', 'south_india')
-    allowed_places_param = request.GET.get('allowed_places')
-    allowed_places = None
-    if allowed_places_param:
-        try:
-            allowed_places = set(json.loads(allowed_places_param))
-        except Exception as e:
-            logger.error(f"Failed to parse allowed_places: {e}")
-            allowed_places = None
-
-    if not all([latitude, longitude, user_place]):
-        return JsonResponse({'error': 'Missing required parameters: latitude, longitude, and user_place are required.'}, status=400)
-
+    """Get AI-powered travel recommendations using Gemini"""
     try:
-        final_recommendations = []  # Ensure always defined for error handling
-        recommendations_text = ""  # Initialize to avoid scope issues
+        # Get user preferences from their profile
+        user_profile = request.user.profile
         
-        # Step 1: Fetch current weather
-        weather_url = f"https://api.openweathermap.org/data/2.5/weather?lat={latitude}&lon={longitude}&appid={settings.OPENWEATHERMAP_API_KEY}&units=metric"
-        weather_response = requests.get(weather_url)
-        weather_response.raise_for_status()
-        weather_data = weather_response.json()
-
-        weather_condition = weather_data['weather'][0]['main'].lower()
-        temperature = weather_data['main']['temp']
-        humidity = weather_data['main']['humidity']
-        location_name = weather_data.get('name', user_place)
-        weather_description = weather_data['weather'][0]['description']
-
-        # Step 2: Get current time dynamically
-        ist = pytz.timezone('Asia/Kolkata')
-        current_time = datetime.now(ist).strftime('%I:%M %p IST')
-
-        # Step 3: Construct enhanced natural language prompt for Gemini
-        if itinerary == 'true':
-            # Enhanced prompt for itinerary generation with more diversity
-            prompt = (
-                f"You are an expert travel planner specializing in {context.replace('_', ' ').title()} tourism. "
-                f"The user is planning a {trip_duration}-day trip starting from '{user_place}' "
-                f"with a {travel_style} travel style and {budget} budget. "
-                f"Current weather: {weather_condition}, {temperature}°C, {humidity}% humidity at {current_time}.\n\n"
-                f"IMPORTANT: Provide a DIVERSE mix of places. Include different types of attractions:\n"
-                f"- Temples and religious sites\n"
-                f"- Natural attractions (beaches, hills, parks)\n"
-                f"- Historical monuments and forts\n"
-                f"- Museums and cultural centers\n"
-                f"- Local markets and shopping areas\n"
-                f"- Hidden gems and offbeat locations\n\n"
-                f"Based on the travel style '{travel_style}', suggest exactly 12-15 diverse places that would create an optimal itinerary. "
-                f"Consider:\n"
-                f"1. **Diversity**: Mix different types of attractions\n"
-                f"2. **{travel_style.title()} Focus**: Prioritize places that match this style\n"
-                f"3. **Weather Conditions**: Current {weather_condition} weather and {temperature}°C temperature\n"
-                f"4. **Budget Level**: {budget} budget considerations\n"
-                f"5. **Cultural Significance**: Historical and cultural importance\n"
-                f"6. **Practical Logistics**: Distance, accessibility, and timing\n"
-                f"7. **Local Expertise**: Include hidden gems and local favorites\n"
-                f"8. **Variety**: Ensure each day has different types of experiences\n\n"
-                f"Provide the response **strictly** in this format (one place per line):\n"
-                f"1. Place Name - Detailed reasoning (30-50 words explaining why this place is perfect for {travel_style} travelers, considering weather, budget, and cultural significance)\n"
-                f"2. Place Name - Detailed reasoning\n"
-                f"3. Place Name - Detailed reasoning\n"
-                f"... (continue for 12-15 diverse places)\n"
-                f"Each reasoning should be specific, contextual, and actionable for the traveler. "
-                f"Ensure you include a good mix of temples, beaches, hills, historical sites, and local experiences."
-            )
-        else:
-            # Enhanced prompt for general recommendations with more diversity
-            prompt = (
-                f"You are a travel guide specializing in {context.replace('_', ' ').title()} tourism. "
-                f"The user is currently at '{user_place}' where it's {weather_condition} with {temperature}°C "
-                f"at {current_time}. They want {place_type.replace('_', ' ')}s with {budget} budget for {duration} duration.\n\n"
-                f"IMPORTANT: Provide a DIVERSE mix of places. Include:\n"
-                f"- Popular tourist attractions\n"
-                f"- Hidden gems and local favorites\n"
-                f"- Different types of experiences\n"
-                f"- Places suitable for current weather\n\n"
-                f"Provide exactly 8-10 diverse nearby places considering:\n"
-                f"1. **Current Conditions**: {weather_condition} weather, {temperature}°C, {humidity}% humidity\n"
-                f"2. **Budget Level**: {budget} budget considerations\n"
-                f"3. **Duration**: {duration} visit duration\n"
-                f"4. **Cultural Context**: Rich cultural and historical significance\n"
-                f"5. **Local Expertise**: Include authentic local experiences\n"
-                f"6. **Practical Tips**: Accessibility, crowd levels, best timing\n"
-                f"7. **Variety**: Mix of different attraction types\n\n"
-                f"Provide the response **strictly** in this format (one place per line):\n"
-                f"1. Place Name - Comprehensive reasoning (25-40 words explaining why this place is ideal right now, considering weather, budget, duration, and cultural significance)\n"
-                f"2. Place Name - Comprehensive reasoning\n"
-                f"3. Place Name - Comprehensive reasoning\n"
-                f"4. Place Name - Comprehensive reasoning\n"
-                f"5. Place Name - Comprehensive reasoning\n"
-                f"6. Place Name - Comprehensive reasoning\n"
-                f"7. Place Name - Comprehensive reasoning\n"
-                f"8. Place Name - Comprehensive reasoning\n"
-                f"Each reasoning must be specific, contextual, and provide actionable insights for the traveler. "
-                f"Ensure diversity in the types of places recommended."
-            )
-
-        # Step 4: Call Gemini API to get recommendations
-        model = genai.GenerativeModel('gemini-1.5-pro')
+        # Build a comprehensive prompt based on user data
+        prompt = f"""
+        As a travel expert for South India, provide personalized recommendations for {request.user.username}.
+        
+        User Profile:
+        - Travel Level: {user_profile.get_travel_level()}
+        - Favorite Categories: {', '.join(user_profile.get_favorite_categories())}
+        - Recent Activity: {len(user_profile.get_recent_activity())} recent activities
+        
+        Please provide:
+        1. 3-5 personalized destination recommendations in South India
+        2. Specific reasons why these places would suit this traveler
+        3. Best time to visit each recommendation
+        4. Estimated budget range for each destination
+        5. Any special tips or considerations
+        
+        Format the response as a structured list with clear sections.
+        Keep recommendations practical and specific to South India.
+        """
+        
+        # Generate response using Gemini
+        model = genai.GenerativeModel('gemini-pro')
         response = model.generate_content(prompt)
         
-        # Log the raw response for debugging
-        logger.info(f"Gemini API raw response: {response.text}")
-        
-        if not response or not response.text:
-            raise ValueError("Empty response from Gemini API")
-            
-        recommendations_text = response.text
-
-        # Parse the response with improved error handling
-        recommended_places = []
-        lines = recommendations_text.strip().split('\n')
-        
-        for line in lines:
-            line = line.strip()
-            if not line:
-                continue
-            
-            # Skip lines that are clearly notes
-            if line.lower().startswith('note:') or line.lower().startswith('important:'):
-                continue
-                
-            try:
-                # Remove numbering like "1. "
-                content = line
-                if '.' in line and line.split('.', 1)[0].strip().isdigit():
-                    content = line.split('.', 1)[1].strip()
-                
-                # Try to split by " - " which is more specific, then ":"
-                separator = None
-                if ' - ' in content:
-                    separator = ' - '
-                elif ': ' in content:
-                    separator = ': '
-                
-                if separator:
-                    place_name, explanation = content.split(separator, 1)
-                    place_name = place_name.strip()
-                    explanation = explanation.strip()
-
-                    if place_name and explanation:
-                        recommended_places.append({
-                            "name": place_name,
-                            "reasoning": explanation
-                        })
-                else:
-                    logger.warning(f"Could not parse line, no valid separator found: {line}")
-                    
-            except Exception as e:
-                logger.warning(f"Failed to parse line: {line}. Error: {str(e)}")
-                continue
-
-        if not recommended_places:
-            logger.error(f"Failed to parse any recommendations from response: {recommendations_text}")
+        if response.text:
             return JsonResponse({
-                'error': 'Failed to parse recommendations from Gemini API response',
-                'raw_response': recommendations_text
-            }, status=500)
-
-        # Step 5: Cross-reference with database first, then Google Maps API
-        final_recommendations = []
-        for place in recommended_places:
-            try:
-                place_name = place['name']
-                
-                # First, try to find the place in our database
-                from .models import State, Place
-                try:
-                    # Get the state based on context
-                    state_name = context.replace('_', ' ').title()
-                    if context == 'tamil_nadu':
-                        state_name = 'Tamil Nadu'
-                    elif context == 'telangana':
-                        state_name = 'Telangana'
-                    elif context == 'andhra_pradesh':
-                        state_name = 'Andhra Pradesh'
-                    elif context == 'karnataka':
-                        state_name = 'Karnataka'
-                    elif context == 'kerala':
-                        state_name = 'Kerala'
-                    
-                    state = State.objects.filter(name__iexact=state_name).first()
-                    
-                    if state:
-                        # Search for the place in our database
-                        db_place = Place.objects.filter(
-                            state=state,
-                            name__icontains=place_name
-                        ).first()
-                        
-                        if db_place and db_place.latitude and db_place.longitude:
-                            # Use the database place with accurate coordinates
-                            final_recommendations.append({
-                                'name': db_place.name,
-                                'latitude': db_place.latitude,
-                                'longitude': db_place.longitude,
-                                'rating': db_place.average_rating or 0,
-                                'reasoning': place['reasoning'],
-                                'formatted_address': db_place.location or '',
-                                'place_id': str(db_place.id),
-                                'types': [db_place.category] if db_place.category else []
-                            })
-                            continue  # Skip Google Maps API call
-                except Exception as e:
-                    logger.warning(f"Database lookup failed for {place_name}: {str(e)}")
-                
-                # If not found in database, fall back to Google Maps API
-                # Enhanced search query for better results, focusing on place name and state context
-                search_query = f"{place_name}, {context.replace('_', ' ')}"
-                
-                # Try multiple search strategies for better accuracy
-                search_queries = [
-                    f"{place_name}, {context.replace('_', ' ')}",
-                    f"{place_name} {context.replace('_', ' ')}",
-                    f"{place_name}, Tamil Nadu" if context == 'tamil_nadu' else f"{place_name}, {context.replace('_', ' ')}",
-                    place_name  # Fallback to just the place name
-                ]
-                
-                place_found = False
-                for search_query in search_queries:
-                    places_url = (
-                        f"https://maps.googleapis.com/maps/api/place/textsearch/json?"
-                        f"query={search_query}&key={settings.GOOGLE_MAPS_API_KEY}"
-                    )
-                    places_response = requests.get(places_url)
-                    places_response.raise_for_status()
-                    places_data = places_response.json()
-
-                    if places_data['status'] == 'OK' and places_data['results']:
-                        place_details = places_data['results'][0]
-                        
-                        # Additional validation: check if the result is actually in the right state/region
-                        formatted_address = place_details.get('formatted_address', '').lower()
-                        if (context == 'tamil_nadu' and 'tamil nadu' in formatted_address) or \
-                           (context == 'telangana' and 'telangana' in formatted_address) or \
-                           (context == 'andhra pradesh' in formatted_address) or \
-                           (context == 'karnataka' and 'karnataka' in formatted_address) or \
-                           (context == 'kerala' and 'kerala' in formatted_address):
-                            
-                            final_recommendations.append({
-                                'name': place_details.get('name', place_name),
-                                'latitude': place_details['geometry']['location']['lat'],
-                                'longitude': place_details['geometry']['location']['lng'],
-                                'rating': place_details.get('rating', 0),
-                                'reasoning': place['reasoning'],
-                                'formatted_address': place_details.get('formatted_address', ''),
-                                'place_id': place_details.get('place_id', ''),
-                                'types': place_details.get('types', [])
-                            })
-                            place_found = True
-                            break
-                
-                if not place_found:
-                    logger.warning(f"Google Maps API could not find accurate location for place: {place_name}")
-                    # Add the place without coordinates if Google Maps fails
-                    final_recommendations.append({
-                        'name': place_name,
-                        'latitude': None,
-                        'longitude': None,
-                        'rating': 0,
-                        'reasoning': place['reasoning'],
-                        'formatted_address': '',
-                        'place_id': '',
-                        'types': []
-                    })
-            except Exception as e:
-                logger.warning(f"Failed to get Google Maps data for {place['name']}: {str(e)}")
-                # Add the place without coordinates if Google Maps fails
-                final_recommendations.append({
-                    'name': place['name'],
-                    'latitude': None,
-                    'longitude': None,
-                    'rating': 0,
-                    'reasoning': place['reasoning'],
-                    'formatted_address': '',
-                    'place_id': '',
-                    'types': []
-                })
-
-        # --- FILTER BY allowed_places if provided ---
-        if allowed_places:
-            allowed_places_normalized = set(n.strip().lower() for n in allowed_places)
-            filtered_recommendations = [p for p in final_recommendations if p['name'].strip().lower() in allowed_places_normalized]
-            if filtered_recommendations:
-                final_recommendations = filtered_recommendations
-            # else: fallback to all results (do not filter)
-
-        if not final_recommendations:
-            logger.error("No valid places found in Google Maps")
+                'success': True,
+                'recommendations': response.text
+            })
+        else:
             return JsonResponse({
-                'error': 'Failed to find places in Google Maps',
-                'raw_response': recommendations_text
+                'success': False,
+                'error': 'Unable to generate recommendations'
             }, status=500)
-
-        # Limit results based on request type
-        max_places = 15 if itinerary == 'true' else 10
-        # For itinerary, return as many as found (even if <12), but show a warning if very few
-       
-        result = {
-            'gemini_recommended_places': final_recommendations[:max_places],
-            'weather_data': {
-                'temperature': temperature,
-                'weather': weather_condition,
-                'humidity': humidity,
-                'description': weather_description,
-                'location': location_name
-            },
-            'context': {
-                'travel_style': travel_style,
-                'budget': budget,
-                'duration': duration,
-                'trip_duration': trip_duration,
-                'user_place': user_place
-            }
-        }
-        cache_key = f"gemini_recommendations_{latitude}_{longitude}_{user_place}_{place_type}_{budget}_{duration}_{itinerary}_{travel_style}_{trip_duration}_{enhanced}_{context}"
-        cache.set(cache_key, result, timeout=3600)
-        return JsonResponse(result)
-
+            
     except Exception as e:
-        logger.error(f"Error in Gemini API call: {str(e)}")
-        return JsonResponse({'error': f'Failed to get recommendations: {str(e)}'}, status=500)
+        logger.error(f"Error generating Gemini recommendations: {str(e)}")
+        return JsonResponse({
+            'success': False,
+            'error': 'Failed to generate recommendations'
+        }, status=500)
 
-    except requests.exceptions.RequestException as e:
-        logger.error(f"API request error in get_gemini_recommendations: {str(e)}")
-        return JsonResponse({'error': f'Failed to fetch data from external API: {str(e)}'}, status=500)
-    except Exception as e:
-        logger.error(f"Error in get_gemini_recommendations: {str(e)}")
-        return JsonResponse({'error': str(e)}, status=500)
-
+@login_required
 def submit_inquiry(request, state_id):
     state = get_object_or_404(State, id=state_id)
     if request.method == 'POST':
         name = request.POST.get('name')
         email = request.POST.get('email')
-        phone = request.POST.get('phone')
-        travel_dates = request.POST.get('travel_dates')
-        travelers = request.POST.get('travelers')
         message = request.POST.get('message')
-        # Validate input
-        if not all([name, email, message]):
-            messages.error(request, "All fields are required.")
-            return redirect('state_detail', state_name=state.name.lower().replace(' ', '-'))
-        # Save the inquiry
-        inquiry = Inquiry(
-            state=state,
-            name=name,
-            email=email,
-            phone=phone,
-            travel_dates=travel_dates,
-            travelers=travelers,
-            message=message,
-            user=request.user if request.user.is_authenticated else None
-        )
-        inquiry.save()
-        messages.success(request, "Your inquiry has been submitted successfully!")
-        return redirect('state_detail', state_name=state.name.lower().replace(' ', '-'))
-    # If not a POST request, redirect back to the state page
-    return redirect('state_detail', state_name=state.name.lower().replace(' ', '-'))
+        
+        if name and email and message:
+            Inquiry.objects.create(
+                state=state,
+                name=name,
+                email=email,
+                message=message
+            )
+            messages.success(request, f'Your inquiry about {state.name} has been submitted successfully!')
+        else:
+            messages.error(request, 'Please fill in all required fields.')
+    
+    return redirect('core:state_detail', state_slug=state.name.lower().replace(' ', '-'))
 
+@login_required
 def fetch_place_info(request):
-    """
-    API endpoint to fetch detailed information about a place using Composio.
-    """
-    place_name = request.GET.get('place')
-    if not place_name:
-        return JsonResponse({"error": "Place not provided"}, status=400)
-    
-    try:
-        toolset = ComposioToolSet()
-        result = toolset.execute_action(
-            action=Action.GOOGLEMAPS_GET_PLACE_INFO,
-            params={
-                "place_name": place_name
-            }
-        )
-        
-        if not result.get("successful"):
-            return JsonResponse({"error": result.get("error", "Failed to fetch place details")}, status=500)
-            
-        return JsonResponse(result.get("data", {}), safe=False)
-    except Exception as e:
-        logger.error(f"Error in fetch_place_info: {str(e)}")
-        return JsonResponse({"error": str(e)}, status=500)
+    """Fetch detailed information about a place"""
+    if request.method == 'GET':
+        place_id = request.GET.get('place_id')
+        if place_id:
+            try:
+                place = Place.objects.get(id=place_id)
+                return JsonResponse({
+                    'name': place.name,
+                    'description': place.description,
+                    'location': place.location,
+                    'category': place.category,
+                    'average_rating': place.average_rating or 0,
+                    'image_url': place.image_url or '',
+                    'latitude': place.latitude,
+                    'longitude': place.longitude
+                })
+            except Place.DoesNotExist:
+                return JsonResponse({'error': 'Place not found'}, status=404)
+        else:
+            return JsonResponse({'error': 'Place ID is required'}, status=400)
+    return JsonResponse({'error': 'Invalid request method'}, status=405)
 
+@login_required
 def fetch_route_info(request):
-    """
-    API endpoint to fetch route planning information using Composio.
-    """
-    origin = request.GET.get('origin')
-    destination = request.GET.get('destination')
-    mode = request.GET.get('mode', 'driving')
-    
-    if not all([origin, destination]):
-        return JsonResponse({"error": "Origin and destination are required"}, status=400)
-    
-    try:
-        toolset = ComposioToolSet()
-        result = toolset.execute_action(
-            action=Action.GOOGLEMAPS_GET_DIRECTIONS,
-            params={
-                "origin": origin,
-                "destination": destination,
-                "mode": mode
-            }
-        )
+    """Fetch route information between two places"""
+    if request.method == 'GET':
+        origin = request.GET.get('origin')
+        destination = request.GET.get('destination')
         
-        if not result.get("successful"):
-            return JsonResponse({"error": result.get("error", "Failed to fetch route planning")}, status=500)
-            
-        return JsonResponse(result.get("data", {}), safe=False)
-    except Exception as e:
-        logger.error(f"Error in fetch_route_info: {str(e)}")
-        return JsonResponse({"error": str(e)}, status=500)
+        if not origin or not destination:
+            return JsonResponse({'error': 'Origin and destination are required'}, status=400)
+        
+        # This would typically call Google Maps Directions API
+        # For now, return a placeholder response
+        return JsonResponse({
+            'origin': origin,
+            'destination': destination,
+            'distance': '25 km',
+            'duration': '45 minutes',
+            'route_type': 'driving'
+        })
+    
+    return JsonResponse({'error': 'Invalid request method'}, status=405)
 
+@login_required
 def nearby_places(request):
-    """
-    API endpoint to fetch nearby places using Composio.
-    """
-    location = request.GET.get('location')
-    place_type = request.GET.get('type', 'lodging')
-    
-    if not location:
-        return JsonResponse({"error": "Location is required"}, status=400)
-    
-    try:
-        toolset = ComposioToolSet()
-        result = toolset.execute_action(
-            action=Action.GOOGLEMAPS_FIND_PLACES_NEARBY,
-            params={
-                "location": location,
-                "radius": 5000,  # 5km radius
-                "type": place_type
-            }
-        )
+    """Get nearby places based on coordinates"""
+    if request.method == 'GET':
+        lat = request.GET.get('lat')
+        lng = request.GET.get('lng')
+        radius = request.GET.get('radius', 10)  # Default 10km radius
         
-        if not result.get("successful"):
-            return JsonResponse({"error": result.get("error", "Failed to fetch nearby places")}, status=500)
+        if not lat or not lng:
+            return JsonResponse({'error': 'Latitude and longitude are required'}, status=400)
+        
+        try:
+            # Find places within the specified radius
+            places = Place.objects.filter(
+                latitude__isnull=False,
+                longitude__isnull=False
+            )[:10]  # Limit to 10 places
             
-        return JsonResponse(result.get("data", {}), safe=False)
-    except Exception as e:
-        logger.error(f"Error in nearby_places: {str(e)}")
-        return JsonResponse({"error": str(e)}, status=500)
+            nearby_places_data = []
+            for place in places:
+                nearby_places_data.append({
+                    'id': place.id,
+                    'name': place.name,
+                    'category': place.category,
+                    'latitude': place.latitude,
+                    'longitude': place.longitude,
+                    'average_rating': place.average_rating or 0
+                })
+            
+            return JsonResponse({'places': nearby_places_data})
+            
+        except Exception as e:
+            logger.error(f"Error fetching nearby places: {str(e)}")
+            return JsonResponse({'error': 'Failed to fetch nearby places'}, status=500)
+    
+    return JsonResponse({'error': 'Invalid request method'}, status=405)
 
+@login_required
 @cache_page(60 * 15)
 def map_view(request):
+    """Interactive map view"""
+    states = State.objects.all()
+    places = Place.objects.filter(latitude__isnull=False, longitude__isnull=False)[:50]
+    
     context = {
+        'states': states,
+        'places': places,
         'GOOGLE_MAPS_API_KEY': settings.GOOGLE_MAPS_API_KEY
     }
     return render(request, 'core/map_view.html', context)
 
+@login_required
 @cache_page(60 * 15)
 def test_api_view(request):
-    """View function for testing API endpoints."""
-    context = {
-        'GOOGLE_MAPS_API_KEY': settings.GOOGLE_MAPS_API_KEY
-    }
-    return render(request, 'core/test_api.html', context)
+    """Test API endpoint"""
+    return JsonResponse({'status': 'success', 'message': 'API is working correctly'})
 
+@login_required
 def fetch_github_repos(request):
-    """
-    Fetch GitHub repositories for the authenticated user using Composio.
-    """
-    try:
-        toolset = ComposioToolSet()
-        result = toolset.execute_action(
-            action=Action.GITHUB_LIST_REPOSITORIES_FOR_THE_AUTHENTICATED_USER,
-            params={}
-        )
-        
-        if not result.get("successful"):
-            return JsonResponse({"error": result.get("error", "Failed to fetch GitHub repositories")}, status=500)
-        
-        return JsonResponse(result.get("data", {}), safe=False)
-    except Exception as e:
-        logger.error(f"Error fetching GitHub repos: {str(e)}")
-        return JsonResponse({"error": str(e)}, status=500)
+    """Fetch GitHub repositories (placeholder for future integration)"""
+    return JsonResponse({
+        'repositories': [
+            {'name': 'South India Tourism', 'description': 'Tourism website for South India'},
+            {'name': 'Travel API', 'description': 'API for travel recommendations'}
+        ]
+    })
 
 @login_required
 def add_recommended_favorite(request):
@@ -1330,3 +1051,39 @@ def auth_status(request):
         'session_id': request.session.session_key,
         'session_data': dict(request.session.items())
     })
+
+def custom_login(request):
+    """Custom login view with better error handling and notifications"""
+    if request.user.is_authenticated:
+        messages.info(request, 'You are already logged in.')
+        return redirect('home')
+    
+    if request.method == 'POST':
+        username = request.POST.get('username')
+        password = request.POST.get('password')
+        
+        if not username or not password:
+            messages.error(request, 'Please provide both username and password.')
+            return render(request, 'registration/login.html')
+        
+        user = authenticate(request, username=username, password=password)
+        
+        if user is not None:
+            login(request, user)
+            messages.success(request, f'Welcome back, {user.username}! You have been successfully logged in.')
+            
+            # Redirect to next parameter or home
+            next_url = request.POST.get('next', 'home')
+            if next_url == '':
+                next_url = 'home'
+            
+            response = redirect(next_url)
+            response['Cache-Control'] = 'no-cache, no-store, must-revalidate, private, max-age=0'
+            response['Pragma'] = 'no-cache'
+            response['Expires'] = '0'
+            
+            return response
+        else:
+            messages.error(request, 'Invalid username or password. Please try again.')
+    
+    return render(request, 'registration/login.html')

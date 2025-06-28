@@ -88,15 +88,48 @@
 
     <!-- Messages -->
     {% if messages %}
-        <div class="container mt-3">
+        <div class="container mt-3" id="messages-container">
             {% for message in messages %}
-                <div class="alert alert-{{ message.tags }} alert-dismissible fade show">
-                    {{ message }}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show notification-popup" role="alert">
+                    <div class="d-flex align-items-center">
+                        {% if message.tags == 'success' %}
+                            <i class="fas fa-check-circle me-2 text-success"></i>
+                        {% elif message.tags == 'error' %}
+                            <i class="fas fa-exclamation-circle me-2 text-danger"></i>
+                        {% elif message.tags == 'warning' %}
+                            <i class="fas fa-exclamation-triangle me-2 text-warning"></i>
+                        {% elif message.tags == 'info' %}
+                            <i class="fas fa-info-circle me-2 text-info"></i>
+                        {% endif %}
+                        <span>{{ message }}</span>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                 </div>
             {% endfor %}
         </div>
     {% endif %}
+
+    <!-- Login Required Modal -->
+    <div class="modal fade" id="loginRequiredModal" tabindex="-1" aria-labelledby="loginRequiredModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="loginRequiredModalLabel">
+                        <i class="fas fa-lock text-warning"></i> Login Required
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p>You need to be logged in to access this feature. Please log in or create an account to continue.</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <a href="{% url 'login' %}" class="btn btn-primary">Login</a>
+                    <a href="{% url 'signup' %}" class="btn btn-success">Sign Up</a>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <!-- Main Content -->
     <main>
@@ -173,6 +206,21 @@
                 window.history.replaceState({}, document.title, newUrl);
             }
             
+            // Enhanced notification system
+            const notifications = document.querySelectorAll('.notification-popup');
+            notifications.forEach(function(notification) {
+                // Auto-dismiss success messages after 5 seconds
+                if (notification.classList.contains('alert-success')) {
+                    setTimeout(function() {
+                        const bsAlert = new bootstrap.Alert(notification);
+                        bsAlert.close();
+                    }, 5000);
+                }
+                
+                // Add animation for better UX
+                notification.style.animation = 'slideInDown 0.5s ease-out';
+            });
+            
             // Monitor authentication status changes
             let currentAuthStatus = {{ user.is_authenticated|yesno:"true,false" }};
             
@@ -190,8 +238,88 @@
                         console.log('Auth status check failed:', error);
                     });
             }, 2000);
+            
+            // Add login requirement checks for protected features
+            const protectedFeatures = document.querySelectorAll('[data-requires-login]');
+            protectedFeatures.forEach(function(feature) {
+                feature.addEventListener('click', function(e) {
+                    if (!{{ user.is_authenticated|yesno:"true,false" }}) {
+                        e.preventDefault();
+                        const loginModal = new bootstrap.Modal(document.getElementById('loginRequiredModal'));
+                        loginModal.show();
+                    }
+                });
+            });
+            
+            // Show welcome message for newly logged in users
+            {% if messages %}
+                {% for message in messages %}
+                    {% if message.tags == 'success' and 'Welcome' in message %}
+                        // Show a special welcome notification
+                        setTimeout(function() {
+                            const welcomeNotification = document.createElement('div');
+                            welcomeNotification.className = 'alert alert-success alert-dismissible fade show position-fixed';
+                            welcomeNotification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+                            welcomeNotification.innerHTML = `
+                                <div class="d-flex align-items-center">
+                                    <i class="fas fa-heart me-2 text-success"></i>
+                                    <span>{{ message }}</span>
+                                </div>
+                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                            `;
+                            document.body.appendChild(welcomeNotification);
+                            
+                            // Auto-dismiss after 8 seconds
+                            setTimeout(function() {
+                                const bsAlert = new bootstrap.Alert(welcomeNotification);
+                                bsAlert.close();
+                            }, 8000);
+                        }, 1000);
+                    {% endif %}
+                {% endfor %}
+            {% endif %}
         });
     </script>
+    
+    <!-- CSS for notification animations -->
+    <style>
+        @keyframes slideInDown {
+            from {
+                transform: translateY(-100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+        
+        .notification-popup {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            border: none;
+            border-radius: 8px;
+        }
+        
+        .alert-success {
+            background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+            border-left: 4px solid #28a745;
+        }
+        
+        .alert-danger {
+            background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%);
+            border-left: 4px solid #dc3545;
+        }
+        
+        .alert-warning {
+            background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+            border-left: 4px solid #ffc107;
+        }
+        
+        .alert-info {
+            background: linear-gradient(135deg, #d1ecf1 0%, #bee5eb 100%);
+            border-left: 4px solid #17a2b8;
+        }
+    </style>
     
     <!-- Navbar Scroll Effect -->
     <script>
