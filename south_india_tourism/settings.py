@@ -196,12 +196,16 @@ import os
 from pathlib import Path
 import dj_database_url
 from dotenv import load_dotenv
+import logging
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # Load environment variables from .env file for local development
 load_dotenv()
+
+# Configure logger
+logger = logging.getLogger(__name__)
 
 # --- SECURITY SETTINGS ---
 # Get the secret key from an environment variable.
@@ -222,7 +226,6 @@ if RENDER_EXTERNAL_HOSTNAME:
 if DEBUG:
     ALLOWED_HOSTS.append('127.0.0.1')
     ALLOWED_HOSTS.append('localhost')
-
 
 # --- APPLICATION DEFINITION ---
 INSTALLED_APPS = [
@@ -247,6 +250,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'core.middleware.NoCacheMiddleware',  # Custom middleware for cache control
 ]
 
 ROOT_URLCONF = 'south_india_tourism.urls'
@@ -269,7 +273,6 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'south_india_tourism.wsgi.application'
 
-
 # --- DATABASE CONFIGURATION ---
 # This is the most important change. It uses the Render DATABASE_URL in production,
 # but falls back to your local PostgreSQL setup for development.
@@ -290,7 +293,6 @@ else:
         }
     }
 
-
 # --- PASSWORD VALIDATION ---
 AUTH_PASSWORD_VALIDATORS = [
     {
@@ -307,13 +309,11 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-
 # --- INTERNATIONALIZATION ---
 LANGUAGE_CODE = 'en-us'
 TIME_ZONE = 'UTC'
 USE_I18N = True
 USE_TZ = True
-
 
 # --- STATIC FILES (CSS, JavaScript, Images) ---
 STATIC_URL = 'static/'
@@ -329,6 +329,9 @@ STATIC_ROOT = BASE_DIR / "staticfiles"
 # This storage engine handles compression and caching for you in production.
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
+# --- MEDIA FILES ---
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / "media"
 
 # --- DEFAULT PRIMARY KEY FIELD TYPE ---
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
@@ -337,3 +340,42 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # Important for security on POST requests (like login forms).
 if RENDER_EXTERNAL_HOSTNAME:
     CSRF_TRUSTED_ORIGINS = [f'https://{RENDER_EXTERNAL_HOSTNAME}']
+
+# --- SESSION CONFIGURATION ---
+SESSION_COOKIE_AGE = 3600  # 1 hour
+SESSION_EXPIRE_AT_BROWSER_CLOSE = True
+SESSION_SAVE_EVERY_REQUEST = True
+SESSION_COOKIE_SECURE = not DEBUG  # Set to True in production with HTTPS
+SESSION_COOKIE_HTTPONLY = True
+SESSION_COOKIE_SAMESITE = 'Lax'
+
+# --- LOGIN/LOGOUT REDIRECTS ---
+LOGIN_REDIRECT_URL = '/'  # Redirect to home page after login
+LOGOUT_REDIRECT_URL = '/'  # Redirect to home page after logout
+
+# --- API CONFIGURATION ---
+COMPOSIO_API_KEY = os.getenv('COMPOSIO_API_KEY')
+if not COMPOSIO_API_KEY:
+    logger.warning("COMPOSIO_API_KEY not found in environment variables. Some features may not work.")
+
+GOOGLE_MAPS_API_KEY = os.getenv('GOOGLE_MAPS_API_KEY')
+if not GOOGLE_MAPS_API_KEY:
+    logger.warning("GOOGLE_MAPS_API_KEY not found in environment variables. Maps features will not work.")
+
+GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
+if not GEMINI_API_KEY:
+    logger.warning("GEMINI_API_KEY not found in environment variables. Gemini recommendations will not work.")
+
+OPENWEATHERMAP_API_KEY = os.getenv('OPENWEATHERMAP_API_KEY')
+if not OPENWEATHERMAP_API_KEY:
+    logger.warning("OPENWEATHERMAP_API_KEY not found in environment variables. Weather features will not work.")
+
+# --- SECURITY HEADERS FOR PRODUCTION ---
+if not DEBUG:
+    SECURE_BROWSER_XSS_FILTER = True
+    SECURE_CONTENT_TYPE_NOSNIFF = True
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_SECONDS = 31536000  # 1 year
+    SECURE_REDIRECT_EXEMPT = []
+    SECURE_SSL_REDIRECT = True
+    X_FRAME_OPTIONS = 'DENY'
