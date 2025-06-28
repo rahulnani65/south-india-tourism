@@ -12,9 +12,9 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 
 from pathlib import Path
 import os
+import dj_database_url
 from dotenv import load_dotenv
 import logging
-import dj_database_url
 
 # Load environment variables from .env file
 load_dotenv()
@@ -29,16 +29,23 @@ logger = logging.getLogger(__name__)
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure--z)%y%1cy3&24xjuh6bbr(mg*h4m-%8g%95ad@-1^1ttsl(ufr'
+# We will get the SECRET_KEY from an environment variable in Render.
+SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure--z)%y%1cy3&24xjuh6bbr(mg*h4m-%8g%95ad@-1^1ttsl(ufr')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+# Set DEBUG to False in production. 'False' is not the same as False.
+DEBUG = os.environ.get('DEBUG', 'False').lower() == 'true'
 
-# Update ALLOWED_HOSTS after deployment (set temporarily)
-ALLOWED_HOSTS = ['*']
-# DEBUG = False
-# ALLOWED_HOSTS = ['southindiatourism.up.railway.app'] 
+# ALLOWED_HOSTS for Render
+# Render provides a URL like 'your-app.onrender.com'.
+ALLOWED_HOSTS = []
+RENDER_EXTERNAL_HOSTNAME = os.environ.get('RENDER_EXTERNAL_HOSTNAME')
+if RENDER_EXTERNAL_HOSTNAME:
+    ALLOWED_HOSTS.append(RENDER_EXTERNAL_HOSTNAME)
 
+# It's also good to allow your custom domain if you add one later
+# and localhost for local development.
+ALLOWED_HOSTS.extend(['127.0.0.1', 'localhost'])
 
 # Application definition
 
@@ -52,9 +59,11 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
 ]
 
+# Middleware Configuration (for WhiteNoise)
+# Make sure WhiteNoise middleware is right after SecurityMiddleware
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
-    'whitenoise.middleware.WhiteNoiseMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',  # Add this line
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -81,38 +90,17 @@ TEMPLATES = [
     },
 ]
 
-
-
 WSGI_APPLICATION = 'south_india_tourism.wsgi.application'
 
-
-# Database
-# https://docs.djangoproject.com/en/5.2/ref/settings/#databases
-
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.sqlite3',
-#         'NAME': BASE_DIR / 'db.sqlite3',
-#     }
-# }
-
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.postgresql',
-#         'NAME': 'south_india_tourism',
-#         'USER': 'southindiauser',
-#         'PASSWORD': '1234',
-#         'HOST': 'localhost',
-#         'PORT': '5432',
-#     }
-# }
-
+# Database Configuration using dj-database-url
+# This will use your local sqlite for dev and Render's Postgres for prod
 DATABASES = {
     'default': dj_database_url.config(
-        default=os.environ.get('DATABASE_URL')
+        # Replace this with your local database configuration
+        default='sqlite:///db.sqlite3',
+        conn_max_age=600
     )
 }
-
 
 # Password validation
 # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
@@ -132,7 +120,6 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-
 # Internationalization
 # https://docs.djangoproject.com/en/5.2/topics/i18n/
 
@@ -144,28 +131,24 @@ USE_I18N = True
 
 USE_TZ = True
 
-
 # Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/5.2/howto/static-files/
+# https://docs.djangoproject.com/en/5.0/howto/static-files/
 
-# Static files (CSS, JavaScript, Images)
 STATIC_URL = '/static/'
-STATICFILES_DIRS = [
-    BASE_DIR / "core/static",
-]
-STATIC_ROOT = BASE_DIR / "staticfiles"
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')  # Directory where collectstatic will place files
 
-# Media files
-MEDIA_URL = '/media/'
-MEDIA_ROOT = BASE_DIR / "media"
+# Add this for WhiteNoise to find your static files
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
-# Ensure static files are served in development
+# Static files directories for development
 if DEBUG:
     STATICFILES_DIRS = [
         BASE_DIR / "core/static",
     ]
-else:
-    STATIC_ROOT = BASE_DIR / "staticfiles"
+
+# Media files
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / "media"
 
 # Add these settings
 LOGIN_REDIRECT_URL = '/'  # Redirect to home page after login
@@ -175,7 +158,7 @@ LOGOUT_REDIRECT_URL = '/'  # Redirect to home page after logout (already handled
 SESSION_COOKIE_AGE = 3600  # 1 hour
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 SESSION_SAVE_EVERY_REQUEST = True
-SESSION_COOKIE_SECURE = False  # Set to True in production with HTTPS
+SESSION_COOKIE_SECURE = not DEBUG  # Set to True in production with HTTPS
 SESSION_COOKIE_HTTPONLY = True
 SESSION_COOKIE_SAMESITE = 'Lax'
 
@@ -185,6 +168,9 @@ SESSION_COOKIE_SAMESITE = 'Lax'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # AUTH_USER_MODEL = 'core.CustomUser'
+
+# Add CSRF_TRUSTED_ORIGINS for Render
+CSRF_TRUSTED_ORIGINS = [f"https://{RENDER_EXTERNAL_HOSTNAME}"] if RENDER_EXTERNAL_HOSTNAME else []
 
 # API Configuration
 COMPOSIO_API_KEY = os.getenv('COMPOSIO_API_KEY')

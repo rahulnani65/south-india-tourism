@@ -14,4 +14,4 @@ class NoCacheMiddleware:
         response['X-Frame-Options'] = 'DENY'
         response['X-Content-Type-Options'] = 'nosniff'
         
-        return response 
+        return response

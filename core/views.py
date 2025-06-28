@@ -2,7 +2,7 @@ import requests
 import os
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.forms import UserCreationForm
-from django.contrib.auth import login
+from django.contrib.auth import login, authenticate, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.http import JsonResponse
@@ -22,17 +22,56 @@ import json
 from django.utils.timesince import timesince
 from django.utils.timezone import now
 from django.views.decorators.cache import cache_page
+from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_POST
+from django.contrib.auth.models import User
+from .models import Cuisine, Restaurant
+from django.db.models import Q
 
 logger = logging.getLogger(__name__)
 
 # Configure Gemini API
 genai.configure(api_key=settings.GEMINI_API_KEY)
 
-@cache_page(60 * 15)
+def no_cache_response(view_func):
+    """Decorator to add no-cache headers to responses"""
+    def wrapper(request, *args, **kwargs):
+        response = view_func(request, *args, **kwargs)
+        response['Cache-Control'] = 'no-cache, no-store, must-revalidate, private, max-age=0'
+        response['Pragma'] = 'no-cache'
+        response['Expires'] = '0'
+        return response
+    return wrapper
+
+@no_cache_response
 def home(request):
-    states = State.objects.all()
-    posts = Post.objects.all().order_by('-created_at')[:3]
-    return render(request, 'core/index.html', {'states': states, 'posts': posts})
+    """Home page view with enhanced caching and performance"""
+    try:
+        # Get featured states
+        states = State.objects.all()[:5]
+        
+        # Get featured places
+        featured_places = Place.objects.filter(is_featured=True)[:6]
+        
+        # Get recent reviews
+        recent_reviews = Review.objects.select_related('user', 'place').order_by('-created_at')[:3]
+        
+        # Get cuisine data
+        cuisines = Cuisine.objects.all()[:4]
+        
+        context = {
+            'states': states,
+            'featured_places': featured_places,
+            'recent_reviews': recent_reviews,
+            'cuisines': cuisines,
+        }
+        
+        return render(request, 'core/index.html', context)
+        
+    except Exception as e:
+        logger.error(f"Error in home view: {str(e)}")
+        # Return a basic context if there's an error
+        return render(request, 'core/index.html', {})
 
 #@cache_page(60 * 15)
 def state_detail(request, state_slug):
@@ -124,16 +163,22 @@ def contact_submit(request):
     if request.method == 'POST':
         name = request.POST.get('name')
         email = request.POST.get('email')
-        phone = request.POST.get('phone')
+        phone = request.POST.get('phone', '')  # Default to empty string if not provided
         subject = request.POST.get('subject')
         message = request.POST.get('message')
-        Contact.objects.create(
-            name=name,
-            email=email,
-            phone=phone,
-            subject=subject,
-            message=message
-        )
+        
+        # Only save phone if it's not empty
+        contact_data = {
+            'name': name,
+            'email': email,
+            'subject': subject,
+            'message': message
+        }
+        
+        if phone.strip():  # Only add phone if it's not empty
+            contact_data['phone'] = phone
+            
+        Contact.objects.create(**contact_data)
         messages.success(request, "Your message has been sent successfully!")
         return redirect('home')
     return redirect('home')
@@ -143,13 +188,22 @@ def signup(request):
         form = UserCreationForm(request.POST)
         if form.is_valid():
             user = form.save()
-            UserProfile.objects.create(user=user)
+            # Log the user in immediately after signup
             login(request, user)
-            messages.success(request, "Registration successful! Welcome!")
-            return redirect('home')
-        else:
-            messages.error(request, "Please correct the errors below.")
-            return render(request, 'registration/signup.html', {'form': form})
+            messages.success(request, 'Account created successfully! Welcome to South India Tourism.')
+            
+            # Create cache-busting response
+            response = redirect('home')
+            response['Cache-Control'] = 'no-cache, no-store, must-revalidate, private, max-age=0'
+            response['Pragma'] = 'no-cache'
+            response['Expires'] = '0'
+            
+            # Add cache-busting parameter
+            import time
+            cache_buster = int(time.time())
+            response['Location'] = f'/?cb={cache_buster}'
+            
+            return response
     else:
         form = UserCreationForm()
     return render(request, 'registration/signup.html', {'form': form})
@@ -162,6 +216,9 @@ def profile(request):
     except UserProfile.DoesNotExist:
         user_profile = UserProfile.objects.create(user=request.user)
 
+    # Update user statistics
+    user_profile.update_stats()
+
     if request.method == 'POST':
         form = UserProfileForm(request.POST, instance=user_profile)
         if form.is_valid():
@@ -170,7 +227,50 @@ def profile(request):
             return redirect('core:profile')
     else:
         form = UserProfileForm(instance=user_profile)
-    return render(request, 'core/profile.html', {'form': form})
+
+    # Get travel level
+    travel_level = user_profile.get_travel_level()
+
+    # Get recent reviews
+    recent_reviews = Review.objects.filter(user=request.user).select_related('place').order_by('-created_at')[:5]
+
+    # Get recent favorites
+    recent_favorites = Favorite.objects.filter(user=request.user).select_related('place').order_by('-created_at')[:5]
+
+    # Get timeline events (recent activities)
+    timeline_events = []
+    
+    # Add recent reviews to timeline
+    for review in recent_reviews[:3]:
+        timeline_events.append({
+            'title': f'Reviewed {review.place.name}',
+            'description': f'Gave {review.rating} stars',
+            'date': review.created_at,
+            'icon': 'star'
+        })
+    
+    # Add recent favorites to timeline
+    for favorite in recent_favorites[:3]:
+        timeline_events.append({
+            'title': f'Added {favorite.place.name} to favorites',
+            'description': f'Added to your bucket list',
+            'date': favorite.created_at,
+            'icon': 'heart'
+        })
+
+    # Sort timeline events by date
+    timeline_events.sort(key=lambda x: x['date'], reverse=True)
+
+    context = {
+        'form': form,
+        'user_profile': user_profile,
+        'travel_level': travel_level,
+        'timeline_events': timeline_events,
+        'recent_reviews': recent_reviews,
+        'recent_favorites': [favorite.place for favorite in recent_favorites],
+    }
+    
+    return render(request, 'core/profile.html', context)
 
 @login_required
 def add_review(request, place_id):
@@ -857,3 +957,376 @@ def add_recommended_favorite(request):
         'success': False,
         'error': 'Invalid request method'
     }, status=400)
+
+@login_required
+def get_ai_personality_analysis(request):
+    """
+    Get AI-powered personality analysis for travel recommendations.
+    """
+    try:
+        # Get user's profile and preferences
+        user_profile = request.user.profile
+        user_favorites = Favorite.objects.filter(user=request.user)
+        
+        # Analyze user's travel preferences based on their favorites
+        favorite_places = [fav.place for fav in user_favorites]
+        favorite_states = [fav.place.state for fav in user_favorites if fav.place.state]
+        
+        # Create a comprehensive personality analysis
+        personality_traits = []
+        travel_motivation = "Exploration and discovery"
+        personalized_message = "Keep exploring the beautiful South India!"
+        travel_insights = ""
+        preferred_experiences = []
+        travel_strengths = []
+        
+        # Analyze based on number of favorites
+        if len(user_favorites) > 10:
+            personality_traits.append('Travel Expert')
+            travel_motivation = "Deep cultural immersion and authentic experiences"
+            personalized_message = "You're a seasoned traveler! Consider exploring hidden gems and offbeat destinations."
+            travel_strengths.extend(['Experience', 'Cultural Awareness', 'Adaptability'])
+        elif len(user_favorites) > 5:
+            personality_traits.append('Travel Enthusiast')
+            travel_motivation = "Adventure and new experiences"
+            personalized_message = "You love exploring! Try visiting different types of destinations to broaden your horizons."
+            travel_strengths.extend(['Curiosity', 'Open-mindedness', 'Adventure Spirit'])
+        elif len(user_favorites) > 2:
+            personality_traits.append('Travel Explorer')
+            travel_motivation = "Learning and discovery"
+            personalized_message = "You're developing your travel style! Explore more destinations to find your preferences."
+            travel_strengths.extend(['Learning Mindset', 'Exploration'])
+        else:
+            personality_traits.append('Travel Beginner')
+            travel_motivation = "New experiences and cultural exposure"
+            personalized_message = "Welcome to the world of travel! Start with popular destinations and gradually explore more."
+            travel_strengths.extend(['Fresh Perspective', 'Eagerness to Learn'])
+        
+        # Analyze based on favorite categories
+        favorite_categories = [place.category for place in favorite_places if place.category]
+        if favorite_categories:
+            category_counts = {}
+            for category in favorite_categories:
+                category_counts[category] = category_counts.get(category, 0) + 1
+            
+            most_liked_category = max(category_counts, key=category_counts.get)
+            
+            if most_liked_category == 'temple':
+                personality_traits.append('Spiritual Explorer')
+                preferred_experiences.extend(['Temple visits', 'Cultural ceremonies', 'Meditation retreats'])
+                travel_insights = "You appreciate spiritual and cultural experiences. Consider visiting ancient temples and participating in local rituals."
+            elif most_liked_category == 'beach':
+                personality_traits.append('Nature Lover')
+                preferred_experiences.extend(['Beach activities', 'Water sports', 'Sunset watching'])
+                travel_insights = "You enjoy natural beauty and relaxation. Explore more coastal destinations and nature reserves."
+            elif most_liked_category == 'fort':
+                personality_traits.append('History Buff')
+                preferred_experiences.extend(['Historical tours', 'Museum visits', 'Heritage walks'])
+                travel_insights = "You're fascinated by history and architecture. Visit more historical monuments and heritage sites."
+            elif most_liked_category == 'park':
+                personality_traits.append('Adventure Seeker')
+                preferred_experiences.extend(['Outdoor activities', 'Wildlife spotting', 'Adventure sports'])
+                travel_insights = "You love outdoor adventures and wildlife. Try trekking, wildlife safaris, and adventure activities."
+        
+        # Analyze based on favorite states
+        if favorite_states:
+            state_names = [state.name for state in favorite_states if state]
+            if len(set(state_names)) > 2:
+                personality_traits.append('Multi-State Explorer')
+                travel_insights += " You enjoy exploring different states and cultures."
+            else:
+                personality_traits.append('Focused Explorer')
+                travel_insights += " You prefer to explore destinations in depth."
+        
+        # Remove duplicates and create final analysis
+        personality_traits = list(set(personality_traits))
+        preferred_experiences = list(set(preferred_experiences))
+        travel_strengths = list(set(travel_strengths))
+        
+        analysis = {
+            'personality_type': ' & '.join(personality_traits) if personality_traits else 'Travel Enthusiast',
+            'travel_motivation': travel_motivation,
+            'personalized_message': personalized_message,
+            'travel_insights': travel_insights,
+            'preferred_experiences': preferred_experiences,
+            'travel_strengths': travel_strengths,
+            'total_favorites': len(user_favorites),
+            'favorite_categories': list(set(favorite_categories)),
+            'preferred_states': list(set([state.name for state in favorite_states if state]))
+        }
+        
+        return JsonResponse({
+            'success': True,
+            'analysis': analysis
+        })
+        
+    except Exception as e:
+        logger.error(f"Error in AI personality analysis: {str(e)}")
+        return JsonResponse({
+            'success': False,
+            'error': 'Failed to generate personality analysis'
+        }, status=500)
+
+@login_required
+def get_travel_recommendations(request):
+    """
+    Get personalized travel recommendations based on user preferences.
+    """
+    try:
+        user_profile = request.user.profile
+        user_favorites = Favorite.objects.filter(user=request.user)
+        
+        # Get user's favorite places and states
+        favorite_places = [fav.place for fav in user_favorites]
+        favorite_states = [fav.place.state for fav in user_favorites if fav.place.state]
+        
+        # Generate recommendations based on preferences
+        recommendations = []
+        
+        # Recommend places from states they haven't visited
+        all_states = State.objects.all()
+        visited_states = set([state.name for state in favorite_states if state])
+        
+        for state in all_states:
+            if state.name not in visited_states:
+                state_places = Place.objects.filter(state=state)[:3]
+                for place in state_places:
+                    recommendations.append({
+                        'name': place.name,
+                        'state': state.name,
+                        'description': place.description[:100] + '...' if len(place.description) > 100 else place.description,
+                        'best_time': 'Year-round',
+                        'estimated_cost': f'₹{place.entry_fee or 500}',
+                        'category': place.category,
+                        'type': 'new_state'
+                    })
+        
+        # Recommend similar places based on categories
+        favorite_categories = [place.category for place in favorite_places if place.category]
+        if favorite_categories:
+            most_liked_category = max(set(favorite_categories), key=favorite_categories.count)
+            similar_places = Place.objects.filter(category=most_liked_category).exclude(
+                id__in=[place.id for place in favorite_places]
+            )[:5]
+            
+            for place in similar_places:
+                recommendations.append({
+                    'name': place.name,
+                    'state': place.state.name,
+                    'description': place.description[:100] + '...' if len(place.description) > 100 else place.description,
+                    'best_time': 'Year-round',
+                    'estimated_cost': f'₹{place.entry_fee or 500}',
+                    'category': place.category,
+                    'type': 'similar_places'
+                })
+        
+        # If no recommendations based on preferences, suggest popular places
+        if not recommendations:
+            popular_places = Place.objects.all()[:10]
+            for place in popular_places:
+                recommendations.append({
+                    'name': place.name,
+                    'state': place.state.name,
+                    'description': place.description[:100] + '...' if len(place.description) > 100 else place.description,
+                    'best_time': 'Year-round',
+                    'estimated_cost': f'₹{place.entry_fee or 500}',
+                    'category': place.category,
+                    'type': 'popular'
+                })
+        
+        return JsonResponse({
+            'success': True,
+            'recommendations': {
+                'recommendations': recommendations[:8]  # Limit to 8 recommendations
+            }
+        })
+        
+    except Exception as e:
+        logger.error(f"Error generating travel recommendations: {str(e)}")
+        return JsonResponse({
+            'success': False,
+            'error': 'Failed to generate recommendations'
+        }, status=500)
+
+@login_required
+def update_bucket_list(request):
+    """
+    Update user's bucket list (places they want to visit).
+    """
+    if request.method == 'POST':
+        try:
+            # Handle both JSON and form data
+            if request.content_type == 'application/json':
+                data = json.loads(request.body)
+            else:
+                # Handle form-encoded data
+                data = request.POST
+            
+            action = data.get('action')  # 'add' or 'remove'
+            item = data.get('item', '').strip()
+            
+            if not item:
+                return JsonResponse({
+                    'success': False,
+                    'error': 'Item is required'
+                }, status=400)
+            
+            user_profile = request.user.profile
+            
+            if action == 'add':
+                # Add to bucket list if not already present
+                if item not in user_profile.travel_bucket_list:
+                    user_profile.travel_bucket_list.append(item)
+                    user_profile.save()
+                    message = f'Added "{item}" to your bucket list'
+                else:
+                    return JsonResponse({
+                        'success': False,
+                        'error': 'Item already in bucket list'
+                    }, status=400)
+                    
+            elif action == 'remove':
+                # Remove from bucket list
+                if item in user_profile.travel_bucket_list:
+                    user_profile.travel_bucket_list.remove(item)
+                    user_profile.save()
+                    message = f'Removed "{item}" from your bucket list'
+                else:
+                    return JsonResponse({
+                        'success': False,
+                        'error': 'Item not found in bucket list'
+                    }, status=400)
+            else:
+                return JsonResponse({
+                    'success': False,
+                    'error': 'Invalid action'
+                }, status=400)
+            
+            return JsonResponse({
+                'success': True,
+                'message': message,
+                'bucket_list': user_profile.travel_bucket_list
+            })
+            
+        except Exception as e:
+            logger.error(f"Error updating bucket list: {str(e)}")
+            return JsonResponse({
+                'success': False,
+                'error': 'Failed to update bucket list'
+            }, status=500)
+    
+    return JsonResponse({
+        'success': False,
+        'error': 'Invalid request method'
+    }, status=400)
+
+@login_required
+def get_travel_stats(request):
+    """
+    Get user's travel statistics and achievements.
+    """
+    try:
+        user_favorites = Favorite.objects.filter(user=request.user)
+        user_reviews = Review.objects.filter(user=request.user)
+        
+        # Calculate statistics
+        stats = {
+            'total_favorites': len(user_favorites),
+            'total_reviews': len(user_reviews),
+            'states_visited': len(set([fav.state.name for fav in user_favorites if hasattr(fav, 'state') and fav.state])),
+            'average_rating': 0,
+            'favorite_categories': {},
+            'recent_activity': []
+        }
+        
+        # Calculate average rating
+        if user_reviews:
+            total_rating = sum(review.rating for review in user_reviews)
+            stats['average_rating'] = round(total_rating / len(user_reviews), 1)
+        
+        # Get favorite categories
+        favorite_places = [fav.place for fav in user_favorites]
+        for place in favorite_places:
+            if place.category:
+                stats['favorite_categories'][place.category] = stats['favorite_categories'].get(place.category, 0) + 1
+        
+        # Get recent activity (last 5 favorites and reviews)
+        recent_favorites = user_favorites.order_by('-created_at')[:5]
+        recent_reviews = user_reviews.order_by('-created_at')[:5]
+        
+        for fav in recent_favorites:
+            stats['recent_activity'].append({
+                'type': 'favorite',
+                'place': fav.place.name,
+                'date': fav.created_at.strftime('%Y-%m-%d'),
+                'time_ago': timesince(fav.created_at)
+            })
+        
+        for review in recent_reviews:
+            stats['recent_activity'].append({
+                'type': 'review',
+                'place': review.place.name,
+                'rating': review.rating,
+                'date': review.created_at.strftime('%Y-%m-%d'),
+                'time_ago': timesince(review.created_at)
+            })
+        
+        # Sort recent activity by date
+        stats['recent_activity'].sort(key=lambda x: x['date'], reverse=True)
+        stats['recent_activity'] = stats['recent_activity'][:10]  # Keep only 10 most recent
+        
+        return JsonResponse(stats)
+        
+    except Exception as e:
+        logger.error(f"Error getting travel stats: {str(e)}")
+        return JsonResponse({'error': 'Failed to get travel statistics'}, status=500)
+
+def custom_logout(request):
+    # Debug: Log the current user before logout
+    print(f"Logging out user: {request.user}")
+    print(f"User is authenticated: {request.user.is_authenticated}")
+    
+    # Clear all session data
+    request.session.flush()
+    request.session.delete()
+    
+    # Logout the user
+    logout(request)
+    
+    # Debug: Check if user is still authenticated
+    print(f"After logout - User: {request.user}")
+    print(f"After logout - User is authenticated: {request.user.is_authenticated}")
+    
+    # Add a success message
+    messages.success(request, 'You have been successfully logged out.')
+    
+    # Redirect to home page with cache-busting parameters
+    response = redirect('home')
+    
+    # Clear any authentication cookies
+    response.delete_cookie('sessionid')
+    response.delete_cookie('csrftoken')
+    response.delete_cookie('auth_token')
+    
+    # Add aggressive cache control headers to prevent caching
+    response['Cache-Control'] = 'no-cache, no-store, must-revalidate, private, max-age=0'
+    response['Pragma'] = 'no-cache'
+    response['Expires'] = '0'
+    response['X-Frame-Options'] = 'DENY'
+    response['X-Content-Type-Options'] = 'nosniff'
+    
+    # Add cache-busting parameter to URL
+    import time
+    cache_buster = int(time.time())
+    response['Location'] = f'/?cb={cache_buster}'
+    
+    return response
+
+def auth_status(request):
+    """Debug view to check authentication status"""
+    return JsonResponse({
+        'user': str(request.user),
+        'is_authenticated': request.user.is_authenticated,
+        'session_id': request.session.session_key,
+        'session_data': dict(request.session.items())
+    })
