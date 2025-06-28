@@ -91,7 +91,6 @@ DEBUG=True
 DATABASE_URL=postgresql://username:password@localhost:5432/south_india_tourism
 GOOGLE_MAPS_API_KEY=your-google-maps-api-key
 GEMINI_API_KEY=your-gemini-api-key
-COMPOSIO_API_KEY=your-composio-api-key
 OPENWEATHERMAP_API_KEY=your-openweathermap-api-key
 ```
 
@@ -294,7 +293,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 For support and questions:
 - Create an issue in the GitHub repository
-- Contact: [your-email@example.com]
+- Contact: [rahulview65@gmail.com]
 - Documentation: [link-to-docs]
 
 ---
