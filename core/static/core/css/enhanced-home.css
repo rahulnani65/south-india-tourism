@@ -57,7 +57,7 @@
   font-weight: 700;
   margin-bottom: 1.5rem;
   font-family: 'Montserrat', sans-serif;
-  text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+  text-shadow: 2px 2px 8px rgba(0,0,0,0.35);
   animation: fadeInUp 1s ease-out;
   background: linear-gradient(45deg, var(--white), var(--secondary-color));
   -webkit-background-clip: text;
@@ -69,7 +69,7 @@
   font-size: 1.6rem;
   margin-bottom: 2.5rem;
   font-weight: 300;
-  text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+  text-shadow: 2px 2px 8px rgba(0,0,0,0.35);
   animation: fadeInUp 1s ease-out 0.3s both;
   opacity: 0.9;
 }
@@ -1170,4 +1170,20 @@
   max-width: none !important;
   min-width: 100% !important;
   z-index: 1 !important;
+}
+
+/* Remove any yellow bar at the bottom */
+body, html {
+  border-bottom: none !important;
+  box-shadow: none !important;
+}
+
+/* Enhance hero-section overlay for readability */
+.hero-section .carousel-item::after {
+  background: linear-gradient(rgba(26, 60, 52, 0.5), rgba(0,0,0,0.3)); /* more subtle, less yellow */
+}
+
+/* Ensure .hero-title and .hero-subtitle are always readable */
+.hero-title, .hero-subtitle {
+  text-shadow: 2px 2px 8px rgba(0,0,0,0.35);
 } 
