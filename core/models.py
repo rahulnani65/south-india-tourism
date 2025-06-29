@@ -125,13 +125,42 @@ class UserProfile(models.Model):
             return "Travel Beginner"
 
     def get_favorite_categories(self):
-        """Return a list of unique categories from the user's favorited places."""
-        favorite_places = self.user.favorite_places.all()
-        categories = set()
-        for place in favorite_places:
-            if place.category:
-                categories.add(place.category)
-        return list(categories)
+        """Return a list of unique categories from the user's favorited places. Returns an empty list if none."""
+        try:
+            favorite_places = self.user.favorite_places.all()
+            categories = set()
+            for place in favorite_places:
+                if place.category:
+                    categories.add(place.category)
+            return list(categories)
+        except Exception:
+            return []
+
+    def get_recent_activity(self):
+        """Return a list of the user's 5 most recent favorites and 5 most recent reviews, sorted by date. Returns an empty list if none."""
+        try:
+            from core.models import Favorite, Review
+            recent_favorites = Favorite.objects.filter(user=self.user).order_by('-created_at')[:5]
+            recent_reviews = Review.objects.filter(user=self.user).order_by('-created_at')[:5]
+            activity = []
+            for fav in recent_favorites:
+                activity.append({
+                    'type': 'favorite',
+                    'place': fav.place.name,
+                    'date': fav.created_at
+                })
+            for rev in recent_reviews:
+                activity.append({
+                    'type': 'review',
+                    'place': rev.place.name,
+                    'rating': rev.rating,
+                    'date': rev.created_at
+                })
+            # Sort all activity by date, descending
+            activity.sort(key=lambda x: x['date'], reverse=True)
+            return activity
+        except Exception:
+            return []
 
 class Review(models.Model):
     place = models.ForeignKey(Place, on_delete=models.CASCADE, related_name='reviews')

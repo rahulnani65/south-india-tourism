@@ -13,7 +13,7 @@
   -webkit-backdrop-filter: blur(15px);
   transition: var(--transition);
   padding: 0.8rem 0 !important;
-  border-bottom: 1px solid rgba(211, 166, 37, 0.2);
+  border-bottom: none !important;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
 }
 

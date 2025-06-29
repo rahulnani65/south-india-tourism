@@ -12,35 +12,66 @@
     {% block extra_css %}{% endblock %}
 </head>
 <body>
-    <!-- Navbar -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-custom sticky-top">
-        <div class="container-fluid">
-            <a class="navbar-brand" href="{% url 'home' %}">South India Tourism</a>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark fixed-top">
+        <div class="container">
+            <a class="navbar-brand" href="{% url 'home' %}">
+                <i class="fas fa-mountain"></i>
+                <span>South India Tourism</span>
+            </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav ms-auto">
-                    <li class="nav-item"><a class="nav-link" href="{% url 'home' %}">Home</a></li>
-                    <li class="nav-item"><a class="nav-link" href="{% url 'home' %}#category">Adventures</a></li>
-                    <li class="nav-item"><a class="nav-link" href="{% url 'home' %}#packages">Packages</a></li>
-                    <li class="nav-item"><a class="nav-link" href="{% url 'home' %}#contact">Contact</a></li>
+                <ul class="navbar-nav ms-auto align-items-center">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'home' %}">
+                            <i class="fas fa-home"></i> Home
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#destinations">
+                            <i class="fas fa-map-marker-alt"></i> Destinations
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#experiences">
+                            <i class="fas fa-star"></i> Experiences
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#cuisine">
+                            <i class="fas fa-utensils"></i> Cuisine
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'core:map_view' %}">
+                            <i class="fas fa-compass"></i> Explore
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#contact">
+                            <i class="fas fa-envelope"></i> Contact
+                        </a>
+                    </li>
                     {% if user.is_authenticated %}
-                        <li class="nav-item"><a class="nav-link" href="{% url 'core:my_favorites' %}">My Favorites</a></li>
-                        <li class="nav-item"><a class="nav-link" href="{% url 'profile' %}">Profile</a></li>
-                        <li class="nav-item">
+                        <div class="user-actions">
+                            <a class="nav-link" href="{% url 'core:profile' %}" title="Profile">
+                                <i class="fas fa-user"></i>
+                            </a>
+                            <a class="nav-link" href="{% url 'core:my_favorites' %}" title="My Favorites">
+                                <i class="fas fa-heart"></i>
+                            </a>
                             <form action="{% url 'logout' %}" method="post" style="display: inline;">
                                 {% csrf_token %}
-                                <button type="submit" class="btn btn-light nav-btn">Logout</button>
+                                <button type="submit" class="btn nav-btn">Logout</button>
                             </form>
-                        </li>
+                        </div>
                     {% else %}
-                        <li class="nav-item">
-                            <a href="{% url 'login' %}" class="btn btn-light nav-btn">Login</a>
-                        </li>
-                        <li class="nav-item">
-                            <a href="{% url 'signup' %}" class="btn btn-light nav-btn">Sign Up</a>
-                        </li>
+                        <div class="user-actions">
+                            <a href="{% url 'login' %}" class="btn nav-btn">Login</a>
+                            <a href="{% url 'signup' %}" class="btn nav-btn">Sign Up</a>
+                        </div>
                     {% endif %}
                 </ul>
             </div>
