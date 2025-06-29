@@ -124,6 +124,15 @@ class UserProfile(models.Model):
         else:
             return "Travel Beginner"
 
+    def get_favorite_categories(self):
+        """Return a list of unique categories from the user's favorited places."""
+        favorite_places = self.user.favorite_places.all()
+        categories = set()
+        for place in favorite_places:
+            if place.category:
+                categories.add(place.category)
+        return list(categories)
+
 class Review(models.Model):
     place = models.ForeignKey(Place, on_delete=models.CASCADE, related_name='reviews')
     state = models.ForeignKey(State, on_delete=models.CASCADE, related_name='reviews')
