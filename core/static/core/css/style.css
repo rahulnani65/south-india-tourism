@@ -263,10 +263,10 @@ main {
 
 .place-card .card-img-top {
   width: 100% !important;
-  height: auto !important;
+  height: 220px !important;
   display: block !important;
-  object-fit: cover !important;
-  min-height: 200px;
+  object-fit: contain !important;
+  min-height: 100px;
   background: #eee;
 }
 
