@@ -502,8 +502,18 @@ def get_gemini_recommendations(request):
         model = genai.GenerativeModel('gemini-1.5-pro')
         response = model.generate_content(prompt)
         
-        import json
+        def clean_gemini_json(text):
+            # Remove triple backticks and optional language tag (e.g., ```json)
+            text = text.strip()
+            if text.startswith('```'):
+                # Remove the first line (``` or ```json)
+                text = text.split('\n', 1)[-1]
+            if text.endswith('```'):
+                text = text.rsplit('```', 1)[0]
+            return text.strip()
+
         cleaned_response = remove_json_comments(response.text)
+        cleaned_response = clean_gemini_json(cleaned_response)
         try:
             places = json.loads(cleaned_response)
         except Exception as e:
@@ -1129,3 +1139,13 @@ def custom_login(request):
 def remove_json_comments(text):
     # Remove // ... comments
     return re.sub(r'//.*', '', text)
+
+def clean_gemini_json(text):
+    # Remove triple backticks and optional language tag (e.g., ```json)
+    text = text.strip()
+    if text.startswith('```'):
+        # Remove the first line (``` or ```json)
+        text = text.split('\n', 1)[-1]
+    if text.endswith('```'):
+        text = text.rsplit('```', 1)[0]
+    return text.strip()
