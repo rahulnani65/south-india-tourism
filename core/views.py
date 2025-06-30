@@ -200,31 +200,34 @@ def contact_submit(request):
 def signup(request):
     if request.method == 'POST':
         form = UserCreationForm(request.POST)
-        if form.is_valid():
+        email = request.POST.get('email', '').strip()
+        # Email validation: must contain '@' and '.com'
+        if not email or '@' not in email or '.com' not in email:
+            messages.error(request, 'Please enter a valid email address containing @ and .com')
+        elif User.objects.filter(email=email).exists():
+            messages.error(request, 'This email address is already in use.')
+        elif form.is_valid():
             try:
-                user = form.save()
+                user = form.save(commit=False)
+                user.email = email
+                user.save()
                 # Log the user in immediately after signup
                 login(request, user)
-                
                 # Create a UserProfile for the new user
                 try:
                     UserProfile.objects.create(user=user)
                 except:
                     pass  # Profile might already exist
-                
                 messages.success(request, f'Welcome {user.username}! Your account has been created successfully. You are now logged in.')
-                
                 # Redirect to home page with cache-busting
                 response = redirect('home')
                 response['Cache-Control'] = 'no-cache, no-store, must-revalidate, private, max-age=0'
                 response['Pragma'] = 'no-cache'
                 response['Expires'] = '0'
-                
                 # Add cache-busting parameter
                 import time
                 cache_buster = int(time.time())
                 response['Location'] = f'/?cb={cache_buster}'
-                
                 return response
             except Exception as e:
                 logger.error(f"Error during signup: {str(e)}")
@@ -240,7 +243,6 @@ def signup(request):
                         messages.error(request, f"{field_name}: {error}")
     else:
         form = UserCreationForm()
-    
     return render(request, 'registration/signup.html', {'form': form})
 
 @login_required
