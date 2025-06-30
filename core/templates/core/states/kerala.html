@@ -1342,61 +1342,41 @@
     <!-- Places to Visit -->
     <section class="places-section py-6 bg-light" id="places">
       <div class="container">
-        <h2 class="section-title text-center mb-5">Places to Visit</h2>
-        
-        <!-- Enhanced AI-Powered Recommendations -->
+        <h2 class="section-title text-center mb-5">Explore Andhra Pradesh</h2>
         <div class="mb-5">
           <div class="recommendations-header text-center mb-4">
-            <h4 class="mb-3">
-              <i class="fas fa-magic"></i> 
-              AI-Powered Smart Recommendations
-            </h4>
-            <p class="text-muted">Get personalized suggestions based on your preferences and current location</p>
-              </div>
-          
-          <!-- Interactive Filters -->
+            <h4><i class="fas fa-magic"></i> AI-Powered Andhra Recommendations</h4>
+            <p>Get personalized suggestions for your Andhra adventure!</p>
+          </div>
           <div class="recommendation-filters mb-4">
             <div class="row g-3">
               <div class="col-md-3">
                 <div class="filter-card">
-                  <label class="form-label">
-                    <i class="fas fa-map-marker-alt"></i> Your Location
-                  </label>
+                  <label class="form-label"><i class="fas fa-map-marker-alt"></i> Your Location</label>
                   <select id="user-place" class="form-select">
-                    <option value="">Select your current place</option>
-                    {% for place_data in places_with_weather %}
-                      <option value="{{ place_data.place.name }}" 
-                              data-lat="{{ place_data.latitude }}" 
-                              data-lng="{{ place_data.longitude }}">
-                        {{ place_data.place.name }}
-                      </option>
+                    <option value="">Select current place</option>
+                    {% for p in places_with_weather %}
+                      <option value="{{ p.place.name }}" data-lat="{{ p.latitude }}" data-lng="{{ p.longitude }}">{{ p.place.name }}</option>
                     {% endfor %}
                   </select>
                 </div>
               </div>
               <div class="col-md-3">
                 <div class="filter-card">
-                  <label class="form-label">
-                    <i class="fas fa-tag"></i> Interest Type
-                  </label>
+                  <label class="form-label"><i class="fas fa-tag"></i> Interest</label>
                   <select id="gemini-place-type" class="form-select">
-                    <option value="tourist_attraction">🏛️ Tourist Attractions</option>
+                    <option value="tourist_attraction">🏛️ Attractions</option>
                     <option value="hindu_temple">🕍 Temples</option>
-                    <option value="park">🏔️ Hill Stations</option>
-                    <option value="beach">🏖️ Beaches</option>
-                    <option value="museum">🏛️ Museums</option>
+                    <option value="park">🌳 Parks & Nature</option>
                     <option value="restaurant">🍽️ Restaurants</option>
-                    <option value="shopping_mall">🛍️ Shopping</option>
                   </select>
                 </div>
               </div>
               <div class="col-md-3">
                 <div class="filter-card">
-                  <label class="form-label">
-                    <i class="fas fa-wallet"></i> Budget Range
-                  </label>
+                  <label class="form-label"><i class="fas fa-wallet"></i> Budget</label>
                   <select id="budget" class="form-select">
-                    <option value="low">💰 Budget Friendly</option>
+                    <option value="low">💰 Budget</option>
                     <option value="medium">💳 Moderate</option>
                     <option value="high">💎 Premium</option>
                   </select>
@@ -1404,55 +1384,40 @@
               </div>
               <div class="col-md-3">
                 <div class="filter-card">
-                  <label class="form-label">
-                    <i class="fas fa-clock"></i> Duration
-                  </label>
+                  <label class="form-label"><i class="fas fa-clock"></i> Duration</label>
                   <select id="duration" class="form-select">
-                    <option value="short">⏰ Quick Visit (1-2 hours)</option>
-                    <option value="medium">🕐 Half Day (3-4 hours)</option>
-                    <option value="long">🌅 Full Day (6+ hours)</option>
+                    <option value="short">⏰ Quick Visit</option>
+                    <option value="medium">🕐 Half Day</option>
+                    <option value="long">🌅 Full Day</option>
                   </select>
-            </div>
-          </div>
-        </div>
-
-            <!-- Action Buttons -->
-            <div class="text-center mt-4">
-              <button class="btn btn-primary btn-lg me-3" onclick="fetchGeminiRecommendations()">
-                <i class="fas fa-magic"></i> Get Smart Recommendations
-              </button>
-              <button class="btn btn-outline-secondary" onclick="clearRecommendations()">
-                <i class="fas fa-refresh"></i> Clear Results
-              </button>
-            </div>
-          </div>
-          
-          <!-- Loading and Results Container -->
-          <div id="gemini-recommended-places" class="recommendations-container">
-            <div class="text-center py-5">
-              <div class="recommendation-placeholder">
-                <i class="fas fa-compass fa-3x text-muted mb-3"></i>
-                <h5 class="text-muted">Ready to Discover?</h5>
-                <p class="text-muted">Select your preferences above and get personalized recommendations</p>
+                </div>
               </div>
             </div>
+            <div class="text-center mt-4">
+              <button class="btn btn-primary-custom btn-lg me-2" onclick="fetchGeminiRecommendations()"><i class="fas fa-magic"></i> Get Andhra Recommendations</button>
+              <button class="btn btn-outline-secondary" onclick="clearRecommendations()"><i class="fas fa-sync-alt"></i> Clear</button>
+            </div>
+          </div>
+          <div id="gemini-recommended-places" class="recommendations-container">
+            <div class="recommendation-placeholder text-center">
+              <i class="fas fa-compass fa-3x text-muted mb-3"></i>
+              <h5>Ready to Discover Andhra Pradesh?</h5>
+              <p>Select your preferences above and get recommendations for Andhra's best destinations.</p>
+            </div>
           </div>
         </div>
-
-        <!-- Category Filter -->
         <div class="mb-4 text-center">
-          <label for="categoryFilter" class="form-label">Filter by Category:</label>
-          <select id="categoryFilter" class="form-select w-auto d-inline-block mx-auto" onchange="filterPlacesByCategory()">
+          <select id="categoryFilter" class="form-select w-auto d-inline-block mx-auto">
             <option value="all">All Categories</option>
-            <option value="religious">🕍 Religious/Temples</option>
-            <option value="natural">🏔️ Natural/Beaches</option>
+            <option value="religious">🕍 Religious</option>
+            <option value="natural">🏔️ Natural</option>
             <option value="historical">🏛️ Historical</option>
             <option value="cultural">🎭 Cultural</option>
             <option value="adventure">🏃 Adventure</option>
             <option value="entertainment">🎪 Entertainment</option>
           </select>
+          <div id="place-count" class="mt-2"></div>
         </div>
-
         <!-- Places List -->
         <div class="row" id="places-list">
           {% for place_data in places_with_weather %}
@@ -1460,19 +1425,7 @@
               <div class="card place-card">
                 <!-- Category Badge always on top -->
                 <div class="category-badge">
-                  {% if place_data.place.category == 'religious' %}
-                    🕍 Temple
-                  {% elif place_data.place.category == 'natural' %}
-                    🏔️ Natural
-                  {% elif place_data.place.category == 'historical' %}
-                    🏛️ Historical
-                  {% elif place_data.place.category == 'cultural' %}
-                    🎭 Cultural
-                  {% elif place_data.place.category == 'adventure' %}
-                    🏃 Adventure
-                  {% else %}
-                    🎪 {{ place_data.place.category|title }}
-                  {% endif %}
+                  {{ place_data.place.category|title }}
                 </div>
                 {% if place_data.image_url %}
                   <img src="{{ place_data.image_url }}" class="card-img-top" alt="{{ place_data.place.name }}">
@@ -1484,8 +1437,6 @@
                 <div class="card-body">
                   <h5 class="card-title">{{ place_data.place.name }}</h5>
                   <p class="card-text">{{ place_data.place.description }}</p>
-                  
-                  <!-- Weather Information -->
                   {% if place_data.weather %}
                     <div class="weather-info mb-3">
                       <h6>Current Weather</h6>
@@ -1493,16 +1444,13 @@
                       <p><i class="fas fa-cloud"></i> Condition: {{ place_data.weather.condition }}</p>
                     </div>
                   {% endif %}
-                  
-                  <!-- Action Buttons -->
                   <div class="card-actions">
-                    <button class="btn btn-outline-primary btn-map" 
-                            onclick="showPlaceOnMap('{{ place_data.latitude }}', '{{ place_data.longitude }}', '{{ place_data.place.name|escapejs }}')">
+                    <button class="btn btn-outline-primary btn-map" onclick="showPlaceOnMap('{{ place_data.latitude }}', '{{ place_data.longitude }}', '{{ place_data.place.name|escapejs }}')">
                       <i class="fas fa-map-marker-alt"></i> Show on Map
                     </button>
-                  {% if user.is_authenticated %}
-                    {% include 'core/partials/favorite_button.html' with place=place_data.place is_favorite=place_data.is_favorite %}
-                  {% endif %}
+                    {% if user.is_authenticated %}
+                      {% include 'core/partials/favorite_button.html' with place=place_data.place is_favorite=place_data.is_favorite %}
+                    {% endif %}
                   </div>
                 </div>
               </div>
@@ -2951,5 +2899,10 @@
       }
     }
   </script>
+  <script>
+document.addEventListener('DOMContentLoaded', function() {
+  filterPlacesByCategory();
+});
+</script>
 </body>
 </html>
