@@ -27,6 +27,7 @@ from django.views.decorators.http import require_POST
 from django.contrib.auth.models import User
 from .models import Cuisine, Restaurant
 from django.db.models import Q
+import re
 
 logger = logging.getLogger(__name__)
 
@@ -494,7 +495,7 @@ def get_gemini_recommendations(request):
           }}
         ]
         
-        Respond ONLY with the JSON array.
+        Respond ONLY with a valid JSON array. Do NOT include any comments (// ...) or explanations outside the JSON.
         """
         
         # Generate response using Gemini
@@ -502,13 +503,14 @@ def get_gemini_recommendations(request):
         response = model.generate_content(prompt)
         
         import json
+        cleaned_response = remove_json_comments(response.text)
         try:
-            places = json.loads(response.text)
+            places = json.loads(cleaned_response)
         except Exception as e:
             logger.error(f"Failed to parse Gemini response as JSON: {e}\nGemini response: {response.text}")
             return JsonResponse({
-                'success': False,
-                'error': 'Failed to parse recommendations'
+                'error': 'Failed to parse recommendations from Gemini API response',
+                'raw_gemini_response': response.text
             }, status=500)
 
         if not places:
@@ -1113,3 +1115,7 @@ def custom_login(request):
             messages.error(request, 'Invalid username or password. Please try again.')
     
     return render(request, 'registration/login.html')
+
+def remove_json_comments(text):
+    # Remove // ... comments
+    return re.sub(r'//.*', '', text)
