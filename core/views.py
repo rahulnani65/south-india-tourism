@@ -108,7 +108,8 @@ def state_detail(request, state_slug):
             'weather': get_weather_data(place.location) if place.location else None,
             'latitude': place.latitude,
             'longitude': place.longitude,
-            'is_favorite': place.favorited_by.filter(id=request.user.id).exists()
+            'is_favorite': place.favorited_by.filter(id=request.user.id).exists(),
+            'image_url': place.image_url or ''
         }
         places_with_weather.append(place_data)
     
