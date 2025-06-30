@@ -485,7 +485,7 @@ def get_gemini_recommendations(request):
         
         # Generate response using Gemini
         # Use the correct Gemini model name for Flash (2024)
-        model = genai.GenerativeModel('gemini-1.0-flash-latest')
+        model = genai.GenerativeModel('gemini-1.5-pro')
         response = model.generate_content(prompt)
         
         if response.text:
