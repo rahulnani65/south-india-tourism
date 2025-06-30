@@ -252,6 +252,9 @@ main {
 }
 
 .place-card {
+  width: 450px !important;
+  min-height: 420px;
+  margin: 0 auto 2rem auto;
   border: none;
   box-shadow: var(--shadow);
   transition: var(--transition);
@@ -263,11 +266,12 @@ main {
 
 .place-card .card-img-top {
   width: 100% !important;
-  height: 220px !important;
+  height: 300px !important;
   display: block !important;
-  object-fit: contain !important;
-  min-height: 100px;
+  object-fit: cover !important;
+  min-height: 150px;
   background: #eee;
+  border-radius: 10px 10px 0 0;
 }
 
 .place-card .card-title {
