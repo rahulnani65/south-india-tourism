@@ -1327,8 +1327,8 @@
                 <div class="category-badge">
                   {{ place_data.place.category|title }}
                 </div>
-                {% if place_data.place.image_url %}
-                  <img src="{{ place_data.place.image_url }}" class="card-img-top" alt="{{ place_data.place.name }}">
+                {% if place_data.image_url %}
+                  <img src="{{ place_data.image_url }}" class="card-img-top" alt="{{ place_data.place.name }}">
                 {% elif place_data.place.image %}
                   <img src="{{ place_data.place.image.url }}" class="card-img-top" alt="{{ place_data.place.name }}">
                 {% else %}

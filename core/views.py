@@ -433,7 +433,8 @@ def my_favorites(request):
             'place': place,
             'weather': get_weather_data(place.location) if place.location else None,
             'latitude': place.latitude,
-            'longitude': place.longitude
+            'longitude': place.longitude,
+            'image_url': place.image_url or ''
         }
         places_with_weather.append(place_data)
     
