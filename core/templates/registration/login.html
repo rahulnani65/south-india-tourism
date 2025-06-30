@@ -149,6 +149,10 @@
         <input type="hidden" name="next" value="{{ next }}" />
       </form>
       
+      <div class="text-center mt-3">
+        <a href="{% url 'password_reset' %}">Forgot password?</a>
+      </div>
+      
       {% if form.non_field_errors %}
         {% for error in form.non_field_errors %}
           <div class="alert alert-danger alert-dismissible fade show mt-3">

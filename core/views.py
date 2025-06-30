@@ -2,7 +2,7 @@ import requests
 import os
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.forms import UserCreationForm
-from django.contrib.auth import login, authenticate, logout
+from django.contrib.auth import login, authenticate, logout as auth_logout
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.http import JsonResponse
@@ -1061,7 +1061,7 @@ def custom_logout(request):
     request.session.delete()
     
     # Logout the user
-    logout(request)
+    auth_logout(request)
     
     # Debug: Check if user is still authenticated
     print(f"After logout - User: {request.user}")
@@ -1150,3 +1150,12 @@ def clean_gemini_json(text):
     if text.endswith('```'):
         text = text.rsplit('```', 1)[0]
     return text.strip()
+
+@login_required
+def delete_account(request):
+    if request.method == 'POST':
+        user = request.user
+        auth_logout(request)
+        user.delete()
+        return redirect('home')
+    return render(request, 'registration/delete_account_confirm.html')

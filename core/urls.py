@@ -31,4 +31,5 @@ urlpatterns = [
     path('test-api/', views.test_api_view, name='test_api'),
     path('api/github/repos/', views.fetch_github_repos, name='github_repos'),
     path('map/', views.map_view, name='map_view'),
+    path('delete-account/', views.delete_account, name='delete_account'),
 ]

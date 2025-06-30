@@ -16,4 +16,9 @@ urlpatterns = [
     path('favorite/add/<int:place_id>/', views.add_favorite, name='add_favorite'),
     path('favorite/remove/<int:place_id>/', views.remove_favorite, name='remove_favorite'),
     path('review/add/<int:place_id>/', views.add_review, name='add_review'),
+    # Password reset URLs
+    path('accounts/password_reset/', auth_views.PasswordResetView.as_view(), name='password_reset'),
+    path('accounts/password_reset/done/', auth_views.PasswordResetDoneView.as_view(), name='password_reset_done'),
+    path('accounts/reset/<uidb64>/<token>/', auth_views.PasswordResetConfirmView.as_view(), name='password_reset_confirm'),
+    path('accounts/reset/done/', auth_views.PasswordResetCompleteView.as_view(), name='password_reset_complete'),
 ]

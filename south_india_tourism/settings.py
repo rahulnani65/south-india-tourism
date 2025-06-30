@@ -380,3 +380,6 @@ if not DEBUG:
     SECURE_REDIRECT_EXEMPT = []
     SECURE_SSL_REDIRECT = True
     X_FRAME_OPTIONS = 'DENY'
+
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+DEFAULT_FROM_EMAIL = 'webmaster@localhost'
