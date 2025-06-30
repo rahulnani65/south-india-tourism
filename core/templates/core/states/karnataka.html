@@ -1658,59 +1658,33 @@
     <section class="state-details py-6" id="overview">
       <div class="container">
         <ul class="nav nav-tabs state-tabs mb-4" id="stateTabs" role="tablist">
-          <li class="nav-item" role="presentation">
-            <a class="nav-link active" id="overview-tab" data-bs-toggle="tab" href="#overview-tab-content" role="tab" aria-controls="overview-tab-content" aria-selected="true">Overview</a>
-          </li>
-          <li class="nav-item" role="presentation">
-            <a class="nav-link" id="history-tab" data-bs-toggle="tab" href="#history" role="tab" aria-controls="history" aria-selected="false">History</a>
-          </li>
-          <li class="nav-item" role="presentation">
-            <a class="nav-link" id="culture-tab" data-bs-toggle="tab" href="#culture" role="tab" aria-controls="culture" aria-selected="false">Culture</a>
-          </li>
-          <li class="nav-item" role="presentation">
-            <a class="nav-link" id="climate-tab" data-bs-toggle="tab" href="#climate" role="tab" aria-controls="climate" aria-selected="false">Climate</a>
-          </li>
-          <li class="nav-item" role="presentation">
-            <a class="nav-link" id="best-time-tab" data-bs-toggle="tab" href="#best-time" role="tab" aria-controls="best-time" aria-selected="false">Best Time to Visit</a>
-          </li>
+          <li class="nav-item" role="presentation"><a class="nav-link active" id="overview-tab" data-bs-toggle="tab" href="#overview-content" role="tab" aria-selected="true">Overview</a></li>
+          <li class="nav-item" role="presentation"><a class="nav-link" id="history-tab" data-bs-toggle="tab" href="#history-content" role="tab">History</a></li>
+          <li class="nav-item" role="presentation"><a class="nav-link" id="culture-tab" data-bs-toggle="tab" href="#culture-content" role="tab">Culture</a></li>
+          <li class="nav-item" role="presentation"><a class="nav-link" id="best-time-tab" data-bs-toggle="tab" href="#best-time-content" role="tab">Best Time</a></li>
         </ul>
-
         <div class="tab-content" id="stateTabsContent">
-          <div class="tab-pane fade show active" id="overview-tab-content" role="tabpanel" aria-labelledby="overview-tab">
-            <h2 class="section-title">{{ state.description }}</h2>
-            <p class="section-content">
-              Karnataka, located in the southern part of India, is known for its rich heritage, magnificent palaces, and diverse landscapes. The state is home to ancient temples, beautiful hill stations, and modern cities. From the historic ruins of Hampi to the royal Mysore Palace, from the tech hub of Bengaluru to the coffee estates of Coorg, Karnataka offers a perfect blend of tradition and modernity.
-            </p>
+          <div class="tab-pane fade show active" id="overview-content" role="tabpanel">
+            <h2>Overview of {{ state.name }}</h2>
+            <p class="section-content">{{ state.description|linebreaks }}</p>
           </div>
-          <div class="tab-pane fade" id="history" role="tabpanel" aria-labelledby="history-tab">
-            <h2 class="section-title">History</h2>
-            <p class="section-content">{{ state.history }}</p>
+          <div class="tab-pane fade" id="history-content" role="tabpanel">
+            <h2>History</h2>
+            <p class="section-content">{{ state.history|linebreaks }}</p>
           </div>
-          <div class="tab-pane fade" id="culture" role="tabpanel" aria-labelledby="culture-tab">
-            <h2 class="section-title">Culture</h2>
-            <p class="section-content">{{ state.culture }}</p>
-            <h4 class="mt-4">Cultural Safety Tips</h4>
-            <ul class="safety-tips-list">
-              {% for tip in state.cultural_safety_tips %}
-                <li>{{ tip }}</li>
-              {% empty %}
-                <li>No specific cultural safety tips available.</li>
-              {% endfor %}
-            </ul>
+          <div class="tab-pane fade" id="culture-content" role="tabpanel">
+            <h2>Culture</h2>
+            <p class="section-content">{{ state.culture|linebreaks }}</p>
           </div>
-          <div class="tab-pane fade" id="climate" role="tabpanel" aria-labelledby="climate-tab">
-            <h2 class="section-title">Climate</h2>
-            <p class="section-content">{{ state.climate }}</p>
-          </div>
-          <div class="tab-pane fade" id="best-time" role="tabpanel" aria-labelledby="best-time-tab">
-            <h2 class="section-title">Best Time to Visit</h2>
-            <p class="section-content">{{ state.best_time_to_visit }}</p>
+          <div class="tab-pane fade" id="best-time-content" role="tabpanel">
+            <h2>Best Time to Visit</h2>
+            <p class="section-content">{{ state.best_time_to_visit|linebreaks }}</p>
           </div>
         </div>
       </div>
     </section>
 
-    <!-- Places to Visit -->
+    <!-- Places to Visit Section -->
     <section class="places-section py-6 bg-light" id="places">
       <div class="container">
         <h2 class="section-title text-center mb-5">Explore Andhra Pradesh</h2>
