@@ -483,7 +483,7 @@ def get_gemini_recommendations(request):
         
         Example:
         [
-          {
+          {{
             "name": "Mysore Palace",
             "reasoning": "Rich history and architecture.",
             "best_time": "October to March",
@@ -491,7 +491,7 @@ def get_gemini_recommendations(request):
             "tips": "Visit during Dussehra festival.",
             "latitude": 12.3051,
             "longitude": 76.6551
-          }
+          }}
         ]
         
         Respond ONLY with the JSON array.
