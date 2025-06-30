@@ -461,43 +461,43 @@ def get_weather(request):
 def get_gemini_recommendations(request):
     """Get AI-powered travel recommendations using Gemini"""
     try:
-        # Get user preferences from their profile
-        user_profile = request.user.profile
-        
-        # Build a comprehensive prompt based on user data
+        # Extract parameters from GET request
+        latitude = request.GET.get('latitude')
+        longitude = request.GET.get('longitude')
+        user_place = request.GET.get('user_place')
+        place_type = request.GET.get('place_type', 'tourist_attraction')
+        budget = request.GET.get('budget', 'medium')
+        duration = request.GET.get('duration', 'medium')
+        context = request.GET.get('context', 'south_india')
+
+        # Optionally, fetch weather data (if you want to keep it)
+        weather_condition = None
+        temperature = None
+        humidity = None
+        location_name = user_place
+        weather_description = None
+        if latitude and longitude:
+            try:
+                weather_url = f"https://api.openweathermap.org/data/2.5/weather?lat={latitude}&lon={longitude}&appid={settings.OPENWEATHERMAP_API_KEY}&units=metric"
+                weather_response = requests.get(weather_url)
+                weather_response.raise_for_status()
+                weather_data = weather_response.json()
+                weather_condition = weather_data['weather'][0]['main'].lower()
+                temperature = weather_data['main']['temp']
+                humidity = weather_data['main']['humidity']
+                location_name = weather_data.get('name', user_place)
+                weather_description = weather_data['weather'][0]['description']
+            except Exception as e:
+                logger.warning(f"Weather API failed: {e}")
+
+        # Build the Gemini prompt using label inputs
         prompt = f"""
-        As a travel expert for South India, provide personalized recommendations for {request.user.username}.
-        
-        User Profile:
-        - Travel Level: {user_profile.get_travel_level()}
-        - Favorite Categories: {', '.join(user_profile.get_favorite_categories())}
-        - Recent Activity: {len(user_profile.get_recent_activity())} recent activities
-        
-        Please provide 3-5 personalized destination recommendations in South India as a JSON array, where each item has:
-        - name (string)
-        - reasoning (string)
-        - best_time (string)
-        - budget_range (string)
-        - tips (string)
-        - latitude (float, if known)
-        - longitude (float, if known)
-        
-        Example:
-        [
-          {{
-            "name": "Mysore Palace",
-            "reasoning": "Rich history and architecture.",
-            "best_time": "October to March",
-            "budget_range": "Moderate",
-            "tips": "Visit during Dussehra festival.",
-            "latitude": 12.3051,
-            "longitude": 76.6551
-          }}
-        ]
-        
-        Respond ONLY with a valid JSON array. Do NOT include any comments (// ...) or explanations outside the JSON.
+        You are a travel expert for {context.replace('_', ' ').title()}. The user is currently at '{user_place}' and wants recommendations for {place_type.replace('_', ' ')}s with a {budget} budget for a {duration} visit.
         """
-        
+        if weather_condition and temperature:
+            prompt += f" The current weather is {weather_condition} with a temperature of {temperature}°C."
+        prompt += f"\n\nPlease provide 5-7 diverse and interesting places in {context.replace('_', ' ')} that match these criteria. For each place, include:\n- name (string)\n- reasoning (string, 1-2 sentences on why it's a good fit for the user's preferences)\n- best_time (string)\n- budget_range (string)\n- tips (string)\n- latitude (float, if known)\n- longitude (float, if known)\n\nRespond ONLY with a valid JSON array. Do NOT include any comments (// ...) or explanations outside the JSON."
+
         # Generate response using Gemini
         model = genai.GenerativeModel('gemini-1.5-pro')
         response = model.generate_content(prompt)
@@ -513,17 +513,27 @@ def get_gemini_recommendations(request):
                 'raw_gemini_response': response.text
             }, status=500)
 
-        if not places:
-            logger.error(f"Failed to parse any recommendations from response: {response.text}")
-            # DEBUG: Return the raw Gemini response for troubleshooting
-            return JsonResponse({
-                'error': 'Failed to parse recommendations from Gemini API response',
-                'raw_gemini_response': response.text
-            }, status=500)
+        # Optionally, include weather data in the response
+        weather_info = None
+        if weather_condition and temperature:
+            weather_info = {
+                'temperature': temperature,
+                'weather': weather_condition,
+                'humidity': humidity,
+                'description': weather_description,
+                'location': location_name
+            }
 
         return JsonResponse({
-            'success': True,
-            'gemini_recommended_places': places
+            'gemini_recommended_places': places,
+            'weather_data': weather_info,
+            'context': {
+                'user_place': user_place,
+                'place_type': place_type,
+                'budget': budget,
+                'duration': duration,
+                'context': context
+            }
         })
             
     except Exception as e:
