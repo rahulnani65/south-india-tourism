@@ -472,32 +472,57 @@ def get_gemini_recommendations(request):
         - Favorite Categories: {', '.join(user_profile.get_favorite_categories())}
         - Recent Activity: {len(user_profile.get_recent_activity())} recent activities
         
-        Please provide:
-        1. 3-5 personalized destination recommendations in South India
-        2. Specific reasons why these places would suit this traveler
-        3. Best time to visit each recommendation
-        4. Estimated budget range for each destination
-        5. Any special tips or considerations
+        Please provide 3-5 personalized destination recommendations in South India as a JSON array, where each item has:
+        - name (string)
+        - reasoning (string)
+        - best_time (string)
+        - budget_range (string)
+        - tips (string)
+        - latitude (float, if known)
+        - longitude (float, if known)
         
-        Format the response as a structured list with clear sections.
-        Keep recommendations practical and specific to South India.
+        Example:
+        [
+          {
+            "name": "Mysore Palace",
+            "reasoning": "Rich history and architecture.",
+            "best_time": "October to March",
+            "budget_range": "Moderate",
+            "tips": "Visit during Dussehra festival.",
+            "latitude": 12.3051,
+            "longitude": 76.6551
+          }
+        ]
+        
+        Respond ONLY with the JSON array.
         """
         
         # Generate response using Gemini
-        # Use the correct Gemini model name for Flash (2024)
         model = genai.GenerativeModel('gemini-1.5-pro')
         response = model.generate_content(prompt)
         
-        if response.text:
-            return JsonResponse({
-                'success': True,
-                'recommendations': response.text
-            })
-        else:
+        import json
+        try:
+            places = json.loads(response.text)
+        except Exception as e:
+            logger.error(f"Failed to parse Gemini response as JSON: {e}\nGemini response: {response.text}")
             return JsonResponse({
                 'success': False,
-                'error': 'Unable to generate recommendations'
+                'error': 'Failed to parse recommendations'
             }, status=500)
+
+        if not places:
+            logger.error(f"Failed to parse any recommendations from response: {response.text}")
+            # DEBUG: Return the raw Gemini response for troubleshooting
+            return JsonResponse({
+                'error': 'Failed to parse recommendations from Gemini API response',
+                'raw_gemini_response': response.text
+            }, status=500)
+
+        return JsonResponse({
+            'success': True,
+            'gemini_recommended_places': places
+        })
             
     except Exception as e:
         logger.error(f"Error generating Gemini recommendations: {str(e)}")
