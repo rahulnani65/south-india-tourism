@@ -1856,30 +1856,13 @@
               <div class="card-body">
                 <h4>Top Restaurants</h4>
                 {% for restaurant in state.restaurants.all %}
-                <div class="restaurant-item mb-3">
+                  <div class="restaurant-item mb-3">
                     <h6>{{ restaurant.name }}</h6>
                     <p><strong>Specialty:</strong> {{ restaurant.specialty }}</p>
                     <p><strong>Average Cost:</strong> ₹{{ restaurant.average_cost }} per person.</p>
-                </div>
-                {% empty %}
-                  <p>No top restaurants listed.</p>
-                {% endfor %}
-              </div>
-            </div>
-          </div>
-          <div class="col-md-4 mb-4">
-            <div class="card cuisine-card h-100">
-              <div class="card-body">
-                <h4>Best Hotels</h4>
-                {% for hotel in state.hotels.all %}
-                  <div class="hotel-item mb-3">
-                    <h6>{{ hotel.name }}</h6>
-                    <p><strong>Location:</strong> {{ hotel.location }}</p>
-                    <p><strong>Rating:</strong> {{ hotel.rating }}/5</p>
-                    <p><strong>Price Range:</strong> ₹{{ hotel.price_range }}</p>
                   </div>
                 {% empty %}
-                  <p>No hotels listed.</p>
+                  <p>No top restaurants listed.</p>
                 {% endfor %}
               </div>
             </div>
