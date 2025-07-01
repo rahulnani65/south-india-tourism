@@ -1,210 +1,482 @@
-{% extends 'core/base.html' %}
 {% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Favorites - South India Tourism</title>
+  <!-- External CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="{% static 'core/css/style.css' %}">
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600&family=Poppins:wght@300;500&display=swap" rel="stylesheet">
+  
+  <!-- Enhanced Scripts -->
+  <script src="{% static 'core/js/enhanced-scripts.js' %}"></script>
+  <!-- Load Google Maps JavaScript API -->
+  <script>
+    (g=>{var h,a,k,p="The Google Maps JavaScript API",c="google",l="importLibrary",q="__ib__",m=document,b=window;b=b[c]||(b[c]={});var d=b.maps||(b.maps={}),r=new Set,e=new URLSearchParams,u=()=>h||(h=new Promise(async(f,n)=>{await (a=m.createElement("script"));e.set("libraries",[...r]+"");for(k in g)e.set(k.replace(/[A-Z]/g,t=>"_"+t[0].toLowerCase()),g[k]);e.set("callback",c+".maps."+q);a.src=`https://maps.${c}apis.com/maps/api/js?`+e;d[q]=f;a.onerror=()=>h=n(Error(p+" could not load."));a.nonce=m.querySelector("script[nonce]")?.nonce||"";m.head.append(a)}));d[l]?console.warn(p+" only loads once. Ignoring:",g):d[l]=(f,...n)=>r.add(f)&&u().then(()=>d[l](f,...n))})({
+      key: "AIzaSyD3WSnlZlux7vVPP2LQ7fZvg8O43J01mK8",
+      v: "weekly",
+      libraries: "places"
+    });
+  </script>
+  <style>
+    /* Hero Section Styles */
+    .hero-section {
+      background: linear-gradient(135deg, #1a472a 0%, #2d5a3f 100%);
+      color: white;
+      padding: 4rem 0;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .hero-section::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: url('{% static "core/images/india-south-5states.svg" %}') center center no-repeat;
+      background-size: contain;
+      opacity: 0.1;
+      z-index: 1;
+    }
+    
+    .hero-content {
+      position: relative;
+      z-index: 2;
+      text-align: center;
+    }
+    
+    .hero-title {
+      font-size: 3.5rem;
+      font-weight: 700;
+      margin-bottom: 1rem;
+      text-shadow: 0 3px 10px rgba(0,0,0,0.3);
+    }
+    
+    .hero-subtitle {
+      font-size: 1.5rem;
+      margin-bottom: 2rem;
+      opacity: 0.9;
+    }
+    
+    /* Card Styles */
+    .state-card, .place-card {
+      height: 100%;
+      transition: transform 0.2s, box-shadow 0.2s;
+      border: none;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      border-radius: 15px;
+      overflow: hidden;
+    }
 
-{% block title %}My Favorites - South India Tourism{% endblock %}
+    .state-card:hover, .place-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    }
 
-{% block content %}
-<nav class="navbar navbar-expand-lg navbar-dark bg-custom sticky-top">
-  <div class="container-fluid">
-    <a class="navbar-brand" href="{% url 'core:home' %}">South India Tourism</a>
-    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation"><span class="navbar-toggler-icon"></span></button>
-    <div class="collapse navbar-collapse" id="navbarNav">
-      <ul class="navbar-nav ms-auto">
-        <li class="nav-item"><a class="nav-link" href="{% url 'core:home' %}">Home</a></li>
-        <li class="nav-item"><a class="nav-link" href="#places">Places</a></li>
-        <li class="nav-item"><a class="nav-link" href="#booking">Plan Your Trip</a></li>
-        {% if user.is_authenticated %}
-          <li class="nav-item"><a class="nav-link" href="{% url 'core:my_favorites' %}"><i class="fas fa-heart"></i> My Favorites</a></li>
-          <li class="nav-item"><a class="nav-link" href="{% url 'core:profile' %}"><i class="fas fa-user"></i> Profile</a></li>
-          <li class="nav-item"><form action="{% url 'logout' %}" method="post" class="d-inline">{% csrf_token %}<button type="submit" class="btn btn-light nav-btn">Logout</button></form></li>
-        {% else %}
-          <li class="nav-item"><a href="{% url 'login' %}" class="btn btn-light nav-btn">Login</a></li>
-          <li class="nav-item"><a href="{% url 'signup' %}" class="btn btn-outline-light nav-btn">Sign Up</a></li>
-        {% endif %}
-      </ul>
+    .card-img-top {
+      height: 200px;
+      object-fit: cover;
+      border-top-left-radius: 15px;
+      border-top-right-radius: 15px;
+    }
+
+    .card-body {
+      padding: 1.5rem;
+    }
+
+    .card-title {
+      font-size: 1.25rem;
+      margin-bottom: 1rem;
+      color: #1a472a;
+      font-weight: 600;
+    }
+
+    .weather-info {
+      background-color: #f8f9fa;
+      border-radius: 0.5rem;
+      padding: 0.8rem;
+      margin-bottom: 1rem;
+    }
+
+    .weather-info p {
+      margin-bottom: 0.3rem;
+      font-size: 0.9rem;
+    }
+
+    .weather-info i {
+      margin-right: 0.5rem;
+      color: #0d6efd;
+    }
+
+    .card-actions {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: auto;
+    }
+
+    /* Section Styles */
+    .section-title {
+      color: #1a472a;
+      font-weight: 600;
+      margin-bottom: 2rem;
+    }
+
+    .section-header {
+      background: linear-gradient(135deg, #1a472a, #2d5a3f);
+      color: white;
+      padding: 2rem;
+      border-radius: 15px;
+      margin-bottom: 2rem;
+      text-align: center;
+    }
+
+    /* Back to Top Button */
+    .back-to-top {
+      position: fixed;
+      bottom: 30px;
+      right: 30px;
+      width: 50px;
+      height: 50px;
+      background-color: #1a472a;
+      color: white;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-decoration: none;
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.3s ease;
+      z-index: 1000;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+    }
+
+    .back-to-top:hover {
+      background-color: #2d5a3f;
+      color: white;
+      transform: translateY(-3px);
+    }
+
+    .back-to-top.show {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .back-to-top i {
+      font-size: 20px;
+    }
+
+    /* Responsive Design */
+    @media (max-width: 768px) {
+      .hero-title {
+        font-size: 2.5rem;
+      }
+      
+      .hero-subtitle {
+        font-size: 1.2rem;
+      }
+      
+      .card-actions {
+        flex-direction: column;
+        gap: 0.5rem;
+      }
+      
+      .card-actions .btn {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Messages Section -->
+  {% if messages %}
+    <div class="messages">
+      {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+          {{ message }}
+          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+      {% endfor %}
     </div>
-  </div>
-</nav>
+  {% endif %}
 
-<div class="container py-5">
+  <!-- Navbar -->
+  <nav class="navbar navbar-expand-lg navbar-dark bg-custom sticky-top">
+    <div class="container-fluid">
+      <a class="navbar-brand" href="{% url 'core:home' %}">South India Tourism</a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav ms-auto">
+          <li class="nav-item"><a class="nav-link" href="{% url 'core:home' %}">Home</a></li>
+          <li class="nav-item"><a class="nav-link" href="{% url 'core:home' %}#destinations">Destinations</a></li>
+          <li class="nav-item"><a class="nav-link" href="{% url 'core:home' %}#contact">Contact</a></li>
+          {% if user.is_authenticated %}
+            <li class="nav-item"><a class="nav-link active" href="{% url 'core:my_favorites' %}"><i class="fas fa-heart"></i> My Favorites</a></li>
+            <li class="nav-item"><a class="nav-link" href="{% url 'core:profile' %}"><i class="fas fa-user"></i> Profile</a></li>
+            <li class="nav-item">
+              <form action="{% url 'logout' %}" method="post" style="display: inline;">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-light nav-btn">Logout</button>
+              </form>
+            </li>
+          {% else %}
+            <li class="nav-item">
+              <a href="{% url 'login' %}" class="btn btn-light nav-btn">Login</a>
+            </li>
+            <li class="nav-item">
+              <a href="{% url 'signup' %}" class="btn btn-light nav-btn">Sign Up</a>
+            </li>
+          {% endif %}
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Hero Section -->
+  <section class="hero-section">
+    <div class="container">
+      <div class="hero-content">
+        <h1 class="hero-title animate__animated animate__fadeInDown">
+          <i class="fas fa-heart text-warning"></i> My Favorites
+        </h1>
+        <p class="hero-subtitle animate__animated animate__fadeInUp animate__delay-1s">
+          Your saved states and places for future adventures
+        </p>
+        <div class="animate__animated animate__fadeInUp animate__delay-2s">
+          <a href="{% url 'core:home' %}" class="btn btn-light btn-lg me-3">
+            <i class="fas fa-home"></i> Back to Home
+          </a>
+          <a href="{% url 'core:home' %}#destinations" class="btn btn-outline-light btn-lg">
+            <i class="fas fa-map-marked-alt"></i> Explore More
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Main Content -->
+  <div class="container py-5">
     <!-- Favorite States Section -->
     <section class="mb-5">
-        <h2 class="mb-4">Favorite States</h2>
-        {% if favorite_states %}
-            <div class="row">
-                {% for state in favorite_states %}
-                    <div class="col-md-6 col-lg-4 mb-4">
-                        <div class="card state-card">
-                            {% if state.image %}
-                                <img src="{{ state.image.url }}" class="card-img-top" alt="{{ state.name }}">
-                            {% endif %}
-                            <div class="card-body">
-                                <h5 class="card-title">{{ state.name }}</h5>
-                                <p class="card-text">{{ state.description|truncatewords:30 }}</p>
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <a href="{% url 'core:state_detail' state.name|lower|slugify %}" class="btn btn-primary">
-                                        <i class="fas fa-map-marked-alt"></i> Visit State
-                                    </a>
-                                    <form method="post" action="{% url 'core:remove_state_favorite' state.id %}" class="d-inline">
-                                        {% csrf_token %}
-                                        <button type="submit" class="btn btn-outline-danger">
-                                            <i class="fas fa-heart"></i> Remove
-                                        </button>
-                                    </form>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                {% endfor %}
+      <div class="section-header">
+        <h2 class="section-title text-white mb-0">
+          <i class="fas fa-map"></i> Favorite States
+        </h2>
+        <p class="mb-0">Your saved states for future exploration</p>
+      </div>
+      
+      {% if favorite_states %}
+        <div class="row">
+          {% for state in favorite_states %}
+            <div class="col-md-6 col-lg-4 mb-4">
+              <div class="card state-card">
+                {% if state.image %}
+                  <img src="{{ state.image.url }}" class="card-img-top" alt="{{ state.name }}">
+                {% else %}
+                  <img src="https://via.placeholder.com/400x200?text={{ state.name }}" class="card-img-top" alt="{{ state.name }}">
+                {% endif %}
+                <div class="card-body">
+                  <h5 class="card-title">{{ state.name }}</h5>
+                  <p class="card-text">{{ state.description|truncatewords:30 }}</p>
+                  <div class="card-actions">
+                    <a href="{% url 'core:state_detail' state.name|lower|slugify %}" class="btn btn-primary">
+                      <i class="fas fa-map-marked-alt"></i> Visit State
+                    </a>
+                    <form method="post" action="{% url 'core:remove_state_favorite' state.id %}" class="d-inline">
+                      {% csrf_token %}
+                      <button type="submit" class="btn btn-outline-danger">
+                        <i class="fas fa-heart"></i> Remove
+                      </button>
+                    </form>
+                  </div>
+                </div>
+              </div>
             </div>
-        {% else %}
-            <div class="alert alert-info">
-                You haven't added any states to your favorites yet. 
-                <a href="{% url 'core:home' %}" class="alert-link">Explore states</a> to add them to your favorites.
-            </div>
-        {% endif %}
+          {% endfor %}
+        </div>
+      {% else %}
+        <div class="alert alert-info text-center">
+          <i class="fas fa-info-circle fa-2x mb-3"></i>
+          <h5>No Favorite States Yet</h5>
+          <p>You haven't added any states to your favorites yet.</p>
+          <a href="{% url 'core:home' %}" class="btn btn-primary">
+            <i class="fas fa-search"></i> Explore States
+          </a>
+        </div>
+      {% endif %}
     </section>
 
     <!-- Favorite Places Section -->
     <section>
-        <h2 class="mb-4">Favorite Places</h2>
-        {% if places_with_weather %}
-            <div class="row">
-                {% for place_data in places_with_weather %}
-                    <div class="col-md-6 col-lg-4 mb-4">
-                        <div class="card place-card">
-                            {% if place_data.image_url %}
-                                <img src="{{ place_data.image_url }}" class="card-img-top" alt="{{ place_data.place.name }}">
-                            {% elif place_data.place.image %}
-                                <img src="{{ place_data.place.image.url }}" class="card-img-top" alt="{{ place_data.place.name }}">
-                            {% else %}
-                                <img src="https://via.placeholder.com/400x200?text=No+Image" class="card-img-top" alt="No image available">
-                            {% endif %}
-                            <div class="card-body">
-                                <h5 class="card-title">{{ place_data.place.name }}</h5>
-                                <p class="card-text">{{ place_data.place.description }}</p>
-                                
-                                <!-- Weather Information -->
-                                {% if place_data.weather %}
-                                    <div class="weather-info mb-3">
-                                        <h6>Current Weather</h6>
-                                        <p><i class="fas fa-temperature-high"></i> Temperature: {{ place_data.weather.temperature }}°C</p>
-                                        <p><i class="fas fa-cloud"></i> Condition: {{ place_data.weather.condition }}</p>
-                                    </div>
-                                {% endif %}
-                                
-                                <!-- Action Buttons -->
-                                <div class="card-actions">
-                                    <a href="{% url 'core:state_detail' place_data.place.state.name|lower|slugify %}" class="btn btn-primary">
-                                        <i class="fas fa-map-marked-alt"></i> Visit State
-                                    </a>
-                                    {% include 'core/partials/favorite_button.html' with place=place_data.place remove_mode=True %}
-                                </div>
-                            </div>
-                        </div>
+      <div class="section-header">
+        <h2 class="section-title text-white mb-0">
+          <i class="fas fa-map-marker-alt"></i> Favorite Places
+        </h2>
+        <p class="mb-0">Your saved places across South India</p>
+      </div>
+      
+      {% if places_with_weather %}
+        <div class="row">
+          {% for place_data in places_with_weather %}
+            <div class="col-md-6 col-lg-4 mb-4">
+              <div class="card place-card">
+                {% if place_data.image_url %}
+                  <img src="{{ place_data.image_url }}" class="card-img-top" alt="{{ place_data.place.name }}">
+                {% elif place_data.place.image %}
+                  <img src="{{ place_data.place.image.url }}" class="card-img-top" alt="{{ place_data.place.name }}">
+                {% else %}
+                  <img src="https://via.placeholder.com/400x200?text=No+Image" class="card-img-top" alt="No image available">
+                {% endif %}
+                <div class="card-body">
+                  <h5 class="card-title">{{ place_data.place.name }}</h5>
+                  <p class="card-text">{{ place_data.place.description|truncatewords:25 }}</p>
+                  
+                  <!-- Weather Information -->
+                  {% if place_data.weather %}
+                    <div class="weather-info">
+                      <h6><i class="fas fa-cloud-sun"></i> Current Weather</h6>
+                      <p><i class="fas fa-temperature-high"></i> Temperature: {{ place_data.weather.temperature }}°C</p>
+                      <p><i class="fas fa-cloud"></i> Condition: {{ place_data.weather.condition }}</p>
                     </div>
-                {% endfor %}
+                  {% endif %}
+                  
+                  <!-- Action Buttons -->
+                  <div class="card-actions">
+                    <a href="{% url 'core:state_detail' place_data.place.state.name|lower|slugify %}" class="btn btn-primary">
+                      <i class="fas fa-map-marked-alt"></i> Visit State
+                    </a>
+                    {% include 'core/partials/favorite_button.html' with place=place_data.place remove_mode=True %}
+                  </div>
+                </div>
+              </div>
             </div>
-        {% else %}
-            <div class="alert alert-info">
-                You haven't added any places to your favorites yet. 
-                <a href="{% url 'core:home' %}" class="alert-link">Explore places</a> to add them to your favorites.
-            </div>
-        {% endif %}
+          {% endfor %}
+        </div>
+      {% else %}
+        <div class="alert alert-info text-center">
+          <i class="fas fa-info-circle fa-2x mb-3"></i>
+          <h5>No Favorite Places Yet</h5>
+          <p>You haven't added any places to your favorites yet.</p>
+          <a href="{% url 'core:home' %}" class="btn btn-primary">
+            <i class="fas fa-search"></i> Explore Places
+          </a>
+        </div>
+      {% endif %}
     </section>
-</div>
+  </div>
 
-<style>
-.state-card, .place-card {
-    height: 100%;
-    transition: transform 0.2s, box-shadow 0.2s;
-    border: none;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-}
+  <!-- Footer -->
+  <footer class="footer py-4 bg-dark text-white">
+    <div class="container text-center">
+      <p class="credit">Created by <span>Team South India Tourism</span> | © 2025</p>
+    </div>
+  </footer>
 
-.state-card:hover, .place-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-}
+  <!-- Back to Top Button -->
+  <a href="#" class="back-to-top" aria-label="Back to Top">
+    <i class="fas fa-chevron-up"></i>
+  </a>
 
-.card-img-top {
-    height: 200px;
-    object-fit: cover;
-}
+  <!-- Map Modal -->
+  <div class="modal fade" id="mapModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Location on Map</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <div id="map" style="height: 500px; width: 100%;"></div>
+        </div>
+      </div>
+    </div>
+  </div>
 
-.weather-info {
-    background-color: #f8f9fa;
-    border-radius: 0.5rem;
-    padding: 0.8rem;
-    margin-bottom: 1rem;
-}
+  <!-- Scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://unpkg.com/aos@next/dist/aos.js"></script>
+  
+  <script>
+    // Initialize AOS
+    AOS.init({ duration: 1000, once: true });
 
-.weather-info p {
-    margin-bottom: 0.3rem;
-    font-size: 0.9rem;
-}
+    // Back to Top Button Functionality
+    document.addEventListener('DOMContentLoaded', function() {
+      const backToTopButton = document.querySelector('.back-to-top');
+      
+      window.addEventListener('scroll', function() {
+        if (window.pageYOffset > 300) {
+          backToTopButton.classList.add('show');
+        } else {
+          backToTopButton.classList.remove('show');
+        }
+      });
 
-.weather-info i {
-    margin-right: 0.5rem;
-    color: #0d6efd;
-}
-
-.card-actions {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-top: 1rem;
-}
-</style>
-{% endblock %}
-
-{% block extra_js %}
-<script>
-let map = null;
-let marker = null;
-
-function showOnMap(latitude, longitude, placeName) {
-    // Show the modal
-    const mapModal = new bootstrap.Modal(document.getElementById('mapModal'));
-    mapModal.show();
-
-    // Initialize map if not already done
-    if (!map) {
-        map = new google.maps.Map(document.getElementById('map'), {
-            center: { lat: latitude, lng: longitude },
-            zoom: 15,
-            mapTypeControl: true,
-            streetViewControl: true,
-            fullscreenControl: true
+      backToTopButton.addEventListener('click', function(e) {
+        e.preventDefault();
+        window.scrollTo({
+          top: 0,
+          behavior: 'smooth'
         });
-    } else {
+      });
+    });
+
+    // Map functionality
+    let map = null;
+    let marker = null;
+
+    function showOnMap(latitude, longitude, placeName) {
+      // Show the modal
+      const mapModal = new bootstrap.Modal(document.getElementById('mapModal'));
+      mapModal.show();
+
+      // Initialize map if not already done
+      if (!map) {
+        map = new google.maps.Map(document.getElementById('map'), {
+          center: { lat: latitude, lng: longitude },
+          zoom: 15,
+          mapTypeControl: true,
+          streetViewControl: true,
+          fullscreenControl: true
+        });
+      } else {
         map.setCenter({ lat: latitude, lng: longitude });
-    }
+      }
 
-    // Remove existing marker if any
-    if (marker) {
+      // Remove existing marker if any
+      if (marker) {
         marker.setMap(null);
-    }
+      }
 
-    // Add new marker
-    marker = new google.maps.Marker({
+      // Add new marker
+      marker = new google.maps.Marker({
         position: { lat: latitude, lng: longitude },
         map: map,
         title: placeName,
         animation: google.maps.Animation.DROP
-    });
+      });
 
-    // Add info window
-    const infoWindow = new google.maps.InfoWindow({
+      // Add info window
+      const infoWindow = new google.maps.InfoWindow({
         content: `<div class="p-2"><h6>${placeName}</h6><p>Latitude: ${latitude}<br>Longitude: ${longitude}</p></div>`
-    });
+      });
 
-    marker.addListener('click', () => {
+      marker.addListener('click', () => {
         infoWindow.open(map, marker);
-    });
+      });
 
-    // Open info window by default
-    infoWindow.open(map, marker);
-}
-</script>
-{% endblock %} 
+      // Open info window by default
+      infoWindow.open(map, marker);
+    }
+  </script>
+  <script src="{% static 'core/js/scripts.js' %}"></script>
+</body>
+</html> 
