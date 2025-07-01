@@ -432,6 +432,9 @@ document.addEventListener('DOMContentLoaded', function() {
           alert('Please fill in all fields and select a rating');
           return;
         }
+        // Prevent double submission
+        if (addReviewForm.classList.contains('submitting')) return;
+        addReviewForm.classList.add('submitting');
         submitReview(placeId, selectedRating, comment);
       });
     }
@@ -439,6 +442,8 @@ document.addEventListener('DOMContentLoaded', function() {
       const csrfToken = getCSRFToken();
       if (!csrfToken) {
         alert('CSRF token not found. Please refresh the page and try again.');
+        const addReviewForm = document.getElementById('addReviewForm');
+        if (addReviewForm) addReviewForm.classList.remove('submitting');
         return;
       }
       fetch(window.ADD_REVIEW_URL.replace('0', placeId), {
@@ -463,6 +468,10 @@ document.addEventListener('DOMContentLoaded', function() {
       .catch(error => {
         console.error('Error:', error);
         alert('Error submitting review: ' + error.message);
+      })
+      .finally(() => {
+        const addReviewForm = document.getElementById('addReviewForm');
+        if (addReviewForm) addReviewForm.classList.remove('submitting');
       });
     }
     window.filterReviews = function(alwaysShowNew) {
