@@ -156,6 +156,7 @@
       transition: transform 0.2s, box-shadow 0.2s;
       border: none;
       box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      border-radius: 15px;
     }
 
     .place-card:hover {
@@ -164,15 +165,7 @@
     }
 
     .place-card .card-body {
-      flex: 1 1 auto;
-      display: flex;
-      flex-direction: column;
-      justify-content: flex-start;
       padding: 1.5rem;
-      position: relative;
-      background: #fff;
-      border-bottom-left-radius: 15px;
-      border-bottom-right-radius: 15px;
     }
 
     .place-card .card-title {
@@ -877,7 +870,6 @@
       background: linear-gradient(135deg, rgba(26, 71, 42, 0.1), rgba(45, 90, 63, 0.1));
       opacity: 0;
       transition: opacity 0.3s ease;
-      z-index: 1;
     }
 
     .place-card:hover::before {
@@ -885,8 +877,15 @@
     }
 
     .place-card .card-body {
+      flex: 1 1 auto;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      padding: 1.5rem;
       position: relative;
-      z-index: 2;
+      background: #fff;
+      border-bottom-left-radius: 15px;
+      border-bottom-right-radius: 15px;
     }
 
     .map-modal .modal-content {
