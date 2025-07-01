@@ -30,7 +30,8 @@ from django.contrib.auth.admin import UserAdmin
 from django.contrib.auth.models import User
 from django.shortcuts import render
 from .models import State, Place, Hotel, Cuisine, Restaurant, Event, Itinerary, UserProfile, Review, TelegramUser, Favorite
-
+from .models import Contact
+admin.site.register(Contact)
 # Unregister the default UserAdmin
 admin.site.unregister(User)
 
