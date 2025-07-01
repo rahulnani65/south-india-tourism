@@ -409,11 +409,7 @@
   <section class="profile-header">
     <div class="container">
       <div class="row align-items-center">
-        <div class="col-md-3 text-center">
-          <img src="{{ user_profile.profile_picture|default:'https://via.placeholder.com/120x120/1a3c34/ffffff?text='|add:user.username|slice:':1'|upper }}" 
-               alt="Profile Picture" class="profile-avatar">
-        </div>
-        <div class="col-md-9">
+        <div class="col-md-12">
           <h1 class="mb-2">{{ user.get_full_name|default:user.username }}</h1>
           <p class="mb-2"><i class="fas fa-map-marker-alt me-2"></i>{{ user_profile.location|default:"Location not set" }}</p>
           <p class="mb-3"><i class="fas fa-calendar-alt me-2"></i>Member since {{ user.date_joined|date:"F Y" }}</p>
@@ -531,10 +527,6 @@
             <div class="mb-3">
               <label class="form-label">Bio</label>
               {{ form.bio }}
-            </div>
-            <div class="mb-3">
-              <label class="form-label">Profile Picture URL</label>
-              {{ form.profile_picture }}
             </div>
             <div class="mb-3">
               <label class="form-label">Phone Number</label>

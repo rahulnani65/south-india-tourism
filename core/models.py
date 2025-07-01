@@ -90,7 +90,6 @@ class Itinerary(models.Model):
 class UserProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
     bio = models.TextField(blank=True, max_length=500)
-    profile_picture = models.URLField(blank=True, null=True)
     phone_number = models.CharField(max_length=15, blank=True)
     location = models.CharField(max_length=100, blank=True)
     travel_style = models.CharField(max_length=50, blank=True)

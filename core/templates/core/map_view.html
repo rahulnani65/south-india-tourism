@@ -257,6 +257,38 @@
 {% endblock %}
 
 {% block content %}
+<nav class="navbar navbar-expand-lg navbar-dark bg-custom sticky-top">
+  <div class="container-fluid">
+    <a class="navbar-brand" href="{% url 'core:home' %}">South India Tourism</a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarNav">
+      <ul class="navbar-nav ms-auto">
+        <li class="nav-item"><a class="nav-link" href="{% url 'core:home' %}">Home</a></li>
+        <li class="nav-item"><a class="nav-link" href="{% url 'core:home' %}#destinations">Destinations</a></li>
+        <li class="nav-item"><a class="nav-link" href="{% url 'core:home' %}#contact">Contact</a></li>
+        {% if user.is_authenticated %}
+          <li class="nav-item"><a class="nav-link" href="{% url 'core:my_favorites' %}">My Favorites</a></li>
+          <li class="nav-item"><a class="nav-link" href="{% url 'core:profile' %}">Profile</a></li>
+          <li class="nav-item">
+            <form action="{% url 'logout' %}" method="post" style="display: inline;">
+              {% csrf_token %}
+              <button type="submit" class="btn btn-light nav-btn">Logout</button>
+            </form>
+          </li>
+        {% else %}
+          <li class="nav-item">
+            <a href="{% url 'login' %}" class="btn btn-light nav-btn">Login</a>
+          </li>
+          <li class="nav-item">
+            <a href="{% url 'signup' %}" class="btn btn-light nav-btn">Sign Up</a>
+          </li>
+        {% endif %}
+      </ul>
+    </div>
+  </div>
+</nav>
 <div class="map-view-container">
     <div class="container-fluid">
         <div class="row">

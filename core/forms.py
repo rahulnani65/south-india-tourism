@@ -9,10 +9,9 @@ class UserProfileForm(forms.ModelForm):
     
     class Meta:
         model = UserProfile
-        fields = ['bio', 'profile_picture', 'phone_number', 'location', 'travel_style', 'favorite_state']
+        fields = ['bio', 'phone_number', 'location', 'travel_style', 'favorite_state']
         widgets = {
             'bio': forms.Textarea(attrs={'class': 'form-control', 'rows': 4, 'placeholder': 'Tell us about yourself and your travel experiences...'}),
-            'profile_picture': forms.URLInput(attrs={'class': 'form-control', 'placeholder': 'https://example.com/your-photo.jpg'}),
             'phone_number': forms.TextInput(attrs={'class': 'form-control', 'placeholder': '+91 98765 43210'}),
             'location': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Your current location'}),
             'travel_style': forms.Select(choices=[
