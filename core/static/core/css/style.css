@@ -1461,3 +1461,27 @@ label:hover {
     padding: 10px 20px !important;
   }
 }
+
+/* ===== TRAVEL STORIES CARD (SOCIAL POST) ===== */
+.social-post {
+  width: 100%;
+  max-width: 370px;
+  min-height: 420px;
+  margin: 0 auto;
+  border-radius: 18px;
+  box-shadow: 0 4px 18px rgba(26,60,52,0.10);
+  transition: transform 0.2s, box-shadow 0.2s;
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+}
+.social-post:hover {
+  transform: translateY(-6px) scale(1.03);
+  box-shadow: 0 8px 32px rgba(26,60,52,0.18);
+}
+@media (max-width: 768px) {
+  .social-post {
+    max-width: 100%;
+    min-height: 320px;
+  }
+}

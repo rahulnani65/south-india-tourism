@@ -9,10 +9,10 @@
     <meta http-equiv="Expires" content="0">
     <title>{% block title %}South India Tourism{% endblock %}</title>
     <link rel="icon" type="image/png" href="{% static 'core/images/south-india-hero.png' %}" />
-    <!-- Bootstrap CSS -->
+    <!-- Bootstrap & FontAwesome CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Custom CSS -->
+    <!-- Project Custom CSS -->
     <link href="{% static 'core/css/style.css' %}" rel="stylesheet">
     <link href="{% static 'core/css/enhanced-navbar.css' %}" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
@@ -20,7 +20,7 @@
     {% block extra_css %}{% endblock %}
 </head>
 <body>
-    <!-- Navigation -->
+    {# Main Navigation Bar #}
     <nav class="navbar navbar-expand-lg navbar-dark fixed-top">
         <div class="container">
             <a class="navbar-brand" href="{% url 'core:home' %}">
@@ -62,6 +62,7 @@
                             <i class="fas fa-envelope"></i> Contact
                         </a>
                     </li>
+                    {# User authentication links #}
                     {% if user.is_authenticated %}
                         <div class="user-actions">
                             <a class="nav-link" href="{% url 'core:profile' %}" title="Profile">
@@ -86,7 +87,7 @@
         </div>
     </nav>
 
-    <!-- Messages -->
+    {# Django messages for notifications (success, error, etc.) #}
     {% if messages %}
         <div class="container mt-3" id="messages-container">
             {% for message in messages %}
@@ -109,7 +110,7 @@
         </div>
     {% endif %}
 
-    <!-- Login Required Modal -->
+    {# Modal shown when login is required for a feature #}
     <div class="modal fade" id="loginRequiredModal" tabindex="-1" aria-labelledby="loginRequiredModalLabel" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
@@ -131,12 +132,12 @@
         </div>
     </div>
 
-    <!-- Main Content -->
+    {# Main content block for child templates to override #}
     <main>
         {% block content %}{% endblock %}
     </main>
 
-    <!-- Footer -->
+    {# Footer with site info and social links #}
     <footer class="bg-dark text-light mt-5 py-4">
         <div class="container">
             <div class="row">
@@ -160,38 +161,30 @@
         </div>
     </footer>
 
-    <!-- Bootstrap JS -->
+    <!-- Bootstrap JS and project scripts -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    
-    <!-- Custom JS -->
     <script src="{% static 'core/js/scripts.js' %}"></script>
     <script src="{% static 'core/js/enhanced-scripts.js' %}"></script>
     
-    <!-- Logout Form Enhancement -->
+    {# Enhanced logout and notification logic #}
     <script>
-        // Ensure logout forms work properly
         document.addEventListener('DOMContentLoaded', function() {
+            // Enhanced logout: clear user data and refresh after logout
             const logoutForms = document.querySelectorAll('form[action*="logout"]');
             logoutForms.forEach(function(form) {
                 form.addEventListener('submit', function(e) {
-                    // Add a small delay to ensure the form submits properly
                     setTimeout(function() {
-                        // Clear any stored user data
                         localStorage.removeItem('user_data');
                         sessionStorage.clear();
-                        
-                        // Force page refresh after logout
                         setTimeout(function() {
                             window.location.reload(true);
                         }, 100);
                     }, 100);
                 });
             });
-            
-            // Check for cache-busting parameter and force refresh if needed
+            // Cache-busting: clear browser cache if needed
             const urlParams = new URLSearchParams(window.location.search);
             if (urlParams.has('cb')) {
-                // Clear browser cache for this page
                 if ('caches' in window) {
                     caches.keys().then(function(names) {
                         for (let name of names) {
@@ -199,38 +192,28 @@
                         }
                     });
                 }
-                
-                // Remove cache-busting parameter from URL
                 urlParams.delete('cb');
                 const newUrl = window.location.pathname + (urlParams.toString() ? '?' + urlParams.toString() : '');
                 window.history.replaceState({}, document.title, newUrl);
             }
-            
-            // Enhanced notification system
+            // Auto-dismiss success notifications
             const notifications = document.querySelectorAll('.notification-popup');
             notifications.forEach(function(notification) {
-                // Auto-dismiss success messages after 5 seconds
                 if (notification.classList.contains('alert-success')) {
                     setTimeout(function() {
                         const bsAlert = new bootstrap.Alert(notification);
                         bsAlert.close();
                     }, 5000);
                 }
-                
-                // Add animation for better UX
                 notification.style.animation = 'slideInDown 0.5s ease-out';
             });
-            
-            // Monitor authentication status changes
+            // Monitor authentication status and refresh if changed
             let currentAuthStatus = {{ user.is_authenticated|yesno:"true,false" }};
-            
-            // Check for authentication changes every 2 seconds
             setInterval(function() {
                 fetch('/auth-status/')
                     .then(response => response.json())
                     .then(data => {
                         if (data.is_authenticated !== currentAuthStatus) {
-                            // Authentication status changed, force refresh
                             window.location.reload(true);
                         }
                     })
@@ -238,8 +221,7 @@
                         console.log('Auth status check failed:', error);
                     });
             }, 2000);
-            
-            // Add login requirement checks for protected features
+            // Show login modal for protected features if not logged in
             const protectedFeatures = document.querySelectorAll('[data-requires-login]');
             protectedFeatures.forEach(function(feature) {
                 feature.addEventListener('click', function(e) {
@@ -250,12 +232,10 @@
                     }
                 });
             });
-            
-            // Show welcome message for newly logged in users
+            // Special welcome notification for new logins
             {% if messages %}
                 {% for message in messages %}
                     {% if message.tags == 'success' and 'Welcome' in message %}
-                        // Show a special welcome notification
                         setTimeout(function() {
                             const welcomeNotification = document.createElement('div');
                             welcomeNotification.className = 'alert alert-success alert-dismissible fade show position-fixed';
@@ -268,8 +248,6 @@
                                 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                             `;
                             document.body.appendChild(welcomeNotification);
-                            
-                            // Auto-dismiss after 8 seconds
                             setTimeout(function() {
                                 const bsAlert = new bootstrap.Alert(welcomeNotification);
                                 bsAlert.close();
@@ -281,7 +259,7 @@
         });
     </script>
     
-    <!-- CSS for notification animations -->
+    {# Notification animation and alert styles #}
     <style>
         @keyframes slideInDown {
             from {
@@ -293,35 +271,30 @@
                 opacity: 1;
             }
         }
-        
         .notification-popup {
             box-shadow: 0 4px 12px rgba(0,0,0,0.15);
             border: none;
             border-radius: 8px;
         }
-        
         .alert-success {
             background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
             border-left: 4px solid #28a745;
         }
-        
         .alert-danger {
             background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%);
             border-left: 4px solid #dc3545;
         }
-        
         .alert-warning {
             background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
             border-left: 4px solid #ffc107;
         }
-        
         .alert-info {
             background: linear-gradient(135deg, #d1ecf1 0%, #bee5eb 100%);
             border-left: 4px solid #17a2b8;
         }
     </style>
     
-    <!-- Navbar Scroll Effect -->
+    {# Navbar color change on scroll #}
     <script>
         window.addEventListener('scroll', function() {
             const navbar = document.querySelector('.navbar');
