@@ -126,7 +126,10 @@
           <label for="id_email" class="form-label">
             <i class="fas fa-envelope me-2"></i>Email Address
           </label>
-          <input type="email" class="form-control" id="id_email" name="email" required pattern="^[^@\s]+@[^@\s]+\.[^@\s]+$" placeholder="Enter your email" value="{{ request.POST.email|default:'' }}">
+          <div class="input-group">
+            <span class="input-group-text"><i class="fas fa-envelope"></i></span>
+            <input type="email" class="form-control" id="id_email" name="email" required pattern="^[^@\s]+@[^@\s]+\.[^@\s]+$" placeholder="Enter your email" value="{{ request.POST.email|default:'' }}">
+          </div>
           {% if messages %}
             {% for message in messages %}
               {% if 'email' in message %}
@@ -139,10 +142,13 @@
         </div>
         
         <div class="form-group">
-          <label for="{{ form.username.id_for_label }}" class="form-label">
+          <label for="id_username" class="form-label">
             <i class="fas fa-user me-2"></i>Username
           </label>
-          {{ form.username }}
+          <div class="input-group">
+            <span class="input-group-text"><i class="fas fa-user"></i></span>
+            {{ form.username }}
+          </div>
           {% if form.username.errors %}
             <div class="field-error">
               {% for error in form.username.errors %}
@@ -153,10 +159,13 @@
         </div>
         
         <div class="form-group">
-          <label for="{{ form.password1.id_for_label }}" class="form-label">
+          <label for="id_password1" class="form-label">
             <i class="fas fa-lock me-2"></i>Password
           </label>
-          {{ form.password1 }}
+          <div class="input-group">
+            <span class="input-group-text"><i class="fas fa-lock"></i></span>
+            {{ form.password1 }}
+          </div>
           {% if form.password1.errors %}
             <div class="field-error">
               {% for error in form.password1.errors %}
@@ -167,10 +176,13 @@
         </div>
         
         <div class="form-group">
-          <label for="{{ form.password2.id_for_label }}" class="form-label">
+          <label for="id_password2" class="form-label">
             <i class="fas fa-lock me-2"></i>Confirm Password
           </label>
-          {{ form.password2 }}
+          <div class="input-group">
+            <span class="input-group-text"><i class="fas fa-lock"></i></span>
+            {{ form.password2 }}
+          </div>
           {% if form.password2.errors %}
             <div class="field-error">
               {% for error in form.password2.errors %}
