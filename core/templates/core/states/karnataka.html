@@ -89,6 +89,8 @@
     .place-card img {
       height: 200px;
       object-fit: cover;
+      border-top-left-radius: 15px;
+      border-top-right-radius: 15px;
     }
     .map-modal .modal-dialog {
       max-width: 800px;
@@ -150,11 +152,12 @@
       transition: transform 0.2s, box-shadow 0.2s;
       border: none;
       box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      border-radius: 15px;
     }
 
     .place-card:hover {
       transform: translateY(-5px);
-      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
     }
 
     .place-card .card-body {
@@ -164,7 +167,7 @@
     .place-card .card-title {
       font-size: 1.25rem;
       margin-bottom: 1rem;
-      color: #2c3e50;
+      color: #1a472a;
       font-weight: 600;
     }
 
@@ -1262,13 +1265,13 @@
     /* Category Badge Styles */
     .category-badge {
       position: absolute;
-      top: 10px;
-      left: 10px;
+      top: 12px;
+      left: 12px;
       background: rgba(26, 71, 42, 0.9);
-      color: white;
-      padding: 0.25rem 0.5rem;
-      border-radius: 12px;
-      font-size: 0.75rem;
+      color: #fff;
+      padding: 0.35rem 0.9rem;
+      border-radius: 16px;
+      font-size: 0.8rem;
       font-weight: 600;
       z-index: 2;
     }
@@ -1465,7 +1468,7 @@
       width: 100%;
       height: 200px;
       object-fit: cover;
-      background: #e9ecef url('https://via.placeholder.com/400x200?text=No+Image') center center no-repeat;
+      background: #e9ecef url('https://via.placeholder.com/400x200?text=Image+Not+Available') center center no-repeat;
       border-top-left-radius: 15px;
       border-top-right-radius: 15px;
       display: block;
@@ -1768,7 +1771,6 @@
           {% for place_data in places_with_weather %}
             <div class="col-md-6 col-lg-4 mb-4 place-card-wrapper" data-category="{{ place_data.place.category|lower }}">
               <div class="card place-card">
-                <!-- Category Badge always on top -->
                 <div class="category-badge">
                   {{ place_data.place.category|title }}
                 </div>
@@ -1785,7 +1787,7 @@
                   {% if place_data.weather %}
                     <div class="weather-info mb-3">
                       <h6>Current Weather</h6>
-                      <p><i class="fas fa-temperature-high"></i> Temperature: {{ place_data.weather.temperature }}°C</p>
+                      <p><i class="fas fa-temperature-high"></i> Temp: {{ place_data.weather.temperature }}°C</p>
                       <p><i class="fas fa-cloud"></i> Condition: {{ place_data.weather.condition }}</p>
                     </div>
                   {% endif %}
