@@ -2046,14 +2046,14 @@
             <div class="card social-post">
               <div class="card-body">
                 <div class="d-flex align-items-center mb-3">
-                  <img src="https://randomuser.me/api/portraits/women/44.jpg" class="rounded-circle me-3" width="50" height="50" alt="User Avatar">
+                  <img src="" class="rounded-circle me-3" width="50" height="50" alt="User Avatar">
                   <div>
                     <h6 class="mb-0">Sarah Johnson</h6>
                     <small class="text-muted">Travel Blogger</small>
                   </div>
                 </div>
                 <div class="post-image mb-3">
-                  <img src="{% static 'core/images/tamil_nadu.jpg' %}" class="img-fluid rounded" alt="Tamil Nadu Temple">
+                  <!-- <img src="{% static 'core/images/tamil_nadu.jpg' %}" class="img-fluid rounded" alt="Tamil Nadu Temple"> -->
                 </div>
                 <p class="post-content">Just visited the magnificent Hampi ruins! The ancient architecture and spiritual atmosphere are absolutely breathtaking. A must-visit destination in Karnataka! 🏛️✨</p>
                 <div class="post-stats mb-3">
@@ -2086,7 +2086,7 @@
                   </div>
                 </div>
                 <div class="post-image mb-3">
-                  <img src="{% static 'core/images/tamil_nadu.jpg' %}" class="img-fluid rounded" alt="Ooty Hills">
+                  <!-- <img src="{% static 'core/images/tamil_nadu.jpg' %}" class="img-fluid rounded" alt="Ooty Hills"> -->
                 </div>
                 <p class="post-content">Exploring the beautiful Nilgiri Hills in Ooty! The tea gardens and mountain views are absolutely stunning. Perfect weather for a morning trek! 🏔️☕</p>
                 <div class="post-stats mb-3">
@@ -2119,7 +2119,7 @@
                   </div>
                 </div>
                 <div class="post-image mb-3">
-                  <img src="{% static 'core/images/tamil_nadu.jpg' %}" class="img-fluid rounded" alt="Tamil Nadu Food">
+                  <!-- <img src="{% static 'core/images/tamil_nadu.jpg' %}" class="img-fluid rounded" alt="Tamil Nadu Food"> -->
                 </div>
                 <p class="post-content">Food heaven in Bengaluru! The authentic Karnataka cuisine is a flavor explosion. From spicy curries to crispy dosas, every bite is a delight! 🍛✨</p>
                 <div class="post-stats mb-3">
@@ -2152,7 +2152,7 @@
                   </div>
                 </div>
                 <div class="post-image mb-3">
-                  <img src="{% static 'core/images/tamil_nadu.jpg' %}" class="img-fluid rounded" alt="Kanyakumari">
+                  <!-- <img src="{% static 'core/images/tamil_nadu.jpg' %}" class="img-fluid rounded" alt="Kanyakumari"> -->
                 </div>
                 <p class="post-content">Witnessed the magical sunrise at Kanyakumari - where three oceans meet! The Vivekananda Rock Memorial is a spiritual experience. 🌅🌊</p>
                 <div class="post-stats mb-3">
@@ -2761,7 +2761,6 @@
             </div>
         `;
 
-        const url = `${geminiRecommendationsUrl}?latitude=${latitude}&longitude=${longitude}&user_place=${encodeURIComponent(userPlace)}&place_type=${placeType}&budget=${budget}&duration=${duration}&enhanced=true&context=karnataka`;
 
         fetch(url)
             .then(response => {

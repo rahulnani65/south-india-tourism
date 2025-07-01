@@ -500,7 +500,7 @@ def get_gemini_recommendations(request):
         """
         if weather_condition and temperature:
             prompt += f" The current weather is {weather_condition} with a temperature of {temperature}°C."
-        prompt += f"\n\nPlease provide 5-7 diverse and interesting places in {context.replace('_', ' ')} that match these criteria. For each place, include:\n- name (string)\n- reasoning (string, 1-2 sentences on why it's a good fit for the user's preferences)\n- best_time (string)\n- budget_range (string)\n- tips (string)\n- latitude (float, if known)\n- longitude (float, if known)\n\nRespond ONLY with a valid JSON array. Do NOT include any comments (// ...) or explanations outside the JSON."
+        prompt += f"\n\nPlease provide 5-7 diverse and interesting places in {context.replace('_', ' ')} that match these criteria. For each place, include:\n- name (string)\n- reasoning (string, 1-2 sentences on why it's a good fit for the user's preferences)\n- best_time (string)\n- budget_range (string)\n- tips (string)\n- latitude (float, if known)\n- longitude (float, if known)\n- rating (float, 1-5, required)\n\nRespond ONLY with a valid JSON array. Do NOT include any comments (// ...) or explanations outside the JSON."
 
         # Generate response using Gemini
         model = genai.GenerativeModel('gemini-1.5-pro')
@@ -520,6 +520,10 @@ def get_gemini_recommendations(request):
         cleaned_response = clean_gemini_json(cleaned_response)
         try:
             places = json.loads(cleaned_response)
+            # Ensure every place has a 'rating' key
+            for place in places:
+                if 'rating' not in place or not isinstance(place['rating'], (int, float)):
+                    place['rating'] = 'N/A'
         except Exception as e:
             logger.error(f"Failed to parse Gemini response as JSON: {e}\nGemini response: {response.text}")
             return JsonResponse({

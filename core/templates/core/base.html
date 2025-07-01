@@ -23,7 +23,7 @@
     <!-- Navigation -->
     <nav class="navbar navbar-expand-lg navbar-dark fixed-top">
         <div class="container">
-            <a class="navbar-brand" href="{% url 'home' %}">
+            <a class="navbar-brand" href="{% url 'core:home' %}">
                 <i class="fas fa-mountain"></i>
                 <span>South India Tourism</span>
             </a>
@@ -33,22 +33,22 @@
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ms-auto align-items-center">
                     <li class="nav-item">
-                        <a class="nav-link" href="{% url 'home' %}">
+                        <a class="nav-link" href="{% url 'core:home' %}">
                             <i class="fas fa-home"></i> Home
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="#destinations">
+                        <a class="nav-link" href="{% url 'core:home' %}#destinations">
                             <i class="fas fa-map-marker-alt"></i> Destinations
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="#experiences">
+                        <a class="nav-link" href="{% url 'core:home' %}#experiences">
                             <i class="fas fa-star"></i> Experiences
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="#cuisine">
+                        <a class="nav-link" href="{% url 'core:home' %}#cuisine">
                             <i class="fas fa-utensils"></i> Cuisine
                         </a>
                     </li>
@@ -58,7 +58,7 @@
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="#contact">
+                        <a class="nav-link" href="{% url 'core:home' %}#contact">
                             <i class="fas fa-envelope"></i> Contact
                         </a>
                     </li>
