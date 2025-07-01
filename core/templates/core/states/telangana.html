@@ -164,7 +164,15 @@
     }
 
     .place-card .card-body {
+      flex: 1 1 auto;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
       padding: 1.5rem;
+      position: relative;
+      background: #fff;
+      border-bottom-left-radius: 15px;
+      border-bottom-right-radius: 15px;
     }
 
     .place-card .card-title {
@@ -990,7 +998,6 @@
       justify-content: flex-start;
       padding: 1.5rem;
       position: relative;
-      z-index: 2;
       background: #fff;
       border-bottom-left-radius: 15px;
       border-bottom-right-radius: 15px;
