@@ -1,3 +1,8 @@
+# =============================
+# core/forms.py
+# Contains all Django forms for the core app
+# =============================
+
 from django import forms
 from .models import UserProfile, State
 from django.contrib.auth.models import User

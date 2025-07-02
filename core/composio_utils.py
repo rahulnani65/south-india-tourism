@@ -1,3 +1,8 @@
+# =============================
+# core/composio_utils.py
+# Utility functions for composio integration or features
+# =============================
+
 import logging
 from composio_openai import ComposioToolSet, Action
 

@@ -1,3 +1,8 @@
+# =============================
+# core/userProfile.py
+# User profile related logic for the core app
+# =============================
+
 from django.core.management.base import BaseCommand
 from django.contrib.auth.models import User
 from core.models import UserProfile
