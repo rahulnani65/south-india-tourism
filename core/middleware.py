@@ -1,3 +1,8 @@
+# =============================
+# core/middleware.py
+# Custom middleware for the core app
+# =============================
+
 from django.shortcuts import redirect
 from django.urls import reverse
 from django.contrib import messages

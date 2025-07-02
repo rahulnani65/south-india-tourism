@@ -1,3 +1,8 @@
+# =============================
+# core/admin.py
+# Django admin customizations and model registrations for the core app
+# =============================
+
 # from django.contrib import admin
 # from .models import State, TouristPlace, Hotel
 

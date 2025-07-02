@@ -1,3 +1,8 @@
+{# =============================
+  core/templates/core/test_api.html
+  API testing page
+  ============================= #}
+
 {% extends 'core/base.html' %}
 {% load static %}
 
@@ -198,7 +203,7 @@ function fetchPlaceDetails() {
         })
         .catch(error => {
             responseElement.textContent = `Error: ${error.message}`;
-});
+        });
 }
 </script>
 {% endblock %} 

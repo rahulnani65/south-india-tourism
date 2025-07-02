@@ -1,3 +1,8 @@
+# =============================
+# core/views.py
+# Contains all view functions and class-based views for the core app
+# =============================
+
 import requests
 import os
 from django.shortcuts import render, redirect, get_object_or_404
