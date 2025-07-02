@@ -4,7 +4,7 @@
 # =============================
 
 from django import forms
-from .models import UserProfile, State
+from .models import UserProfile, State, Itinerary
 from django.contrib.auth.models import User
 
 class UserProfileForm(forms.ModelForm):
@@ -60,4 +60,9 @@ class UserProfileForm(forms.ModelForm):
         if commit:
             profile.save()
         return profile
+
+class ItineraryForm(forms.ModelForm):
+    class Meta:
+        model = Itinerary
+        fields = ['state', 'day', 'description']
     

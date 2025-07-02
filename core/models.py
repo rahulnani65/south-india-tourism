@@ -85,12 +85,14 @@ class Event(models.Model):
         return f"{self.name} ({self.state.name})"
 
 class Itinerary(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='itineraries')
     state = models.ForeignKey(State, on_delete=models.CASCADE, related_name='itineraries')
     day = models.IntegerField()
     description = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"Day {self.day} Itinerary for {self.state.name}"
+        return f"Day {self.day} Itinerary for {self.state.name} ({self.user.username})"
 
 class UserProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')

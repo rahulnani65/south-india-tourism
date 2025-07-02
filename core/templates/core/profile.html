@@ -503,6 +503,38 @@
             {% endfor %}
           </div>
         </div>
+
+        <!-- Saved Itineraries Section -->
+        <div class="stats-card">
+          <h3 class="section-title"><i class="fas fa-route me-2"></i>My Saved Itineraries</h3>
+          {% if itineraries_by_state %}
+            {% for state, itineraries in itineraries_by_state.items %}
+              <h5 class="mt-3 text-primary">{{ state }}</h5>
+              <div class="table-responsive mb-3">
+                <table class="table table-bordered table-striped">
+                  <thead>
+                    <tr>
+                      <th>Day</th>
+                      <th>Description</th>
+                      <th>Saved On</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for itin in itineraries %}
+                    <tr>
+                      <td>Day {{ itin.day }}</td>
+                      <td>{{ itin.description|linebreaksbr }}</td>
+                      <td>{{ itin.created_at|date:"M d, Y H:i" }}</td>
+                    </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+            {% endfor %}
+          {% else %}
+            <p class="text-muted">No saved itineraries yet. Generate and save an itinerary from a state page!</p>
+          {% endif %}
+        </div>
       </div>
 
       <!-- Right Column -->
