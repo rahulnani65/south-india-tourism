@@ -870,14 +870,34 @@
 
   // --- ITINERARY ACTION BUTTONS ---
   window.saveItinerary = function() {
-    const itineraryHtml = document.getElementById('itineraryDays').innerHTML;
-    if (!itineraryHtml.trim()) {
-      alert('No itinerary to save!');
-      return;
-    }
-    // Save to localStorage (or send to backend if needed)
-    localStorage.setItem('savedTamilNaduItinerary', itineraryHtml);
-    alert('Itinerary saved! You can access it later from this browser.');
+    const itineraryDiv = document.getElementById('itineraryDays');
+    if (!itineraryDiv) return alert('No itinerary to save!');
+    // Extract day-wise descriptions
+    const days = Array.from(itineraryDiv.querySelectorAll('.itinerary-day')).map((el, idx) => ({
+      day: idx + 1,
+      description: el.innerText.trim()
+    }));
+    if (!days.length) return alert('No itinerary to save!');
+    // Get state_id from a global JS variable or data attribute
+    const stateId = window.STATE_ID || document.body.dataset.stateId || null;
+    if (!stateId) return alert('State ID not found!');
+    fetch('/core/save-itinerary/', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': (document.querySelector('[name=csrfmiddlewaretoken]')||{}).value || ''
+      },
+      body: JSON.stringify({ state_id: stateId, days })
+    })
+    .then(res => res.json())
+    .then(data => {
+      if (data.success) {
+        alert('Itinerary saved! View it in your profile.');
+      } else {
+        alert('Failed to save itinerary: ' + (data.error || 'Unknown error'));
+      }
+    })
+    .catch(err => alert('Error saving itinerary: ' + err.message));
   };
 
   window.exportItinerary = function() {

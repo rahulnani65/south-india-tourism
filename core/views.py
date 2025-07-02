@@ -250,68 +250,62 @@ def signup(request):
         form = UserCreationForm()
     return render(request, 'registration/signup.html', {'form': form})
 
+@csrf_exempt
+@login_required
+@require_POST
+def save_itinerary(request):
+    """Save a user's itinerary for a state (AJAX POST)."""
+    try:
+        data = json.loads(request.body.decode('utf-8'))
+        state_id = data.get('state_id')
+        days = data.get('days', [])  # List of {day, description}
+        state = State.objects.get(id=state_id)
+        user = request.user
+        # Remove previous itineraries for this user/state (optional, or allow multiple)
+        # Itinerary.objects.filter(user=user, state=state).delete()
+        for day_data in days:
+            day = day_data.get('day')
+            description = day_data.get('description')
+            Itinerary.objects.create(user=user, state=state, day=day, description=description)
+        return JsonResponse({'success': True, 'message': 'Itinerary saved.'})
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})
+
 @login_required
 def profile(request):
     # Ensure the user has a UserProfile, create one if it doesn't exist
-    try:
-        user_profile = request.user.profile
-    except UserProfile.DoesNotExist:
-        user_profile = UserProfile.objects.create(user=request.user)
-
-    # Update user statistics
-    user_profile.update_stats()
-
+    user_profile, created = UserProfile.objects.get_or_create(user=request.user)
+    form = UserProfileForm(instance=user_profile)
     if request.method == 'POST':
         form = UserProfileForm(request.POST, instance=user_profile)
         if form.is_valid():
             form.save()
-            messages.success(request, "Profile updated successfully!")
+            messages.success(request, 'Profile updated successfully!')
             return redirect('core:profile')
-    else:
-        form = UserProfileForm(instance=user_profile)
-
-    # Get travel level
+    # Travel level
     travel_level = user_profile.get_travel_level()
-
-    # Get recent reviews
-    recent_reviews = Review.objects.filter(user=request.user).select_related('place').order_by('-created_at')[:5]
-
-    # Get recent favorites
-    recent_favorites = Favorite.objects.filter(user=request.user).select_related('place').order_by('-created_at')[:5]
-
-    # Get timeline events (recent activities)
+    # Timeline events (dummy for now)
     timeline_events = []
-    
-    # Add recent reviews to timeline
-    for review in recent_reviews[:3]:
-        timeline_events.append({
-            'title': f'Reviewed {review.place.name}',
-            'description': f'Gave {review.rating} stars',
-            'date': review.created_at,
-            'icon': 'star'
-        })
-    
-    # Add recent favorites to timeline
-    for favorite in recent_favorites[:3]:
-        timeline_events.append({
-            'title': f'Added {favorite.place.name} to favorites',
-            'description': f'Added to your bucket list',
-            'date': favorite.created_at,
-            'icon': 'heart'
-        })
-
-    # Sort timeline events by date
-    timeline_events.sort(key=lambda x: x['date'], reverse=True)
-
+    # Recent reviews and favorites
+    recent_reviews = Review.objects.filter(user=request.user).order_by('-created_at')[:3]
+    recent_favorites = Favorite.objects.filter(user=request.user).order_by('-created_at')[:3]
+    # Fetch user's itineraries, grouped by state
+    user_itineraries = Itinerary.objects.filter(user=request.user).order_by('state__name', 'day')
+    itineraries_by_state = {}
+    for itin in user_itineraries:
+        state_name = itin.state.name
+        if state_name not in itineraries_by_state:
+            itineraries_by_state[state_name] = []
+        itineraries_by_state[state_name].append(itin)
     context = {
-        'form': form,
         'user_profile': user_profile,
+        'form': form,
         'travel_level': travel_level,
         'timeline_events': timeline_events,
         'recent_reviews': recent_reviews,
-        'recent_favorites': [favorite.place for favorite in recent_favorites],
+        'recent_favorites': recent_favorites,
+        'itineraries_by_state': itineraries_by_state,
     }
-    
     return render(request, 'core/profile.html', context)
 
 @login_required
